@@ -66,7 +66,7 @@ export default function AdminLoginPage() {
     } catch (err) {
       console.error("Login fetch error:", err);
       setError(
-        "Unable to connect to backend server. Please check if backend server is running on http://localhost:8000",
+        `Unable to connect to backend server (${BACKEND_URL}). Please check if backend server is running.`,
       );
     } finally {
       setLoading(false);

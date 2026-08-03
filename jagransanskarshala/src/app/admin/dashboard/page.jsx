@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, useMemo, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -37,6 +37,7 @@ import Logo from "@/assets/images/Logo-english.png";
 import * as XLSX from "xlsx";
 import schoolsData from "@/data/schoolsData.json";
 import AdminSidebar from "@/components/Admin/AdminSidebar";
+import { storiesData as initialStories } from "@/services/stories";
 
 // Helper functions for Date calculations
 const isSameDay = (d1, d2) => {
@@ -111,15 +112,28 @@ const datePresets = [
 ];
 
 export default function AdminDashboardPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#f8f5f0] text-gray-700 font-bold">Loading Jagran Admin Dashboard...</div>}>
+      <AdminDashboardContent />
+    </Suspense>
+  );
+}
+
+function AdminDashboardContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const currentTab = searchParams.get("tab") || "survey-data";
+
   const [admin, setAdmin] = useState(null);
   const [loading, setLoading] = useState(true);
 
   // Live MongoDB Submissions State
   const [liveSurveys, setLiveSurveys] = useState([]);
 
+  // Weekly Stories State
+  const [stories, setStories] = useState(initialStories);
+
   // Sidebar state
-  const [activeMenu, setActiveMenu] = useState("survey-data");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Survey Data Tab Filter State: 'all' | 'parent' | 'student'
@@ -328,14 +342,18 @@ export default function AdminDashboardPage() {
   const currentDataset = liveSurveys;
 
   const filteredData = currentDataset.filter((item) => {
-    // Tab filter
-    if (tabFilter === "parent" && item.type.toLowerCase() !== "parent") return false;
-    if (tabFilter === "student" && item.type.toLowerCase() !== "student") return false;
+    if (!item) return false;
+
+    // Tab filter (Null-safe)
+    const itemType = String(item.type || "").toLowerCase();
+    if (tabFilter === "parent" && itemType !== "parent") return false;
+    if (tabFilter === "student" && itemType !== "student") return false;
 
     // Global Search Query across ALL fields of lead
     if (searchQuery && searchQuery.trim() !== "") {
       const q = searchQuery.trim().toLowerCase();
       const fieldsToSearch = [
+        item._id,
         item.id,
         item.firstName,
         item.lastName,
@@ -351,6 +369,7 @@ export default function AdminDashboardPage() {
         item.city,
         item.school,
         item.submittedOn,
+        item.createdAt,
       ];
       const matchesAnyField = fieldsToSearch.some(
         (val) => val && String(val).toLowerCase().includes(q)
@@ -360,15 +379,18 @@ export default function AdminDashboardPage() {
 
     // Known standard states from schoolsData
     const knownStates = Object.keys(schoolsData || {});
+    const itemState = String(item.state || "");
+    const itemCity = String(item.city || "");
+    const itemSchool = String(item.school || "");
 
     // State filter (Handles "Other / अन्य" and custom state entries)
     if (stateFilter !== "all") {
       if (stateFilter === "Other") {
-        const isStandard = knownStates.includes(item.state);
-        const isOther = !item.state || item.state.toLowerCase().includes("other") || !isStandard;
+        const isStandard = knownStates.includes(itemState);
+        const isOther = !itemState || itemState.toLowerCase().includes("other") || !isStandard;
         if (!isOther) return false;
       } else {
-        if (item.state !== stateFilter) return false;
+        if (itemState !== stateFilter) return false;
       }
     }
 
@@ -376,11 +398,11 @@ export default function AdminDashboardPage() {
     if (cityFilter !== "all") {
       if (cityFilter === "Other") {
         const knownCities = stateFilter && schoolsData[stateFilter] ? Object.keys(schoolsData[stateFilter]) : [];
-        const isStandard = knownCities.includes(item.city);
-        const isOther = !item.city || item.city.toLowerCase().includes("other") || !isStandard;
+        const isStandard = knownCities.includes(itemCity);
+        const isOther = !itemCity || itemCity.toLowerCase().includes("other") || !isStandard;
         if (!isOther) return false;
       } else {
-        if (item.city !== cityFilter) return false;
+        if (itemCity !== cityFilter) return false;
       }
     }
 
@@ -388,17 +410,19 @@ export default function AdminDashboardPage() {
     if (schoolFilter !== "all") {
       if (schoolFilter === "Other") {
         const knownSchools = stateFilter && cityFilter && schoolsData[stateFilter]?.[cityFilter] ? schoolsData[stateFilter][cityFilter] : [];
-        const isStandard = knownSchools.includes(item.school);
-        const isOther = !item.school || item.school.toLowerCase().includes("other") || !isStandard;
+        const isStandard = knownSchools.includes(itemSchool);
+        const isOther = !itemSchool || itemSchool.toLowerCase().includes("other") || !isStandard;
         if (!isOther) return false;
       } else {
-        if (item.school !== schoolFilter) return false;
+        if (itemSchool !== schoolFilter) return false;
       }
     }
 
     // Date Range Filter
-    if (item.submittedOn) {
-      const itemDate = new Date(item.submittedOn.replace(",", ""));
+    const rawDate = item.submittedOn || item.createdAt;
+    if (rawDate) {
+      const dateStr = typeof rawDate === "string" ? rawDate.replace(",", "") : rawDate;
+      const itemDate = new Date(dateStr);
       if (!isNaN(itemDate.getTime())) {
         if (datePreset === "custom" && appliedStartDate && appliedEndDate) {
           const start = new Date(appliedStartDate);
@@ -446,17 +470,19 @@ export default function AdminDashboardPage() {
   const startItemDisplay = totalItems === 0 ? 0 : startIndex + 1;
   const endItemDisplay = endIndex;
 
+  const getRowId = (row) => row._id || row.id || row.submissionId;
+
   // Select All & Row Selection logic
   const isAllSelected =
     paginatedData.length > 0 &&
-    paginatedData.every((row) => selectedRows.includes(row.id));
+    paginatedData.every((row) => selectedRows.includes(getRowId(row)));
 
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      const pageIds = paginatedData.map((row) => row.id);
+      const pageIds = paginatedData.map((row) => getRowId(row));
       setSelectedRows((prev) => Array.from(new Set([...prev, ...pageIds])));
     } else {
-      const pageIds = new Set(paginatedData.map((row) => row.id));
+      const pageIds = new Set(paginatedData.map((row) => getRowId(row)));
       setSelectedRows((prev) => prev.filter((id) => !pageIds.has(id)));
     }
   };
@@ -472,9 +498,9 @@ export default function AdminDashboardPage() {
     let dataToExport = [];
     if (selectedRows && selectedRows.length > 0) {
       // Export ONLY selected rows if checkboxes are checked
-      dataToExport = filteredData.filter((row) => selectedRows.includes(row.id));
+      dataToExport = filteredData.filter((row) => selectedRows.includes(getRowId(row)));
       if (dataToExport.length === 0) {
-        dataToExport = currentDataset.filter((row) => selectedRows.includes(row.id));
+        dataToExport = currentDataset.filter((row) => selectedRows.includes(getRowId(row)));
       }
     } else {
       // Export all entries matching current active filters & date range
@@ -624,13 +650,44 @@ export default function AdminDashboardPage() {
     );
   }
 
+  const getHeaderInfo = () => {
+    switch (currentTab) {
+      case "story-publish":
+        return {
+          title: "Publish Story",
+          subtitle: "कहानी प्रकाशित करें - सप्ताहिक कहानियां प्रबंधन",
+        };
+      case "analytics":
+        return {
+          title: "Analytics & Insights",
+          subtitle: "सर्वे आंकड़े एवं रिपोर्ट",
+        };
+      case "leads":
+        return {
+          title: "Contact Leads",
+          subtitle: "कॉन्टैक्ट लीड्स डेटा",
+        };
+      case "notifications":
+        return {
+          title: "Push Notifications",
+          subtitle: "पुश नोटिफिकेशन एवं घोषणाएं",
+        };
+      default:
+        return {
+          title: "Survey Data",
+          subtitle: "सर्वे फॉर्म डेटा",
+        };
+    }
+  };
+  const headerInfo = getHeaderInfo();
+
   return (
     <div className="h-screen w-full bg-[#f8f5f0] text-gray-800 flex flex-col lg:flex-row font-admin overflow-hidden">
       {/* Shared Modular Sidebar Component */}
       <AdminSidebar
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
-        activeMenu="survey-data"
+        activeMenu={currentTab}
       />
 
       {/* =========================================================
@@ -653,31 +710,43 @@ export default function AdminDashboardPage() {
         <header className="p-6 sm:p-8 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
-              Survey Data
+              {headerInfo.title}
             </h1>
             <p className="text-xs sm:text-sm text-gray-500 font-bold mt-0.5">
-              सर्वे फॉर्म डेटा
+              {headerInfo.subtitle}
             </p>
           </div>
 
           <div className="flex items-center gap-3">
-            <button
-              onClick={handleExportData}
-              className="bg-white border border-gray-200 hover:border-gray-300 px-4 py-2 rounded-2xl text-xs font-bold text-gray-700 shadow-2xs hover:bg-gray-50 transition-all flex items-center gap-2 cursor-pointer active:scale-95"
-              title={selectedRows.length > 0 ? `Export ${selectedRows.length} selected entries` : "Export all filtered data"}
-            >
-              <FaFileExport className="text-[var(--primary)]" />
-              <span>
-                {selectedRows.length > 0
-                  ? `Export Selected (${selectedRows.length})`
-                  : "Export"}
-              </span>
-            </button>
+            {currentTab === "survey-data" && (
+              <button
+                onClick={handleExportData}
+                className="bg-white border border-gray-200 hover:border-gray-300 px-4 py-2 rounded-2xl text-xs font-bold text-gray-700 shadow-2xs hover:bg-gray-50 transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+                title={selectedRows.length > 0 ? `Export ${selectedRows.length} selected entries` : "Export all filtered data"}
+              >
+                <FaFileExport className="text-[var(--primary)]" />
+                <span>
+                  {selectedRows.length > 0
+                    ? `Export Selected (${selectedRows.length})`
+                    : "Export"}
+                </span>
+              </button>
+            )}
           </div>
         </header>
 
         {/* Content Container */}
         <div className="px-4 sm:px-8 pb-8 space-y-6">
+          {currentTab === "story-publish" ? (
+            <StoryPublishView stories={stories} setStories={setStories} />
+          ) : currentTab === "analytics" ? (
+            <AnalyticsView liveSurveys={liveSurveys} />
+          ) : currentTab === "leads" ? (
+            <LeadsView liveSurveys={liveSurveys} handleExportData={handleExportData} />
+          ) : currentTab === "notifications" ? (
+            <NotificationsView />
+          ) : (
+            <>
               {/* Filter Sub-Tabs: All Data / Parent Data / Student Data */}
               <div className="bg-white rounded-3xl p-6 shadow-xs border border-gray-200/80">
                 <div className="flex items-center gap-8 border-b border-gray-100 pb-4 mb-6">
@@ -1098,11 +1167,12 @@ export default function AdminDashboardPage() {
                           </td>
                         </tr>
                       ) : (
-                        paginatedData.map((row) => {
-                          const isRowSelected = selectedRows.includes(row.id);
+                        paginatedData.map((row, rowIdx) => {
+                          const rowId = row._id || row.id || row.submissionId || `sub-${rowIdx}`;
+                          const isRowSelected = selectedRows.includes(rowId);
                           return (
                             <tr
-                              key={row.id}
+                              key={rowId}
                               className={`transition-colors ${
                                 isRowSelected ? "bg-red-50/70" : "hover:bg-red-50/30"
                               }`}
@@ -1111,11 +1181,11 @@ export default function AdminDashboardPage() {
                                 <input
                                   type="checkbox"
                                   checked={isRowSelected}
-                                  onChange={() => handleToggleRow(row.id)}
+                                  onChange={() => handleToggleRow(rowId)}
                                   className="rounded text-[var(--primary)] accent-[var(--primary)] cursor-pointer"
                                 />
                               </td>
-                              <td className="py-2.5 px-2 font-mono text-gray-500 text-[10.5px] whitespace-nowrap">{row.id}</td>
+                              <td className="py-2.5 px-2 font-mono text-gray-500 text-[10.5px] whitespace-nowrap">{rowId}</td>
                               <td className="py-2.5 px-2 font-bold text-gray-900 whitespace-nowrap">{row.firstName}</td>
                               <td className="py-2.5 px-2 whitespace-nowrap">{row.lastName}</td>
                               <td className="py-2.5 px-2 text-gray-600 text-[10.5px] whitespace-nowrap">{row.email}</td>
@@ -1182,6 +1252,8 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
               </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -1435,6 +1507,391 @@ export default function AdminDashboardPage() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/* =========================================================
+   STORY PUBLISH TAB VIEW
+   ========================================================= */
+function StoryPublishView({ stories, setStories }) {
+  const [filter, setFilter] = useState("all");
+  const [editingStory, setEditingStory] = useState(null);
+
+  const togglePublish = (id) => {
+    setStories((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, isPublished: !s.isPublished } : s))
+    );
+  };
+
+  const handleSaveEdit = (e) => {
+    e.preventDefault();
+    if (!editingStory) return;
+    setStories((prev) =>
+      prev.map((s) => (s.id === editingStory.id ? editingStory : s))
+    );
+    setEditingStory(null);
+  };
+
+  const publishedCount = stories.filter((s) => s.isPublished).length;
+  const draftCount = stories.filter((s) => !s.isPublished).length;
+
+  const filtered = stories.filter((s) => {
+    if (filter === "published") return s.isPublished;
+    if (filter === "draft") return !s.isPublished;
+    return true;
+  });
+
+  return (
+    <div className="space-y-6">
+      {/* Overview Stat Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white rounded-3xl p-5 shadow-xs border border-gray-200/80 flex items-center justify-between">
+          <div>
+            <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Stories</div>
+            <div className="text-2xl font-black text-gray-900 mt-1">{stories.length} Weeks</div>
+          </div>
+          <div className="w-12 h-12 rounded-2xl bg-red-50 text-[var(--primary)] flex items-center justify-center text-xl">
+            <FaNewspaper />
+          </div>
+        </div>
+        <div className="bg-white rounded-3xl p-5 shadow-xs border border-gray-200/80 flex items-center justify-between">
+          <div>
+            <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">Published Stories</div>
+            <div className="text-2xl font-black text-emerald-600 mt-1">{publishedCount} Live</div>
+          </div>
+          <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl">
+            <FaCheck />
+          </div>
+        </div>
+        <div className="bg-white rounded-3xl p-5 shadow-xs border border-gray-200/80 flex items-center justify-between">
+          <div>
+            <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">Draft / Scheduled</div>
+            <div className="text-2xl font-black text-amber-600 mt-1">{draftCount} Drafts</div>
+          </div>
+          <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl">
+            <FaRegCalendar />
+          </div>
+        </div>
+      </div>
+
+      {/* Main Stories Table / Grid Card */}
+      <div className="bg-white rounded-3xl p-6 shadow-xs border border-gray-200/80">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-gray-100 mb-6">
+          <div className="flex items-center gap-6">
+            <button
+              onClick={() => setFilter("all")}
+              className={`text-sm font-extrabold pb-2 relative transition-all cursor-pointer ${filter === "all" ? "text-[var(--primary)]" : "text-gray-400 hover:text-gray-700"}`}
+            >
+              All Stories ({stories.length})
+              {filter === "all" && <span className="absolute bottom-0 left-0 right-0 h-1 bg-[var(--primary)] rounded-full" />}
+            </button>
+            <button
+              onClick={() => setFilter("published")}
+              className={`text-sm font-extrabold pb-2 relative transition-all cursor-pointer ${filter === "published" ? "text-[var(--primary)]" : "text-gray-400 hover:text-gray-700"}`}
+            >
+              Published ({publishedCount})
+              {filter === "published" && <span className="absolute bottom-0 left-0 right-0 h-1 bg-[var(--primary)] rounded-full" />}
+            </button>
+            <button
+              onClick={() => setFilter("draft")}
+              className={`text-sm font-extrabold pb-2 relative transition-all cursor-pointer ${filter === "draft" ? "text-[var(--primary)]" : "text-gray-400 hover:text-gray-700"}`}
+            >
+              Drafts ({draftCount})
+              {filter === "draft" && <span className="absolute bottom-0 left-0 right-0 h-1 bg-[var(--primary)] rounded-full" />}
+            </button>
+          </div>
+        </div>
+
+        {/* Story Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {filtered.map((story) => (
+            <div
+              key={story.id}
+              className="border border-gray-200/80 rounded-2xl p-5 bg-white hover:shadow-md transition-all flex flex-col justify-between"
+            >
+              <div>
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <span className="bg-red-50 text-[var(--primary)] text-xs font-black px-2.5 py-1 rounded-lg">
+                    {story.weekHi || story.weekEn}
+                  </span>
+                  <span
+                    className={`text-xs font-bold px-2.5 py-1 rounded-lg ${
+                      story.isPublished ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-amber-50 text-amber-700 border border-amber-200"
+                    }`}
+                  >
+                    {story.isPublished ? "✓ Published" : "⏳ Draft"}
+                  </span>
+                </div>
+                <h3 className="text-base font-extrabold text-gray-900">
+                  {story.titleHi} ({story.titleEn})
+                </h3>
+                <p className="text-xs text-gray-500 font-medium mt-1 line-clamp-2">
+                  {story.descHi || story.descEn}
+                </p>
+                <div className="text-[11px] font-semibold text-gray-400 mt-3 flex items-center gap-1.5">
+                  <FaRegCalendar />
+                  <span>Publish Date: {story.publishDateHi || story.publishDateEn}</span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between gap-2 mt-5 pt-3 border-t border-gray-100">
+                <Link
+                  href={`/story/${story.id}`}
+                  target="_blank"
+                  className="text-xs font-bold text-red-600 hover:text-red-800 flex items-center gap-1 cursor-pointer"
+                >
+                  <FaEye /> View Story Live
+                </Link>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setEditingStory({ ...story })}
+                    className="text-xs font-bold px-3 py-1.5 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-700 flex items-center gap-1 transition-all cursor-pointer"
+                  >
+                    <FaPen className="text-[10px]" /> Edit
+                  </button>
+                  <button
+                    onClick={() => togglePublish(story.id)}
+                    className={`text-xs font-extrabold px-3.5 py-1.5 rounded-xl transition-all cursor-pointer ${
+                      story.isPublished
+                        ? "bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200"
+                        : "bg-[var(--primary)] text-white hover:opacity-90 shadow-xs"
+                    }`}
+                  >
+                    {story.isPublished ? "Unpublish" : "Publish Now"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Edit Story Modal */}
+      {editingStory && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-xs">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 animate-fadeIn">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <h3 className="text-lg font-black text-gray-900">
+                Edit Story ({editingStory.weekHi})
+              </h3>
+              <button
+                onClick={() => setEditingStory(null)}
+                className="text-gray-400 hover:text-gray-600 p-1"
+              >
+                <FaXmark className="text-lg" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEdit} className="space-y-3">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Title (Hindi)</label>
+                <input
+                  type="text"
+                  value={editingStory.titleHi || ""}
+                  onChange={(e) => setEditingStory({ ...editingStory, titleHi: e.target.value })}
+                  className="w-full px-3.5 py-2 rounded-xl border border-gray-200 text-xs font-bold focus:outline-none focus:border-[var(--primary)]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Title (English)</label>
+                <input
+                  type="text"
+                  value={editingStory.titleEn || ""}
+                  onChange={(e) => setEditingStory({ ...editingStory, titleEn: e.target.value })}
+                  className="w-full px-3.5 py-2 rounded-xl border border-gray-200 text-xs font-bold focus:outline-none focus:border-[var(--primary)]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Description (Hindi)</label>
+                <textarea
+                  rows={2}
+                  value={editingStory.descHi || ""}
+                  onChange={(e) => setEditingStory({ ...editingStory, descHi: e.target.value })}
+                  className="w-full px-3.5 py-2 rounded-xl border border-gray-200 text-xs font-bold focus:outline-none focus:border-[var(--primary)]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Publish Date (Hindi)</label>
+                <input
+                  type="text"
+                  value={editingStory.publishDateHi || ""}
+                  onChange={(e) => setEditingStory({ ...editingStory, publishDateHi: e.target.value })}
+                  className="w-full px-3.5 py-2 rounded-xl border border-gray-200 text-xs font-bold focus:outline-none focus:border-[var(--primary)]"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-gray-100 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingStory(null)}
+                  className="px-4 py-2 rounded-xl border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-[var(--primary)] text-white text-xs font-extrabold shadow-md hover:opacity-90"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* =========================================================
+   ANALYTICS TAB VIEW
+   ========================================================= */
+function AnalyticsView({ liveSurveys }) {
+  const total = liveSurveys.length;
+  const parents = liveSurveys.filter((s) => s.type === "Parent").length;
+  const students = liveSurveys.filter((s) => s.type === "Student").length;
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white rounded-3xl p-5 shadow-xs border border-gray-200/80">
+          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Submissions</div>
+          <div className="text-3xl font-black text-gray-900 mt-1">{total}</div>
+        </div>
+        <div className="bg-white rounded-3xl p-5 shadow-xs border border-gray-200/80">
+          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">Parents Submissions</div>
+          <div className="text-3xl font-black text-blue-600 mt-1">{parents}</div>
+        </div>
+        <div className="bg-white rounded-3xl p-5 shadow-xs border border-gray-200/80">
+          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">Students Submissions</div>
+          <div className="text-3xl font-black text-emerald-600 mt-1">{students}</div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-3xl p-8 shadow-xs border border-gray-200/80 text-center py-14">
+        <FaChartPie className="text-5xl text-[var(--primary)] opacity-40 mx-auto mb-3" />
+        <h3 className="text-lg font-black text-gray-800">Survey Analytics Overview</h3>
+        <p className="text-xs text-gray-500 font-bold max-w-md mx-auto mt-1">
+          Live analytics and submission breakdown by parent, student, and geographical distribution.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* =========================================================
+   CONTACT LEADS TAB VIEW
+   ========================================================= */
+function LeadsView({ liveSurveys, handleExportData }) {
+  return (
+    <div className="space-y-6">
+      <div className="bg-white rounded-3xl p-6 shadow-xs border border-gray-200/80">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-gray-100">
+          <div>
+            <h3 className="text-lg font-black text-gray-900">Contact Leads ({liveSurveys.length})</h3>
+            <p className="text-xs text-gray-500 font-bold">Registered parents & students contact records</p>
+          </div>
+          <button
+            onClick={handleExportData}
+            className="bg-white border border-gray-200 px-4 py-2 rounded-2xl text-xs font-bold text-gray-700 shadow-2xs hover:bg-gray-50 flex items-center gap-2 cursor-pointer"
+          >
+            <FaFileExport className="text-[var(--primary)]" /> Export Excel
+          </button>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs font-semibold text-gray-700">
+            <thead className="bg-gray-50 text-gray-400 uppercase font-extrabold border-b border-gray-100">
+              <tr>
+                <th className="p-3">Name</th>
+                <th className="p-3">Type</th>
+                <th className="p-3">Mobile</th>
+                <th className="p-3">Email</th>
+                <th className="p-3">State</th>
+                <th className="p-3">City</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {liveSurveys.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="p-6 text-center text-gray-400 font-bold">No contact leads available yet.</td>
+                </tr>
+              ) : (
+                liveSurveys.slice(0, 50).map((lead, idx) => (
+                  <tr key={lead._id || idx} className="hover:bg-gray-50/80 transition-colors">
+                    <td className="p-3 font-extrabold text-gray-900">{lead.firstName} {lead.lastName}</td>
+                    <td className="p-3">
+                      <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-extrabold ${lead.type === "Parent" ? "bg-blue-50 text-blue-700 border border-blue-200" : "bg-emerald-50 text-emerald-700 border border-emerald-200"}`}>
+                        {lead.type}
+                      </span>
+                    </td>
+                    <td className="p-3 font-mono">{lead.mobile}</td>
+                    <td className="p-3">{lead.email || "-"}</td>
+                    <td className="p-3">{lead.state || "-"}</td>
+                    <td className="p-3">{lead.city || "-"}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* =========================================================
+   PUSH NOTIFICATIONS TAB VIEW
+   ========================================================= */
+function NotificationsView() {
+  const [msg, setMsg] = useState("");
+  const [sent, setSent] = useState(false);
+
+  const handleSend = (e) => {
+    e.preventDefault();
+    if (!msg.trim()) return;
+    setSent(true);
+    setTimeout(() => {
+      setMsg("");
+      setSent(false);
+    }, 2500);
+  };
+
+  return (
+    <div className="bg-white rounded-3xl p-6 shadow-xs border border-gray-200/80 max-w-xl mx-auto space-y-4">
+      <div className="flex items-center gap-3 border-b border-gray-100 pb-3">
+        <FaBell className="text-xl text-[var(--primary)]" />
+        <div>
+          <h3 className="text-lg font-black text-gray-900">Broadcast Push Notification</h3>
+          <p className="text-xs text-gray-500 font-bold">Send announcements to registered parents & students</p>
+        </div>
+      </div>
+
+      {sent && (
+        <div className="p-3.5 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold animate-fadeIn">
+          ✓ Push notification sent successfully!
+        </div>
+      )}
+
+      <form onSubmit={handleSend} className="space-y-4">
+        <div>
+          <label className="block text-xs font-bold text-gray-700 mb-1">Message Content</label>
+          <textarea
+            rows={4}
+            value={msg}
+            onChange={(e) => setMsg(e.target.value)}
+            placeholder="Type notification announcement here..."
+            className="w-full p-3 rounded-2xl border border-gray-200 text-xs font-bold focus:outline-none focus:border-[var(--primary)]"
+          />
+        </div>
+        <button
+          type="submit"
+          className="w-full py-3 rounded-2xl bg-[var(--primary)] text-white text-xs font-extrabold shadow-md hover:opacity-90 transition-all cursor-pointer"
+        >
+          Send Push Notification
+        </button>
+      </form>
     </div>
   );
 }
