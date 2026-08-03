@@ -1,0 +1,311 @@
+@import "tailwindcss";
+
+/* ===========================
+   Design Tokens
+=========================== */
+
+:root {
+  /* Brand Colors */
+  --primary: #c71518;
+  --secondary: #f07f22;
+
+  /* Neutral */
+  --black: #111111;
+  --heading: #1a1a1a;
+  --paragraph: #555555;
+
+  --white: #ffffff;
+  --background: #feefe0;
+
+  /* Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  /* Shadow */
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+
+  /* Transition */
+  --transition: all 0.3s ease;
+}
+
+/* Admin Dashboard Modern Font Utility */
+.font-admin {
+  font-family: var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Hide scrollbar but keep scroll functionality */
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;             /* Chrome, Safari, Opera */
+}
+
+/* Lightweight thin horizontal scrollbar for admin tables */
+.thin-scrollbar::-webkit-scrollbar {
+  height: 4px;
+}
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 99px;
+}
+.thin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.28);
+}
+.thin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+}
+
+/* ===========================
+   Base
+=========================== */
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 84px;
+}
+
+@media (min-width: 768px) {
+  html {
+    scroll-padding-top: 96px;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--paragraph);
+  overflow-x: hidden;
+  font-family: var(--font-primary), "Noto Sans Devanagari", sans-serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Hindi (Devanagari) needs a touch more line-height to render conjuncts
+   and matras cleanly without clipping/overlap. Applied globally via the
+   <html data-lang="hi"> attribute set by LanguageContext, so EVERY
+   section stays visually consistent automatically when the user switches. */
+html[data-lang="hi"] body {
+  line-height: 1.85;
+}
+
+html[data-lang="hi"] .heading-xl,
+html[data-lang="hi"] .heading-lg,
+html[data-lang="hi"] .heading-md,
+html[data-lang="hi"] .heading-sm {
+  line-height: 1.5;
+}
+
+/* ===========================
+   Premium Smooth Scrollbar
+=========================== */
+
+/* Firefox */
+html {
+  scrollbar-width: thin;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera & Firefox */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+
+
+/* ===========================
+   Layout
+=========================== */
+
+.container {
+  @apply max-w-7xl mx-auto px-5 sm:px-6 lg:px-8 xl:px-10;
+}
+
+.section {
+  @apply py-16 md:py-20 lg:py-24 xl:py-28;
+}
+
+/* ===========================
+   Typography
+=========================== */
+
+.heading-xl {
+  @apply text-4xl md:text-5xl lg:text-6xl font-bold leading-tight;
+  color: var(--heading);
+}
+
+.heading-lg {
+  @apply text-3xl md:text-4xl lg:text-5xl font-bold leading-tight;
+  color: var(--heading);
+}
+
+.heading-md {
+  @apply text-2xl md:text-3xl lg:text-4xl font-bold leading-tight;
+  color: var(--heading);
+}
+
+.heading-sm {
+  @apply text-xl md:text-2xl font-semibold;
+  color: var(--heading);
+}
+
+.paragraph {
+  @apply text-[15px] md:text-base leading-8 text-justify;
+  color: var(--paragraph);
+}
+
+.small-text {
+  @apply text-sm leading-7;
+}
+
+/* ===========================
+   Buttons
+=========================== */
+
+.primary-btn {
+  @apply inline-flex items-center justify-center
+  px-8 lg:px-10
+  py-3 lg:py-4
+  rounded-full
+  font-semibold
+  text-white;
+
+  background: var(--primary);
+  transition: var(--transition);
+}
+
+.primary-btn:hover {
+  background: var(--secondary);
+}
+
+.secondary-btn {
+  @apply inline-flex items-center justify-center
+  px-8 lg:px-10
+  py-3 lg:py-4
+  rounded-full
+  font-semibold;
+
+  background: var(--primary);
+  color: #fff;
+  transition: var(--transition);
+}
+
+.secondary-btn:hover {
+  background: var(--secondary);
+}
+
+/* ===========================
+   Cards
+=========================== */
+
+.card {
+  @apply rounded-2xl p-6;
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+
+/* ===========================
+   Images
+=========================== */
+
+.image-cover {
+  @apply w-full h-full object-cover;
+}
+
+.image-contain {
+  @apply w-full h-full object-contain;
+}
+
+/* ===========================
+   Utilities
+=========================== */
+
+.section-title {
+  @apply mb-10 lg:mb-14;
+}
+
+.flex-center {
+  @apply flex items-center justify-center;
+}
+
+.flex-between {
+  @apply flex items-center justify-between;
+}
+
+.grid-center {
+  @apply grid place-items-center;
+}
+
+.transition-default {
+  transition: var(--transition);
+}
+
+/* about us componnent */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  opacity: 0;
+  animation: fadeInUp 0.8s ease-out forwards;
+}
+
+/* Year Talk topic cards — orange by default, red on hover */
+.topic-card {
+  background: var(--secondary);
+  transition: var(--transition);
+}
+
+.topic-card:hover {
+  background: var(--primary);
+}
+
+/* Active card - red by default, orange on hover */
+.topic-card-active {
+  background: var(--primary);
+  transition: var(--transition);
+}
+
+.topic-card-active:hover {
+  background: var(--secondary);
+}
+
+/* ===========================
+   Latest Updates Marquee
+=========================== */
+@keyframes marqueeScroll {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee-scroll {
+  display: flex;
+  width: max-content;
+  animation: marqueeScroll 30s linear infinite;
+}
+
+.animate-marquee-scroll:hover {
+  animation-play-state: paused;
+}
+

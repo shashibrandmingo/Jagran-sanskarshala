@@ -1,0 +1,7 @@
+node_modules
+.env
+password sheet.js
+password-sheet.js
+passwordsheet.js
+.DS_Store
+*.log
