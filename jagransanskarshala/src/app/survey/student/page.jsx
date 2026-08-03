@@ -659,7 +659,8 @@ export default function StudentSurveyPage() {
     const calculatedScore = Math.round((matchedCount / QUESTIONS.length) * 100);
 
     // Call Backend API to Save in MongoDB
-    fetch("http://localhost:8000/api/v1/survey/submit", {
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+    fetch(`${backendUrl}/api/v1/survey/submit`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
