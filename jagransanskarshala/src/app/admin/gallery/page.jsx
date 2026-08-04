@@ -420,30 +420,9 @@ export default function AdminGalleryPage() {
   }
 
   return (
-    <div className="h-screen w-full bg-[#f8f5f0] text-gray-800 flex flex-col lg:flex-row font-admin overflow-hidden">
-      {/* Shared Admin Sidebar Component */}
-      <AdminSidebar
-        sidebarOpen={sidebarOpen}
-        setSidebarOpen={setSidebarOpen}
-        activeMenu="gallery-mgmt"
-      />
-
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto overflow-x-hidden">
-        {/* Mobile Header Bar */}
-        <div className="lg:hidden bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between sticky top-0 z-30 shadow-xs">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="p-2 text-gray-700 hover:text-[var(--primary)]"
-          >
-            <FaBars className="text-xl" />
-          </button>
-          <Image src={Logo} alt="Logo" width={120} height={35} className="h-8 w-auto object-contain" />
-          <div className="w-8" />
-        </div>
-
-        {/* Top Header Banner */}
-        <header className="p-4 sm:p-6 lg:p-8 pb-3 sm:pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+    <>
+      {/* Top Header Banner */}
+      <header className="p-4 sm:p-6 lg:p-8 pb-3 sm:pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
           <div>
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-gray-900 tracking-tight">
               Gallery Management
@@ -684,7 +663,6 @@ export default function AdminGalleryPage() {
             ));
           })()}
         </div>
-      </div>
 
       {/* MODAL 1: ADD YEAR / EDITION */}
       {showAddYearModal && (
@@ -1046,6 +1024,6 @@ export default function AdminGalleryPage() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

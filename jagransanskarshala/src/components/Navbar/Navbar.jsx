@@ -96,6 +96,8 @@ export default function Navbar() {
                               <div className="py-1 my-0.5 rounded-xl bg-gray-50/70 p-1">
                                 <Link
                                   href={dropItem.link || "/"}
+                                  target={dropItem.link?.startsWith("https://") ? "_blank" : undefined}
+                                  rel={dropItem.link?.startsWith("https://") ? "noopener noreferrer" : undefined}
                                   className="flex items-center justify-between px-3 py-2 text-[14px] text-gray-800 font-bold hover:text-[var(--primary)] transition-colors"
                                 >
                                   <span>{dropItem.label}</span>
@@ -108,6 +110,8 @@ export default function Navbar() {
                                     <Link
                                       key={subItem.id}
                                       href={subItem.link || "/"}
+                                      target={subItem.link?.startsWith("https://") ? "_blank" : undefined}
+                                      rel={subItem.link?.startsWith("https://") ? "noopener noreferrer" : undefined}
                                       className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[13px] text-gray-600 hover:text-[var(--primary)] hover:bg-white font-medium transition-all shadow-2xs group/subitem"
                                     >
                                       <FaImages className="text-xs text-[var(--secondary)] group-hover/subitem:scale-110 transition-transform" />
@@ -132,6 +136,8 @@ export default function Navbar() {
                                       <Link
                                         key={subItem.id}
                                         href={subItem.link || "/"}
+                                        target={subItem.link?.startsWith("https://") ? "_blank" : undefined}
+                                        rel={subItem.link?.startsWith("https://") ? "noopener noreferrer" : undefined}
                                         className="block px-2.5 py-2 text-[13px] text-gray-600 font-medium hover:text-[var(--primary)] hover:bg-red-50/60 rounded-lg transition-colors leading-snug"
                                       >
                                         {subItem.label}
@@ -143,6 +149,8 @@ export default function Navbar() {
                             ) : (
                               <Link
                                 href={dropItem.link || "/"}
+                                target={dropItem.link?.startsWith("https://") ? "_blank" : undefined}
+                                rel={dropItem.link?.startsWith("https://") ? "noopener noreferrer" : undefined}
                                 className="block px-3 py-2.5 text-[14px] text-gray-700 font-medium hover:text-[var(--primary)] hover:bg-gray-50 rounded-lg transition-colors whitespace-normal leading-tight"
                               >
                                 {dropItem.label}
@@ -298,6 +306,8 @@ export default function Navbar() {
                                     <Link
                                       href={subItem.link || "/"}
                                       onClick={handleLinkClick}
+                                      target={subItem.link?.startsWith("https://") ? "_blank" : undefined}
+                                      rel={subItem.link?.startsWith("https://") ? "noopener noreferrer" : undefined}
                                       className="flex items-center gap-2 text-[14px] text-gray-600 hover:text-[var(--primary)] py-1 font-medium transition-colors"
                                     >
                                       <FaImages className="text-xs text-[var(--secondary)]" />
@@ -321,6 +331,8 @@ export default function Navbar() {
                                     <Link
                                       href={subItem.link || "/"}
                                       onClick={handleLinkClick}
+                                      target={subItem.link?.startsWith("https://") ? "_blank" : undefined}
+                                      rel={subItem.link?.startsWith("https://") ? "noopener noreferrer" : undefined}
                                       className="block text-[13px] text-gray-500 hover:text-[var(--primary)] py-1 transition-colors font-medium"
                                     >
                                       {subItem.label}
@@ -333,6 +345,8 @@ export default function Navbar() {
                             <Link
                               href={dropItem.link || "/"}
                               onClick={handleLinkClick}
+                              target={dropItem.link?.startsWith("https://") ? "_blank" : undefined}
+                              rel={dropItem.link?.startsWith("https://") ? "noopener noreferrer" : undefined}
                               className="block text-[15px] text-gray-600 hover:text-[var(--primary)] py-1 transition-colors"
                             >
                               {dropItem.label}

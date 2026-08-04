@@ -40,7 +40,7 @@ export default function AdminSidebar({ sidebarOpen, setSidebarOpen, activeMenu, 
       label: "Publish Story",
       subLabel: "कहानी प्रकाशित करें",
       icon: FaNewspaper,
-      href: "/admin/dashboard?tab=story-publish",
+      href: "/admin/publish-story",
     },
     {
       id: "gallery-mgmt",
@@ -54,21 +54,21 @@ export default function AdminSidebar({ sidebarOpen, setSidebarOpen, activeMenu, 
       label: "Analytics",
       subLabel: "एनालिटिक्स",
       icon: FaChartPie,
-      href: "/admin/dashboard?tab=analytics",
+      href: "/admin/analytics",
     },
     {
       id: "leads",
       label: "Contact Leads",
       subLabel: "कॉन्टैक्ट लीड्स",
       icon: FaAddressBook,
-      href: "/admin/dashboard?tab=leads",
+      href: "/admin/contact-leads",
     },
     {
       id: "notifications",
       label: "Push Notification",
       subLabel: "पुश नोटिफिकेशन",
       icon: FaBell,
-      href: "/admin/dashboard?tab=notifications",
+      href: "/admin/push-notification",
     },
   ];
 
@@ -117,11 +117,17 @@ export default function AdminSidebar({ sidebarOpen, setSidebarOpen, activeMenu, 
               const Icon = item.icon;
               const isSelected = activeMenu
                 ? activeMenu === item.id
-                : pathname === item.href || (item.id === "gallery-mgmt" && pathname.startsWith("/admin/gallery"));
+                : pathname === item.href ||
+                  (item.id === "gallery-mgmt" && pathname.startsWith("/admin/gallery")) ||
+                  (item.id === "story-publish" && pathname.startsWith("/admin/publish-story")) ||
+                  (item.id === "analytics" && pathname.startsWith("/admin/analytics")) ||
+                  (item.id === "leads" && pathname.startsWith("/admin/contact-leads")) ||
+                  (item.id === "notifications" && pathname.startsWith("/admin/push-notification"));
 
               return (
-                <button
+                <Link
                   key={item.id}
+                  href={item.href}
                   onClick={() => {
                     if (setActiveMenu) {
                       setActiveMenu(item.id);
@@ -129,7 +135,6 @@ export default function AdminSidebar({ sidebarOpen, setSidebarOpen, activeMenu, 
                     if (setSidebarOpen) {
                       setSidebarOpen(false);
                     }
-                    router.push(item.href);
                   }}
                   className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-2xl text-sm font-bold transition-all cursor-pointer ${
                     isSelected
@@ -146,7 +151,7 @@ export default function AdminSidebar({ sidebarOpen, setSidebarOpen, activeMenu, 
                       {item.subLabel}
                     </div>
                   </div>
-                </button>
+                </Link>
               );
             })}
           </nav>

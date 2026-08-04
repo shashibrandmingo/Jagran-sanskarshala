@@ -11,23 +11,18 @@ export async function POST(req) {
     if (!email || !email.includes("@")) {
       return NextResponse.json(
         { success: false, error: "Valid email is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const name = participantName || "Valued Student";
 
-    // 1. Generate Personalized PDF from Template (using English Certificate.pdf)
-    let templatePath = path.join(process.cwd(), "public", "Certificate.pdf");
-    if (!fs.existsSync(templatePath)) {
-      templatePath = path.join(
-        process.cwd(),
-        "src",
-        "assets",
-        "images",
-        "Certificate.pdf"
-      );
-    }
+    // 1. Generate Personalized PDF from Template
+    let templatePath = path.join(
+      process.cwd(),
+      "public",
+      "Certificatefinal.pdf",
+    );
 
     let pdfBuffer;
     if (fs.existsSync(templatePath)) {
@@ -37,17 +32,21 @@ export async function POST(req) {
       const page = pdfDoc.getPages()[0];
       const { width } = page.getSize();
 
+      // Calculate font size & position — name appears AFTER "Mr. / Ms." on the line
       let fontSize = 24;
       if (name.length > 25) fontSize = 20;
       if (name.length > 35) fontSize = 16;
 
+      // "Mr. / Ms." text ends around x=296, dashed line runs till x=602 (measured from certificate template)
+      const mrMsEndX = 296;
+      const lineEndX = 602;
       const textWidth = font.widthOfTextAtSize(name, fontSize);
-      const lineCenter = 470;
-      const x = lineCenter - textWidth / 2;
-      const y = 260; // Baseline sits directly on top of the dashed line
+      const availableWidth = lineEndX - mrMsEndX; // space after Mr./Ms. till end of dashed line
+      const x = mrMsEndX + (availableWidth - textWidth) / 2; // center within remaining space
+      const y = 210; // Baseline sits directly on top of the dashed line
 
       page.drawText(name, {
-        x,
+        x: Math.max(mrMsEndX, x), // ensure never goes before Mr./Ms.
         y,
         size: fontSize,
         font,
@@ -62,8 +61,12 @@ export async function POST(req) {
     const host = process.env.SMTP_HOST || "smtp.gmail.com";
     const port = parseInt(process.env.SMTP_PORT || "465", 10);
     const user = (process.env.SMTP_USER || "pradeepgaur1825@gmail.com").trim();
-    let pass = (process.env.SMTP_PASS || "cmpyanjzpeillmwi").replace(/^your-/i, "").replace(/\s+/g, "").trim();
-    const from = process.env.SMTP_FROM || `"Dainik Jagran Sanskarshala" <${user}>`;
+    let pass = (process.env.SMTP_PASS || "cmpyanjzpeillmwi")
+      .replace(/^your-/i, "")
+      .replace(/\s+/g, "")
+      .trim();
+    const from =
+      process.env.SMTP_FROM || `"Dainik Jagran Sanskarshala" <${user}>`;
 
     // High-quality HTML Email Template
     const htmlContent = `
@@ -94,17 +97,17 @@ export async function POST(req) {
           <h1>Jagran Sanskarshala</h1>
           <p>Building Digital Consciousness & Values</p>
         </div>
-        
+
         <div class="content">
           <div class="salutation">Dear ${name},</div>
-          
+
           <p>Thank you for participating in <strong>India's Largest Student Digital Conduct Survey 2026</strong> organized by <strong>Dainik Jagran Sanskarshala</strong>.</p>
-          
+
           <p>Your honest responses contribute directly to shaping national digital habit awareness programs across schools in India.</p>
 
           <div class="card">
             <h3>🎓 Official Participation Certificate Attached</h3>
-            <p>Your official Certificate of Participation is attached to this email as a PDF file (${name.replace(/\s+/g, '_')}_Certificate.pdf).</p>
+            <p>Your official Certificate of Participation is attached to this email as a PDF file (${name.replace(/\s+/g, "_")}_Certificate.pdf).</p>
           </div>
 
           <p>We encourage you to download, print, or share your certificate with pride!</p>
@@ -149,7 +152,9 @@ export async function POST(req) {
       attachments,
     });
 
-    console.log(`[EMAIL DISPATCH SUCCESS] MessageId: ${info.messageId} to ${email}`);
+    console.log(
+      `[EMAIL DISPATCH SUCCESS] MessageId: ${info.messageId} to ${email}`,
+    );
 
     return NextResponse.json({
       success: true,
@@ -160,7 +165,7 @@ export async function POST(req) {
     console.error("Error sending certificate email:", error);
     return NextResponse.json(
       { success: false, error: error.message || "Failed to send email" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
