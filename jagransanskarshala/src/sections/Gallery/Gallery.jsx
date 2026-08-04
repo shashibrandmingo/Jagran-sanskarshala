@@ -30,6 +30,8 @@ export default function GallerySection({ initialYear = "All" }) {
   const [lightboxCategory, setLightboxCategory] = useState(null);
   const [lightboxIndex, setLightboxIndex] = useState(0);
 
+  const [dynamicTabs, setDynamicTabs] = useState(galleryTabs);
+
   // Sync initialYear if prop changes
   useEffect(() => {
     if (initialYear) {
@@ -43,11 +45,22 @@ export default function GallerySection({ initialYear = "All" }) {
     async function fetchGallery() {
       setLoading(true);
       try {
-        const res = await fetch(`/api/gallery?year=${activeTab}`);
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+        const res = await fetch(`${backendUrl}/api/v1/gallery`);
         if (res.ok) {
           const json = await res.json();
           if (isMounted && json.data) {
-            setCategories(json.data);
+            let categories = json.data.categories || [];
+            let years = json.data.years || [];
+
+            if (years.length > 0) {
+              setDynamicTabs(years);
+            }
+
+            if (activeTab && activeTab !== "All" && activeTab !== "all") {
+              categories = categories.filter((cat) => cat.year === activeTab);
+            }
+            setCategories(categories);
             setLoading(false);
             return;
           }
@@ -78,8 +91,8 @@ export default function GallerySection({ initialYear = "All" }) {
 
   // Active tab object for label display
   const activeTabObj = useMemo(() => {
-    return galleryTabs.find((t) => t.year === activeTab) || galleryTabs[0];
-  }, [activeTab]);
+    return dynamicTabs.find((t) => t.year === activeTab) || dynamicTabs[0] || galleryTabs[0];
+  }, [activeTab, dynamicTabs]);
 
   // Open Lightbox Slider for specific Category and Image Index
   const openLightbox = (category, index) => {
@@ -166,11 +179,11 @@ export default function GallerySection({ initialYear = "All" }) {
            ========================================================== */}
         <div className="mb-8 md:mb-12">
           <div className="hidden lg:flex items-stretch justify-between bg-[#fbf3ea]/90 backdrop-blur-xs p-2 rounded-2xl border border-[#ebd8c5] shadow-xs w-full">
-            {galleryTabs.map((tab, idx) => {
+            {dynamicTabs.map((tab, idx) => {
               const isActive = activeTab === tab.year;
-              const isLast = idx === galleryTabs.length - 1;
-              const tabTitle = tab.title[lang] || tab.title.en;
-              const tabSubtitle = tab.subtitle[lang] || tab.subtitle.en;
+              const isLast = idx === dynamicTabs.length - 1;
+              const tabTitle = typeof tab.title === "object" ? (tab.title[lang] || tab.title.en) : tab.title;
+              const tabSubtitle = typeof tab.subtitle === "object" ? (tab.subtitle[lang] || tab.subtitle.en) : tab.subtitle;
 
               return (
                 <div
@@ -255,44 +268,48 @@ export default function GallerySection({ initialYear = "All" }) {
 
             {dropdownOpen && (
               <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 z-30 p-2 overflow-hidden animate-fadeIn">
-                {galleryTabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => {
-                      setActiveTab(tab.year);
-                      setDropdownOpen(false);
-                    }}
-                    className={`w-full flex items-center justify-between p-3 rounded-xl text-left transition-colors ${
-                      activeTab === tab.year
-                        ? "bg-[var(--primary)] text-white"
-                        : "text-gray-700 hover:bg-red-50"
-                    }`}
-                  >
-                    <div className="flex flex-col">
-                      <span className="text-sm font-bold">
-                        {tab.title[lang] || tab.title.en}
-                      </span>
-                      {tab.subtitle && (
+                {dynamicTabs.map((tab) => {
+                  const tabTitle = typeof tab.title === "object" ? (tab.title[lang] || tab.title.en) : tab.title;
+                  const tabSubtitle = typeof tab.subtitle === "object" ? (tab.subtitle[lang] || tab.subtitle.en) : tab.subtitle;
+                  return (
+                    <button
+                      key={tab._id || tab.id || tab.year}
+                      onClick={() => {
+                        setActiveTab(tab.year);
+                        setDropdownOpen(false);
+                      }}
+                      className={`w-full flex items-center justify-between p-3 rounded-xl text-left transition-colors ${
+                        activeTab === tab.year
+                          ? "bg-[var(--primary)] text-white"
+                          : "text-gray-700 hover:bg-red-50"
+                      }`}
+                    >
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold">
+                          {tabTitle}
+                        </span>
+                        {tabSubtitle && (
+                          <span
+                            className={`text-xs ${activeTab === tab.year ? "text-white/80" : "text-gray-500"}`}
+                          >
+                            {tabSubtitle}
+                          </span>
+                        )}
+                      </div>
+                      {tab.isLatest && (
                         <span
-                          className={`text-xs ${activeTab === tab.year ? "text-white/80" : "text-gray-500"}`}
+                          className={`text-[10px] px-2 py-0.5 rounded-full font-black uppercase ${
+                            activeTab === tab.year
+                              ? "bg-white text-[var(--primary)]"
+                              : "bg-[var(--primary)] text-white"
+                          }`}
                         >
-                          {tab.subtitle[lang] || tab.subtitle.en}
+                          LATEST
                         </span>
                       )}
-                    </div>
-                    {tab.isLatest && (
-                      <span
-                        className={`text-[10px] px-2 py-0.5 rounded-full font-black uppercase ${
-                          activeTab === tab.year
-                            ? "bg-white text-[var(--primary)]"
-                            : "bg-[var(--primary)] text-white"
-                        }`}
-                      >
-                        LATEST
-                      </span>
-                    )}
-                  </button>
-                ))}
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
