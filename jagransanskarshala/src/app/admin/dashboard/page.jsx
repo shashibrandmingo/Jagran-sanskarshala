@@ -37,6 +37,10 @@ import Logo from "@/assets/images/Logo-english.png";
 import * as XLSX from "xlsx";
 import schoolsData from "@/data/schoolsData.json";
 import AdminSidebar from "@/components/Admin/AdminSidebar";
+import PublishStoryView from "@/components/Admin/PublishStoryView";
+import AnalyticsView from "@/components/Admin/AnalyticsView";
+import ContactLeadsView from "@/components/Admin/ContactLeadsView";
+import PushNotificationView from "@/components/Admin/PushNotificationView";
 import { storiesData as initialStories } from "@/services/stories";
 
 // Helper functions for Date calculations
@@ -682,32 +686,9 @@ function AdminDashboardContent() {
   const headerInfo = getHeaderInfo();
 
   return (
-    <div className="h-screen w-full bg-[#f8f5f0] text-gray-800 flex flex-col lg:flex-row font-admin overflow-hidden">
-      {/* Shared Modular Sidebar Component */}
-      <AdminSidebar
-        sidebarOpen={sidebarOpen}
-        setSidebarOpen={setSidebarOpen}
-        activeMenu={currentTab}
-      />
-
-      {/* =========================================================
-          MAIN DASHBOARD CONTENT AREA (Scrolls independently)
-         ========================================================= */}
-      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto overflow-x-hidden">
-        {/* Mobile Header Bar */}
-        <div className="lg:hidden bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between sticky top-0 z-30 shadow-xs">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="p-2 text-gray-700 hover:text-[var(--primary)]"
-          >
-            <FaBars className="text-xl" />
-          </button>
-          <Image src={Logo} alt="Logo" width={120} height={35} className="h-8 w-auto object-contain" />
-          <div className="w-8" />
-        </div>
-
-        {/* Top Header Banner */}
-        <header className="p-6 sm:p-8 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <>
+      {/* Top Header Banner */}
+      <header className="p-6 sm:p-8 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
               {headerInfo.title}
@@ -738,13 +719,13 @@ function AdminDashboardContent() {
         {/* Content Container */}
         <div className="px-4 sm:px-8 pb-8 space-y-6">
           {currentTab === "story-publish" ? (
-            <StoryPublishView stories={stories} setStories={setStories} />
+            <PublishStoryView />
           ) : currentTab === "analytics" ? (
             <AnalyticsView liveSurveys={liveSurveys} />
           ) : currentTab === "leads" ? (
-            <LeadsView liveSurveys={liveSurveys} handleExportData={handleExportData} />
+            <ContactLeadsView liveSurveys={liveSurveys} />
           ) : currentTab === "notifications" ? (
-            <NotificationsView />
+            <PushNotificationView />
           ) : (
             <>
               {/* Filter Sub-Tabs: All Data / Parent Data / Student Data */}
@@ -1255,7 +1236,6 @@ function AdminDashboardContent() {
             </>
           )}
         </div>
-      </div>
 
       {/* =========================================================
           SUBMISSION DETAIL MODAL (When clicking eye icon)
@@ -1507,391 +1487,7 @@ function AdminDashboardContent() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
 
-/* =========================================================
-   STORY PUBLISH TAB VIEW
-   ========================================================= */
-function StoryPublishView({ stories, setStories }) {
-  const [filter, setFilter] = useState("all");
-  const [editingStory, setEditingStory] = useState(null);
-
-  const togglePublish = (id) => {
-    setStories((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, isPublished: !s.isPublished } : s))
-    );
-  };
-
-  const handleSaveEdit = (e) => {
-    e.preventDefault();
-    if (!editingStory) return;
-    setStories((prev) =>
-      prev.map((s) => (s.id === editingStory.id ? editingStory : s))
-    );
-    setEditingStory(null);
-  };
-
-  const publishedCount = stories.filter((s) => s.isPublished).length;
-  const draftCount = stories.filter((s) => !s.isPublished).length;
-
-  const filtered = stories.filter((s) => {
-    if (filter === "published") return s.isPublished;
-    if (filter === "draft") return !s.isPublished;
-    return true;
-  });
-
-  return (
-    <div className="space-y-6">
-      {/* Overview Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white rounded-3xl p-5 shadow-xs border border-gray-200/80 flex items-center justify-between">
-          <div>
-            <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Stories</div>
-            <div className="text-2xl font-black text-gray-900 mt-1">{stories.length} Weeks</div>
-          </div>
-          <div className="w-12 h-12 rounded-2xl bg-red-50 text-[var(--primary)] flex items-center justify-center text-xl">
-            <FaNewspaper />
-          </div>
-        </div>
-        <div className="bg-white rounded-3xl p-5 shadow-xs border border-gray-200/80 flex items-center justify-between">
-          <div>
-            <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">Published Stories</div>
-            <div className="text-2xl font-black text-emerald-600 mt-1">{publishedCount} Live</div>
-          </div>
-          <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl">
-            <FaCheck />
-          </div>
-        </div>
-        <div className="bg-white rounded-3xl p-5 shadow-xs border border-gray-200/80 flex items-center justify-between">
-          <div>
-            <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">Draft / Scheduled</div>
-            <div className="text-2xl font-black text-amber-600 mt-1">{draftCount} Drafts</div>
-          </div>
-          <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl">
-            <FaRegCalendar />
-          </div>
-        </div>
-      </div>
-
-      {/* Main Stories Table / Grid Card */}
-      <div className="bg-white rounded-3xl p-6 shadow-xs border border-gray-200/80">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-gray-100 mb-6">
-          <div className="flex items-center gap-6">
-            <button
-              onClick={() => setFilter("all")}
-              className={`text-sm font-extrabold pb-2 relative transition-all cursor-pointer ${filter === "all" ? "text-[var(--primary)]" : "text-gray-400 hover:text-gray-700"}`}
-            >
-              All Stories ({stories.length})
-              {filter === "all" && <span className="absolute bottom-0 left-0 right-0 h-1 bg-[var(--primary)] rounded-full" />}
-            </button>
-            <button
-              onClick={() => setFilter("published")}
-              className={`text-sm font-extrabold pb-2 relative transition-all cursor-pointer ${filter === "published" ? "text-[var(--primary)]" : "text-gray-400 hover:text-gray-700"}`}
-            >
-              Published ({publishedCount})
-              {filter === "published" && <span className="absolute bottom-0 left-0 right-0 h-1 bg-[var(--primary)] rounded-full" />}
-            </button>
-            <button
-              onClick={() => setFilter("draft")}
-              className={`text-sm font-extrabold pb-2 relative transition-all cursor-pointer ${filter === "draft" ? "text-[var(--primary)]" : "text-gray-400 hover:text-gray-700"}`}
-            >
-              Drafts ({draftCount})
-              {filter === "draft" && <span className="absolute bottom-0 left-0 right-0 h-1 bg-[var(--primary)] rounded-full" />}
-            </button>
-          </div>
-        </div>
-
-        {/* Story Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filtered.map((story) => (
-            <div
-              key={story.id}
-              className="border border-gray-200/80 rounded-2xl p-5 bg-white hover:shadow-md transition-all flex flex-col justify-between"
-            >
-              <div>
-                <div className="flex items-center justify-between gap-2 mb-3">
-                  <span className="bg-red-50 text-[var(--primary)] text-xs font-black px-2.5 py-1 rounded-lg">
-                    {story.weekHi || story.weekEn}
-                  </span>
-                  <span
-                    className={`text-xs font-bold px-2.5 py-1 rounded-lg ${
-                      story.isPublished ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-amber-50 text-amber-700 border border-amber-200"
-                    }`}
-                  >
-                    {story.isPublished ? "✓ Published" : "⏳ Draft"}
-                  </span>
-                </div>
-                <h3 className="text-base font-extrabold text-gray-900">
-                  {story.titleHi} ({story.titleEn})
-                </h3>
-                <p className="text-xs text-gray-500 font-medium mt-1 line-clamp-2">
-                  {story.descHi || story.descEn}
-                </p>
-                <div className="text-[11px] font-semibold text-gray-400 mt-3 flex items-center gap-1.5">
-                  <FaRegCalendar />
-                  <span>Publish Date: {story.publishDateHi || story.publishDateEn}</span>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between gap-2 mt-5 pt-3 border-t border-gray-100">
-                <Link
-                  href={`/story/${story.id}`}
-                  target="_blank"
-                  className="text-xs font-bold text-red-600 hover:text-red-800 flex items-center gap-1 cursor-pointer"
-                >
-                  <FaEye /> View Story Live
-                </Link>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setEditingStory({ ...story })}
-                    className="text-xs font-bold px-3 py-1.5 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-700 flex items-center gap-1 transition-all cursor-pointer"
-                  >
-                    <FaPen className="text-[10px]" /> Edit
-                  </button>
-                  <button
-                    onClick={() => togglePublish(story.id)}
-                    className={`text-xs font-extrabold px-3.5 py-1.5 rounded-xl transition-all cursor-pointer ${
-                      story.isPublished
-                        ? "bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200"
-                        : "bg-[var(--primary)] text-white hover:opacity-90 shadow-xs"
-                    }`}
-                  >
-                    {story.isPublished ? "Unpublish" : "Publish Now"}
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Edit Story Modal */}
-      {editingStory && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 animate-fadeIn">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-              <h3 className="text-lg font-black text-gray-900">
-                Edit Story ({editingStory.weekHi})
-              </h3>
-              <button
-                onClick={() => setEditingStory(null)}
-                className="text-gray-400 hover:text-gray-600 p-1"
-              >
-                <FaXmark className="text-lg" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveEdit} className="space-y-3">
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Title (Hindi)</label>
-                <input
-                  type="text"
-                  value={editingStory.titleHi || ""}
-                  onChange={(e) => setEditingStory({ ...editingStory, titleHi: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-xl border border-gray-200 text-xs font-bold focus:outline-none focus:border-[var(--primary)]"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Title (English)</label>
-                <input
-                  type="text"
-                  value={editingStory.titleEn || ""}
-                  onChange={(e) => setEditingStory({ ...editingStory, titleEn: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-xl border border-gray-200 text-xs font-bold focus:outline-none focus:border-[var(--primary)]"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Description (Hindi)</label>
-                <textarea
-                  rows={2}
-                  value={editingStory.descHi || ""}
-                  onChange={(e) => setEditingStory({ ...editingStory, descHi: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-xl border border-gray-200 text-xs font-bold focus:outline-none focus:border-[var(--primary)]"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Publish Date (Hindi)</label>
-                <input
-                  type="text"
-                  value={editingStory.publishDateHi || ""}
-                  onChange={(e) => setEditingStory({ ...editingStory, publishDateHi: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-xl border border-gray-200 text-xs font-bold focus:outline-none focus:border-[var(--primary)]"
-                />
-              </div>
-
-              <div className="pt-3 border-t border-gray-100 flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setEditingStory(null)}
-                  className="px-4 py-2 rounded-xl border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 rounded-xl bg-[var(--primary)] text-white text-xs font-extrabold shadow-md hover:opacity-90"
-                >
-                  Save Changes
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* =========================================================
-   ANALYTICS TAB VIEW
-   ========================================================= */
-function AnalyticsView({ liveSurveys }) {
-  const total = liveSurveys.length;
-  const parents = liveSurveys.filter((s) => s.type === "Parent").length;
-  const students = liveSurveys.filter((s) => s.type === "Student").length;
-
-  return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white rounded-3xl p-5 shadow-xs border border-gray-200/80">
-          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Submissions</div>
-          <div className="text-3xl font-black text-gray-900 mt-1">{total}</div>
-        </div>
-        <div className="bg-white rounded-3xl p-5 shadow-xs border border-gray-200/80">
-          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">Parents Submissions</div>
-          <div className="text-3xl font-black text-blue-600 mt-1">{parents}</div>
-        </div>
-        <div className="bg-white rounded-3xl p-5 shadow-xs border border-gray-200/80">
-          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">Students Submissions</div>
-          <div className="text-3xl font-black text-emerald-600 mt-1">{students}</div>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-3xl p-8 shadow-xs border border-gray-200/80 text-center py-14">
-        <FaChartPie className="text-5xl text-[var(--primary)] opacity-40 mx-auto mb-3" />
-        <h3 className="text-lg font-black text-gray-800">Survey Analytics Overview</h3>
-        <p className="text-xs text-gray-500 font-bold max-w-md mx-auto mt-1">
-          Live analytics and submission breakdown by parent, student, and geographical distribution.
-        </p>
-      </div>
-    </div>
-  );
-}
-
-/* =========================================================
-   CONTACT LEADS TAB VIEW
-   ========================================================= */
-function LeadsView({ liveSurveys, handleExportData }) {
-  return (
-    <div className="space-y-6">
-      <div className="bg-white rounded-3xl p-6 shadow-xs border border-gray-200/80">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-gray-100">
-          <div>
-            <h3 className="text-lg font-black text-gray-900">Contact Leads ({liveSurveys.length})</h3>
-            <p className="text-xs text-gray-500 font-bold">Registered parents & students contact records</p>
-          </div>
-          <button
-            onClick={handleExportData}
-            className="bg-white border border-gray-200 px-4 py-2 rounded-2xl text-xs font-bold text-gray-700 shadow-2xs hover:bg-gray-50 flex items-center gap-2 cursor-pointer"
-          >
-            <FaFileExport className="text-[var(--primary)]" /> Export Excel
-          </button>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs font-semibold text-gray-700">
-            <thead className="bg-gray-50 text-gray-400 uppercase font-extrabold border-b border-gray-100">
-              <tr>
-                <th className="p-3">Name</th>
-                <th className="p-3">Type</th>
-                <th className="p-3">Mobile</th>
-                <th className="p-3">Email</th>
-                <th className="p-3">State</th>
-                <th className="p-3">City</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {liveSurveys.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="p-6 text-center text-gray-400 font-bold">No contact leads available yet.</td>
-                </tr>
-              ) : (
-                liveSurveys.slice(0, 50).map((lead, idx) => (
-                  <tr key={lead._id || idx} className="hover:bg-gray-50/80 transition-colors">
-                    <td className="p-3 font-extrabold text-gray-900">{lead.firstName} {lead.lastName}</td>
-                    <td className="p-3">
-                      <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-extrabold ${lead.type === "Parent" ? "bg-blue-50 text-blue-700 border border-blue-200" : "bg-emerald-50 text-emerald-700 border border-emerald-200"}`}>
-                        {lead.type}
-                      </span>
-                    </td>
-                    <td className="p-3 font-mono">{lead.mobile}</td>
-                    <td className="p-3">{lead.email || "-"}</td>
-                    <td className="p-3">{lead.state || "-"}</td>
-                    <td className="p-3">{lead.city || "-"}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* =========================================================
-   PUSH NOTIFICATIONS TAB VIEW
-   ========================================================= */
-function NotificationsView() {
-  const [msg, setMsg] = useState("");
-  const [sent, setSent] = useState(false);
-
-  const handleSend = (e) => {
-    e.preventDefault();
-    if (!msg.trim()) return;
-    setSent(true);
-    setTimeout(() => {
-      setMsg("");
-      setSent(false);
-    }, 2500);
-  };
-
-  return (
-    <div className="bg-white rounded-3xl p-6 shadow-xs border border-gray-200/80 max-w-xl mx-auto space-y-4">
-      <div className="flex items-center gap-3 border-b border-gray-100 pb-3">
-        <FaBell className="text-xl text-[var(--primary)]" />
-        <div>
-          <h3 className="text-lg font-black text-gray-900">Broadcast Push Notification</h3>
-          <p className="text-xs text-gray-500 font-bold">Send announcements to registered parents & students</p>
-        </div>
-      </div>
-
-      {sent && (
-        <div className="p-3.5 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold animate-fadeIn">
-          ✓ Push notification sent successfully!
-        </div>
-      )}
-
-      <form onSubmit={handleSend} className="space-y-4">
-        <div>
-          <label className="block text-xs font-bold text-gray-700 mb-1">Message Content</label>
-          <textarea
-            rows={4}
-            value={msg}
-            onChange={(e) => setMsg(e.target.value)}
-            placeholder="Type notification announcement here..."
-            className="w-full p-3 rounded-2xl border border-gray-200 text-xs font-bold focus:outline-none focus:border-[var(--primary)]"
-          />
-        </div>
-        <button
-          type="submit"
-          className="w-full py-3 rounded-2xl bg-[var(--primary)] text-white text-xs font-extrabold shadow-md hover:opacity-90 transition-all cursor-pointer"
-        >
-          Send Push Notification
-        </button>
-      </form>
-    </div>
-  );
-}

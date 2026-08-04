@@ -52,88 +52,117 @@ const QUESTIONS = [
   {
     id: "q3",
     question: "What kind of content you consume most on Phones?",
-    options: ["Educational", "Entertainment", "Gaming", "Social Media"],
+    options: [
+      "Educational",
+      "Entertainment",
+      "Gaming",
+      "Social Media",
+      "News & Information",
+      "Devotional",
+    ],
     type: "multiple",
   },
   {
     id: "q4",
     question:
-      "I need to reread paragraphs or review information due to distractions from device notification?",
-    options: ["Always", "Never", "Often", "Cant Say"],
+      "I need to re-read paragraphs or review information due to distractions from device notification",
+    options: ["Always", "Sometime", "Never"],
     type: "single",
   },
   {
     id: "q5",
     question:
-      "I get distracted from the main reason I look at my phone and start watching unnecessary content.",
-    options: ["Always", "Never", "Often", "Cant say"],
+      "I pick-up the phone for something Important and end-up scrolling through unnecessary content",
+    options: ["Always", "Sometime", "Never"],
     type: "single",
   },
   {
     id: "q6",
-    question:
-      "I check my phone in regular intervals even during in-person conversations?",
-    options: ["Always", "Never", "Often", "Cant say"],
+    question: "I check my phone during in-person conversation",
+    options: ["Always", "Sometime", "Never"],
     type: "single",
   },
   {
     id: "q7",
     question:
-      "I find myself scrolling through apps, notifications or digital content even when I am no longer interested or entertained.",
-    options: ["Always", "Never", "Often", "Cant say"],
+      "Habit to scroll phone interrupts me from reading book or watching content on bigger screen.",
+    options: ["Always", "Sometime", "Never"],
     type: "single",
   },
   {
     id: "q8",
     question:
-      "I drop books and movies midway to scroll through content on phone.",
-    options: ["Always", "Never", "Often", "Cant say"],
+      "I find myself scrolling through my phone even if I am no longer interested or entertained.",
+    options: ["Always", "Sometime", "Never"],
     type: "single",
   },
   {
     id: "q9",
-    question: "Returning to original work after phone breaks breaks my focus.",
-    options: ["Always", "Never", "Often", "Cant Say"],
+    question:
+      "Returning to original work after phone-breaks interrupts my focus.",
+    options: ["Always", "Sometime", "Never"],
     type: "single",
   },
   {
     id: "q10",
     question:
-      "Social media makes me compare myself to others and crave for likes and comments for recognition.",
-    options: ["Always", "Never", "Often", "Cant Say"],
+      "After seeing other's post, I feel my own looks/life/ successes aren't good enough",
+    options: ["Always", "Sometime", "Never"],
     type: "single",
   },
   {
     id: "q11",
-    question: "Short-form phone content prevents deep understanding.",
-    options: ["Agree", "Disagree", "Somewhat", "Cant Say"],
+    question:
+      "Do you feel your phone takes away time from things that matter to you?",
+    options: ["Yes", "Sometime", "No"],
     type: "single",
   },
   {
     id: "q12",
-    question:
-      "Rate your awareness of how infinite scrolling impacts your time and priorities.",
-    options: ["High", "Moderate", "Low"],
+    question: "Have you ever tried to reduce or control your phone use?",
+    options: [
+      "Yes, and it worked",
+      "Yes, but it didn't last",
+      "Thought about it, but never tried",
+      "No",
+    ],
     type: "single",
   },
   {
     id: "q13",
-    question:
-      "Does your attempt to limit usage of mobile phone been successful?",
-    options: ["Yes", "No", "To some extent"],
+    question: "When you think about your phone habits, you mostly feel",
+    options: [
+      "Frustrated with myself",
+      "A little guilty",
+      "I really don't think about it",
+      "It doesn't bother me",
+      "It's normal, everyone is like this",
+    ],
     type: "single",
   },
   {
     id: "q14",
-    question:
-      "How often does an intentional 'one-minute check' turn into a multi-minute session?",
-    options: ["Always", "Never", "Sometime"],
+    question: "The biggest thing that pulls you back to the phone is?",
+    options: [
+      "Habit",
+      "Fear of Missing out",
+      "Boredom",
+      "All my friends are there",
+      "Notifications",
+      "Nothing else to do",
+    ],
     type: "single",
   },
   {
     id: "q15",
-    question: "Which specific feature in your mobile pulls you the most?",
-    options: ["Notification", "Social media feeds", "Infinite scrolling"],
+    question:
+      "How much infinite short-format content on your phone affect your ability to deeply understand complex issues?",
+    options: [
+      "Completely prevents deep understanding",
+      "Significantly reduces my understanding",
+      "Has a minor effect",
+      "Does not affect my understanding at all",
+    ],
     type: "single",
   },
 ];
@@ -199,7 +228,7 @@ function SearchableSelect({
   }, [options, allowCustom]);
 
   const filteredOptions = displayOptions.filter((opt) =>
-    getLabel(opt).toLowerCase().includes(query.toLowerCase())
+    getLabel(opt).toLowerCase().includes(query.toLowerCase()),
   );
 
   const selectedLabel = useMemo(() => {
@@ -274,8 +303,8 @@ function SearchableSelect({
               error
                 ? "border-red-500 bg-red-50/20 ring-1 ring-red-200"
                 : customText
-                ? "border-emerald-500/80 bg-emerald-50/5"
-                : "border-[var(--primary)] ring-2 ring-red-100"
+                  ? "border-emerald-500/80 bg-emerald-50/5"
+                  : "border-[var(--primary)] ring-2 ring-red-100"
             } focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] outline-none transition bg-white text-gray-900`}
           />
           <button
@@ -313,16 +342,20 @@ function SearchableSelect({
           error
             ? "border-red-500 bg-red-50/20 ring-1 ring-red-200"
             : isOpen
-            ? "border-[var(--primary)] ring-2 ring-red-100"
-            : value
-            ? "border-emerald-500/80 bg-emerald-50/5"
-            : "border-gray-300 hover:border-gray-400"
+              ? "border-[var(--primary)] ring-2 ring-red-100"
+              : value
+                ? "border-emerald-500/80 bg-emerald-50/5"
+                : "border-gray-300 hover:border-gray-400"
         } ${disabled ? "bg-gray-100 cursor-not-allowed opacity-60" : ""}`}
       >
-        <span className={`flex-1 min-w-0 truncate ${!value ? "text-gray-400 font-normal" : "text-gray-900 font-semibold"}`}>
+        <span
+          className={`flex-1 min-w-0 truncate ${!value ? "text-gray-400 font-normal" : "text-gray-900 font-semibold"}`}
+        >
           {selectedLabel || placeholder}
         </span>
-        <FiChevronDown className={`shrink-0 text-gray-400 text-sm sm:text-base transition-transform duration-200 ${isOpen ? "rotate-180 text-[var(--primary)]" : ""}`} />
+        <FiChevronDown
+          className={`shrink-0 text-gray-400 text-sm sm:text-base transition-transform duration-200 ${isOpen ? "rotate-180 text-[var(--primary)]" : ""}`}
+        />
       </button>
 
       {/* Dropdown Options Popover */}
@@ -371,14 +404,16 @@ function SearchableSelect({
                         isSelected
                           ? "bg-red-50 text-[var(--primary)] font-bold"
                           : isTypeHere
-                          ? "bg-red-50/60 text-[var(--primary)] hover:bg-red-100/70 font-bold border border-red-100"
-                          : isOther
-                          ? "text-[var(--primary)] hover:bg-red-50/50 italic font-bold"
-                          : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                            ? "bg-red-50/60 text-[var(--primary)] hover:bg-red-100/70 font-bold border border-red-100"
+                            : isOther
+                              ? "text-[var(--primary)] hover:bg-red-50/50 italic font-bold"
+                              : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
                       }`}
                     >
                       <span className="truncate">{lbl}</span>
-                      {isSelected && <FiCheck className="text-[var(--primary)] text-sm shrink-0" />}
+                      {isSelected && (
+                        <FiCheck className="text-[var(--primary)] text-sm shrink-0" />
+                      )}
                     </div>
                   );
                 })
@@ -444,7 +479,9 @@ export default function ParentSurveyPage() {
   // Available Cities based on selected State
   const availableCities = useMemo(() => {
     if (!form.state) return [];
-    const known = schoolsData[form.state] ? Object.keys(schoolsData[form.state]).sort() : [];
+    const known = schoolsData[form.state]
+      ? Object.keys(schoolsData[form.state]).sort()
+      : [];
     return Array.from(new Set([...known, "Other / अन्य"]));
   }, [form.state]);
 
@@ -458,7 +495,7 @@ export default function ParentSurveyPage() {
         updated.dob = buildDob(
           name === "dobDay" ? value : prev.dobDay,
           name === "dobMonth" ? value : prev.dobMonth,
-          name === "dobYear" ? value : prev.dobYear
+          name === "dobYear" ? value : prev.dobYear,
         );
         return updated;
       });
@@ -485,10 +522,14 @@ export default function ParentSurveyPage() {
       newErrors.firstName = "Enter valid first name / पहला नाम दर्ज करें";
     if (!form.lastName.trim() || form.lastName.trim().length < 2)
       newErrors.lastName = "Enter valid last name / अंतिम नाम दर्ज करें";
-    if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()))
+    if (
+      !form.email.trim() ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())
+    )
       newErrors.email = "Enter a valid email address / मान्य ईमेल दर्ज करें";
     if (!form.mobile.trim() || !/^[6-9]\d{9}$/.test(form.mobile.trim()))
-      newErrors.mobile = "Enter a valid 10-digit mobile number / 10 अंकों का नंबर दर्ज करें";
+      newErrors.mobile =
+        "Enter a valid 10-digit mobile number / 10 अंकों का नंबर दर्ज करें";
 
     if (!form.dob) {
       newErrors.dob = "Date of birth is required / जन्म तिथि आवश्यक है";
@@ -502,13 +543,15 @@ export default function ParentSurveyPage() {
         const m = today.getMonth() - birthDate.getMonth();
         if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
         if (age < 19) {
-          newErrors.dob = "Age must be 19 years or above for parents / आयु 19 वर्ष या अधिक होनी चाहिए";
+          newErrors.dob =
+            "Age must be 19 years or above for parents / आयु 19 वर्ष या अधिक होनी चाहिए";
         }
       }
     }
 
     if (!form.gender) newErrors.gender = "Please select gender / लिंग चुनें";
-    if (!form.occupation) newErrors.occupation = "Please select occupation / व्यवसाय चुनें";
+    if (!form.occupation)
+      newErrors.occupation = "Please select occupation / व्यवसाय चुनें";
     if (!form.state) newErrors.state = "Please select state / राज्य चुनें";
     if (!form.city) newErrors.city = "Please select city / शहर चुनें";
 
@@ -517,10 +560,16 @@ export default function ParentSurveyPage() {
   };
 
   const isFormValid = useMemo(() => {
-    if (!form.firstName.trim() || form.firstName.trim().length < 2) return false;
+    if (!form.firstName.trim() || form.firstName.trim().length < 2)
+      return false;
     if (!form.lastName.trim() || form.lastName.trim().length < 2) return false;
-    if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) return false;
-    if (!form.mobile.trim() || !/^[6-9]\d{9}$/.test(form.mobile.trim())) return false;
+    if (
+      !form.email.trim() ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())
+    )
+      return false;
+    if (!form.mobile.trim() || !/^[6-9]\d{9}$/.test(form.mobile.trim()))
+      return false;
     if (!form.dob) return false;
 
     const birthDate = new Date(form.dob);
@@ -562,7 +611,8 @@ export default function ParentSurveyPage() {
     for (let q of QUESTIONS) {
       const ans = answers[q.id];
       if (q.type === "single" && !ans) return q;
-      if (q.type === "multiple" && (!Array.isArray(ans) || ans.length === 0)) return q;
+      if (q.type === "multiple" && (!Array.isArray(ans) || ans.length === 0))
+        return q;
     }
     return null;
   }, [answers]);
@@ -576,19 +626,22 @@ export default function ParentSurveyPage() {
     if (!validateForm()) {
       showToast(
         "अपूर्ण जानकारी (Incomplete Form)",
-        "कृपया फॉर्म में सभी आवश्यक जानकारी सही-सही भरें।"
+        "कृपया फॉर्म में सभी आवश्यक जानकारी सही-सही भरें।",
       );
       window.scrollTo({ top: 200, behavior: "smooth" });
       return;
     }
 
     if (firstUnansweredQuestion) {
-      const qNum = QUESTIONS.findIndex((q) => q.id === firstUnansweredQuestion.id) + 1;
+      const qNum =
+        QUESTIONS.findIndex((q) => q.id === firstUnansweredQuestion.id) + 1;
       showToast(
         `प्रश्न संख्या ${qNum} का उत्तर दें`,
-        `"${firstUnansweredQuestion.question}"`
+        `"${firstUnansweredQuestion.question}"`,
       );
-      const qElement = document.getElementById(`question-${firstUnansweredQuestion.id}`);
+      const qElement = document.getElementById(
+        `question-${firstUnansweredQuestion.id}`,
+      );
       if (qElement) {
         qElement.scrollIntoView({ behavior: "smooth", block: "center" });
       }
@@ -598,7 +651,7 @@ export default function ParentSurveyPage() {
     if (!agreed) {
       showToast(
         "पुष्टि आवश्यक (Confirmation Required)",
-        "कृपया नीचे दिए गए पुष्टि (Confirmation) बॉक्स पर टिक करें।"
+        "कृपया नीचे दिए गए पुष्टि (Confirmation) बॉक्स पर टिक करें।",
       );
       const checkboxEl = document.getElementById("agree-checkbox");
       if (checkboxEl) {
@@ -609,7 +662,8 @@ export default function ParentSurveyPage() {
     }
 
     // Call Backend API to Save in MongoDB
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+    const backendUrl =
+      process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
     fetch(`${backendUrl}/api/v1/survey/submit`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -635,15 +689,19 @@ export default function ParentSurveyPage() {
           if (data.code === "DUPLICATE_MOBILE") {
             setErrors((prev) => ({
               ...prev,
-              mobile: "इस मोबाइल नंबर से पहले ही अभिभावक फॉर्म जमा किया जा चुका है।",
+              mobile:
+                "इस मोबाइल नंबर से पहले ही अभिभावक फॉर्म जमा किया जा चुका है।",
             }));
             showToast(
               "पहले ही जमा किया जा चुका है (Already Submitted)",
-              `मोबाइल नंबर (${form.mobile.trim()}) से अभिभावक सर्वेक्षण पहले ही जमा किया जा चुका है। एक मोबाइल नंबर से केवल 1 अभिभावक सर्वेक्षण जमा किया जा सकता है।`
+              `मोबाइल नंबर (${form.mobile.trim()}) से अभिभावक सर्वेक्षण पहले ही जमा किया जा चुका है। एक मोबाइल नंबर से केवल 1 अभिभावक सर्वेक्षण जमा किया जा सकता है।`,
             );
             window.scrollTo({ top: 200, behavior: "smooth" });
           } else {
-            showToast("त्रुटि (Error)", data.message || "सबमिशन में समस्या आई।");
+            showToast(
+              "त्रुटि (Error)",
+              data.message || "सबमिशन में समस्या आई।",
+            );
           }
           return;
         }
@@ -674,7 +732,10 @@ export default function ParentSurveyPage() {
       })
       .catch((err) => {
         console.error("Parent survey submit network error:", err);
-        showToast("नेटवर्क त्रुटि (Network Error)", "कृपया अपना इंटरनेट कनेक्शन जांचें और पुनः प्रयास करें।");
+        showToast(
+          "नेटवर्क त्रुटि (Network Error)",
+          "कृपया अपना इंटरनेट कनेक्शन जांचें और पुनः प्रयास करें।",
+        );
       });
   };
 
@@ -692,13 +753,15 @@ export default function ParentSurveyPage() {
         >
           <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none" />
           <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/20 text-xs sm:text-sm font-bold uppercase tracking-wider mb-4 border border-white/30 backdrop-blur-md">
-            <FaUserGroup className="text-lg" /> Parent & Guardian Conduct Survey 2026
+            <FaUserGroup className="text-lg" /> Parent & Guardian Conduct Survey
+            2026
           </span>
           <h1 className="text-3xl sm:text-5xl font-black leading-tight">
             Jagran Sanskarshala Parent Survey
           </h1>
           <p className="text-white/90 text-sm sm:text-base max-w-2xl mx-auto mt-3 font-medium">
-            Please fill out your profile details first to unlock the national digital habits questionnaire.
+            Please fill out your profile details first to unlock the national
+            digital habits questionnaire.
           </p>
         </motion.div>
 
@@ -717,7 +780,8 @@ export default function ParentSurveyPage() {
                 Parent Profile Information / अभिभावक विवरण
               </h2>
               <p className="text-xs sm:text-sm text-gray-500">
-                Fill all mandatory fields marked with (<span className="text-red-500">*</span>)
+                Fill all mandatory fields marked with (
+                <span className="text-red-500">*</span>)
               </p>
             </div>
           </div>
@@ -736,13 +800,17 @@ export default function ParentSurveyPage() {
                   onChange={handleChange}
                   placeholder="Enter first name"
                   className={`w-full min-w-0 pl-3.5 pr-10 py-3 text-xs sm:text-sm rounded-xl border ${
-                    errors.firstName ? "border-red-500 bg-red-50/20" : "border-gray-300"
+                    errors.firstName
+                      ? "border-red-500 bg-red-50/20"
+                      : "border-gray-300"
                   } focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] outline-none transition bg-white`}
                 />
                 <FiUser className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               </div>
               {errors.firstName && (
-                <p className="text-xs text-red-500 mt-1 flex items-center gap-1"><FiAlertCircle /> {errors.firstName}</p>
+                <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                  <FiAlertCircle /> {errors.firstName}
+                </p>
               )}
             </div>
 
@@ -758,13 +826,17 @@ export default function ParentSurveyPage() {
                   onChange={handleChange}
                   placeholder="Enter last name"
                   className={`w-full min-w-0 pl-3.5 pr-10 py-3 text-xs sm:text-sm rounded-xl border ${
-                    errors.lastName ? "border-red-500 bg-red-50/20" : "border-gray-300"
+                    errors.lastName
+                      ? "border-red-500 bg-red-50/20"
+                      : "border-gray-300"
                   } focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] outline-none transition bg-white`}
                 />
                 <FiUser className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               </div>
               {errors.lastName && (
-                <p className="text-xs text-red-500 mt-1 flex items-center gap-1"><FiAlertCircle /> {errors.lastName}</p>
+                <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                  <FiAlertCircle /> {errors.lastName}
+                </p>
               )}
             </div>
 
@@ -781,19 +853,24 @@ export default function ParentSurveyPage() {
                   onChange={handleChange}
                   placeholder="Enter your email address"
                   className={`w-full min-w-0 pl-3.5 pr-10 py-3 text-xs sm:text-sm rounded-xl border ${
-                    errors.email ? "border-red-500 bg-red-50/20" : "border-gray-300"
+                    errors.email
+                      ? "border-red-500 bg-red-50/20"
+                      : "border-gray-300"
                   } focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] outline-none transition bg-white`}
                 />
                 <FiMail className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               </div>
               {errors.email && (
-                <p className="text-xs text-red-500 mt-1 flex items-center gap-1"><FiAlertCircle /> {errors.email}</p>
+                <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                  <FiAlertCircle /> {errors.email}
+                </p>
               )}
             </div>
 
             <div className="w-full min-w-0">
               <label className="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
-                Mobile Number / मोबाइल नंबर <span className="text-red-500">*</span>
+                Mobile Number / मोबाइल नंबर{" "}
+                <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <input
@@ -803,17 +880,23 @@ export default function ParentSurveyPage() {
                   value={form.mobile}
                   onChange={(e) => {
                     const onlyNums = e.target.value.replace(/\D/g, "");
-                    handleChange({ target: { name: "mobile", value: onlyNums } });
+                    handleChange({
+                      target: { name: "mobile", value: onlyNums },
+                    });
                   }}
                   placeholder="10-digit mobile number"
                   className={`w-full pl-3.5 pr-10 py-3 text-xs sm:text-sm rounded-xl border ${
-                    errors.mobile ? "border-red-500 bg-red-50/20" : "border-gray-300"
+                    errors.mobile
+                      ? "border-red-500 bg-red-50/20"
+                      : "border-gray-300"
                   } focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] outline-none transition bg-white`}
                 />
                 <FiPhone className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               </div>
               {errors.mobile && (
-                <p className="text-xs text-red-500 mt-1 flex items-center gap-1"><FiAlertCircle /> {errors.mobile}</p>
+                <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                  <FiAlertCircle /> {errors.mobile}
+                </p>
               )}
             </div>
 
@@ -821,7 +904,8 @@ export default function ParentSurveyPage() {
             <div className="w-full min-w-0">
               <label className="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5 flex items-center gap-1.5">
                 <FiCalendar className="text-[var(--primary)] text-sm" />
-                Date of Birth / जन्म तिथि <span className="text-red-500">*</span>
+                Date of Birth / जन्म तिथि{" "}
+                <span className="text-red-500">*</span>
               </label>
 
               <div className="relative">
@@ -835,12 +919,12 @@ export default function ParentSurveyPage() {
                     [&::-webkit-calendar-picker-indicator]:cursor-pointer
                     [&::-webkit-calendar-picker-indicator]:opacity-80
                     [&::-webkit-calendar-picker-indicator]:hover:opacity-100 ${
-                    errors.dob
-                      ? "border-red-500 ring-1 ring-red-200 bg-red-50/10"
-                      : form.dob && !errors.dob
-                      ? "border-emerald-500/80 ring-1 ring-emerald-100 bg-emerald-50/10"
-                      : "border-gray-300 hover:border-gray-400 focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]"
-                  }`}
+                      errors.dob
+                        ? "border-red-500 ring-1 ring-red-200 bg-red-50/10"
+                        : form.dob && !errors.dob
+                          ? "border-emerald-500/80 ring-1 ring-emerald-100 bg-emerald-50/10"
+                          : "border-gray-300 hover:border-gray-400 focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]"
+                    }`}
                 />
               </div>
 
@@ -851,10 +935,17 @@ export default function ParentSurveyPage() {
                     const today = new Date();
                     let age = today.getFullYear() - bd.getFullYear();
                     const m = today.getMonth() - bd.getMonth();
-                    if (m < 0 || (m === 0 && today.getDate() < bd.getDate())) age--;
+                    if (m < 0 || (m === 0 && today.getDate() < bd.getDate()))
+                      age--;
                     const isValid = !isNaN(age) && age >= 19;
                     return (
-                      <span className={isValid ? "text-emerald-600 font-bold" : "text-red-500 font-bold"}>
+                      <span
+                        className={
+                          isValid
+                            ? "text-emerald-600 font-bold"
+                            : "text-red-500 font-bold"
+                        }
+                      >
                         Age: {age} years {isValid ? "✓" : "(Must be 19+ years)"}
                       </span>
                     );
@@ -862,7 +953,8 @@ export default function ParentSurveyPage() {
                 </p>
               ) : (
                 <p className="text-[10px] text-gray-400 mt-1 flex items-center gap-1">
-                  <FiCalendar className="shrink-0" /> Type directly or tap calendar picker (Age 19+ years)
+                  <FiCalendar className="shrink-0" /> Type directly or tap
+                  calendar picker (Age 19+ years)
                 </p>
               )}
 
@@ -950,7 +1042,8 @@ export default function ParentSurveyPage() {
                 Questionnaire Section Locked
               </h3>
               <p className="text-sm text-gray-600 max-w-md font-medium">
-                कृपया प्रश्नावली अनलॉक करने के लिए ऊपर दिए गए अभिभावक विवरण फॉर्म को पूरा भरें।
+                कृपया प्रश्नावली अनलॉक करने के लिए ऊपर दिए गए अभिभावक विवरण
+                फॉर्म को पूरा भरें।
               </p>
             </div>
           )}
@@ -959,7 +1052,9 @@ export default function ParentSurveyPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className={`bg-white rounded-3xl p-5 sm:p-7 shadow-xl border border-gray-100 transition-all ${
-              !isFormValid ? "opacity-40 pointer-events-none filter blur-[1px]" : ""
+              !isFormValid
+                ? "opacity-40 pointer-events-none filter blur-[1px]"
+                : ""
             }`}
           >
             <div className="flex items-center justify-between mb-5 border-b border-gray-100 pb-3.5">
@@ -1003,13 +1098,16 @@ export default function ParentSurveyPage() {
                         const isSelected =
                           q.type === "single"
                             ? currentAns === opt
-                            : Array.isArray(currentAns) && currentAns.includes(opt);
+                            : Array.isArray(currentAns) &&
+                              currentAns.includes(opt);
 
                         return (
                           <button
                             key={opt}
                             type="button"
-                            onClick={() => handleSelectOption(q.id, opt, q.type)}
+                            onClick={() =>
+                              handleSelectOption(q.id, opt, q.type)
+                            }
                             className={`py-1.5 px-3.5 sm:py-2 sm:px-4 rounded-xl font-semibold text-xs sm:text-sm transition-all duration-200 flex items-center gap-1.5 cursor-pointer border ${
                               isSelected
                                 ? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-sm shadow-red-500/20 scale-[1.01]"
@@ -1053,7 +1151,12 @@ export default function ParentSurveyPage() {
                 className="w-4 h-4 rounded border-gray-300 accent-[var(--primary)] text-[var(--primary)] focus:ring-[var(--primary)] mt-0.5 shrink-0 cursor-pointer"
               />
               <span className="leading-snug">
-                I voluntarily consent to participate in this survey. I understand that the information provided will be kept confidential and used only for the stated purpose. / मैं स्वेच्छा से इस सर्वे में भाग लेने की सहमति देता/देती हूँ। मैं समझता/समझती हूँ कि प्रदान की गई जानकारी गोपनीय रखी जाएगी और केवल निर्दिष्ट उद्देश्य के लिए उपयोग की जाएगी।
+                I voluntarily consent to participate in this survey. I
+                understand that the information provided will be kept
+                confidential and used only for the stated purpose. / मैं
+                स्वेच्छा से इस सर्वे में भाग लेने की सहमति देता/देती हूँ। मैं
+                समझता/समझती हूँ कि प्रदान की गई जानकारी गोपनीय रखी जाएगी और केवल
+                निर्दिष्ट उद्देश्य के लिए उपयोग की जाएगी।
               </span>
             </label>
           </div>

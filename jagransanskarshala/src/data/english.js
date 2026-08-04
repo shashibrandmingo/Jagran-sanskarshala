@@ -21,27 +21,27 @@ const english = {
           {
             id: "archive-2020",
             label: "Sanskriti Se Sanskar (2020)",
-            link: "/gallery?year=2020",
+            link: "https://jagransanskarshala.com/sanskrti-se-sanskaar-2020/",
           },
           {
             id: "archive-2021",
             label: "Desh Se Hum Aur Humse Desh Banta Hai (2021)",
-            link: "/gallery?year=2021",
+            link: "https://jagransanskarshala.com/desh-se-ham-aur-hamase-desh-banata-hai-2021/",
           },
           {
             id: "archive-2022",
             label: "Digital Sanskar (2022)",
-            link: "/gallery?year=2022",
+            link: "https://jagransanskarshala.com/dijital-sanskaar-2022/",
           },
           {
             id: "archive-2023",
             label: "Urja Saksharta (2023)",
-            link: "/gallery?year=2023",
+            link: "https://jagransanskarshala.com/urja-saaksharata-2023/",
             subDropdown2023: [
               {
                 id: "urja-2023-1",
                 label: "Urja Ke Sanskar",
-                link: "/gallery?year=2023",
+                link: "https://jagransanskarshala.com/urja-saaksharata-2023/",
               },
               {
                 id: "urja-2023-2",
@@ -53,12 +53,12 @@ const english = {
           {
             id: "archive-2024",
             label: "Sanskarshala 2024",
-            link: "/gallery?year=2024",
+            link: "https://jagransanskarshala.com/sanskarshala-2024/",
           },
           {
             id: "archive-2025",
             label: "Sanskarshala 2025",
-            link: "/gallery?year=2025",
+            link: "https://jagransanskarshala.com/jss2025/",
             subDropdown: [{ id: "gallery-2025", label: "Gallery", link: "/gallery?year=2025" }],
           },
         ],

@@ -88,6 +88,7 @@ app.get(`${API_VERSION}/health`, (req, res) => {
 import adminRoutes from "./routes/adminRoutes.js";
 import surveyRoutes from "./routes/surveyRoutes.js";
 import galleryRoutes from "./routes/galleryRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
 
 /* ================================
    API Routes
@@ -96,6 +97,7 @@ import galleryRoutes from "./routes/galleryRoutes.js";
 app.use(`${API_VERSION}/admin`, adminRoutes);
 app.use(`${API_VERSION}/survey`, surveyRoutes);
 app.use(`${API_VERSION}/gallery`, galleryRoutes);
+app.use(`${API_VERSION}/notifications`, notificationRoutes);
 
 /* ================================
    404 Route

@@ -1,32 +1,35 @@
 // src/services/latestUpdates.js
-// Mock data and API service for Latest Updates.
-// Can be replaced with your Node.js backend API fetch in the future.
+// API service for Latest Updates - Fetches published notifications from backend.
 
-export const latestUpdatesData = [
-  {
-    id: 1,
-    titleEn: "Read the Latest Stories & Stay Updated",
-    titleHi: "नवीनतम कहानियाँ पढ़ें और अपडेट रहें",
-    link: "/story/1",
-    actionType: "navigate",
-  },
-  {
-    id: 2,
-    titleEn: "Participate in India's Largest Survey",
-    titleHi: "भारत के सबसे बड़े सर्वे में भाग लें",
-    link: "#",
-    actionType: "surveyModal",
-  },
-  {
-    id: 3,
-    titleEn: "Download Your Participation Certificate After Completing the Survey",
-    titleHi: "सर्वे पूरा करने के बाद अपना सहभागिता प्रमाणपत्र डाउनलोड करें",
-    link: "#",
-    actionType: "none",
-  },
-];
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
 
 export async function getLatestUpdates() {
-  // Simulated backend API response
-  return Promise.resolve(latestUpdatesData);
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/v1/notifications/published`, {
+      cache: "no-store",
+    });
+
+    if (!res.ok) {
+      throw new Error(`API error: ${res.status}`);
+    }
+
+    const json = await res.json();
+
+    if (!json.success || !Array.isArray(json.data)) {
+      return [];
+    }
+
+    // Map backend notification fields to frontend expected format
+    return json.data.map((item) => ({
+      id: item._id,
+      titleEn: item.msgEn || "",
+      titleHi: item.msgHi || "",
+      link: item.link || "#",
+      actionType: item.link && item.link !== "#" ? "navigate" : "none",
+    }));
+  } catch (error) {
+    console.error("Failed to fetch latest updates:", error);
+    return [];
+  }
 }
