@@ -48,14 +48,33 @@ export default function ThankYouModal({ isOpen, onClose, participantName, partic
 
   if (!isOpen) return null;
 
-  const handleDownloadCertificate = () => {
-    const downloadUrl = `/api/download-certificate?name=${encodeURIComponent(participantName || "Student")}`;
-    const link = document.createElement("a");
-    link.href = downloadUrl;
-    link.download = `Sanskarshala_Certificate_${(participantName || "Student").replace(/\s+/g, "_")}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleDownloadCertificate = async () => {
+    try {
+      const name = encodeURIComponent(participantName || "Student");
+      const response = await fetch(`/api/download-certificate?name=${name}`);
+
+      if (!response.ok) {
+        console.error("Download failed:", response.status, response.statusText);
+        alert("Certificate download failed. Please try again.");
+        return;
+      }
+
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = `Sanskarshala_Certificate_${(participantName || "Student").replace(/\s+/g, "_")}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Cleanup blob URL after download
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 3000);
+    } catch (err) {
+      console.error("Certificate download error:", err);
+      alert("Certificate download failed. Please try again.");
+    }
   };
 
   return (
