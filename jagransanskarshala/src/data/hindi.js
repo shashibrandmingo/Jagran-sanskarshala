@@ -166,7 +166,7 @@ const hindi = {
         {
           icon: "email",
           label: "ईमेल",
-          value: "info@jagransanskarsala.com",
+          value: "info@jagransanskarshala.com",
           note: "हम 24 घंटे के भीतर जवाब देते हैं",
         },
         {
@@ -187,7 +187,7 @@ const hindi = {
   footer: {
     tagline: "समृद्ध समाज और सशक्त राष्ट्र के लिए",
     rights: "जागरण संस्कारशाला। सर्वाधिकार सुरक्षित।",
-    email: "info@jagransanskarsala.com",
+    email: "info@jagransanskarshala.com",
   },
 
   welcomePopup: {

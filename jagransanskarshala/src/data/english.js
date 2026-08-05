@@ -164,7 +164,7 @@ const english = {
         {
           icon: "email",
           label: "Email",
-          value: "info@jagransanskarsala.com",
+          value: "info@jagransanskarshala.com",
           note: "We reply within 24 hours",
         },
         {
@@ -185,7 +185,7 @@ const english = {
   footer: {
     tagline: "For a Prosperous Society and a Strong Nation",
     rights: "Jagran Sanskarshaala. All Rights Reserved.",
-    email: "info@jagransanskarsala.com",
+    email: "info@jagransanskarshala.com",
   },
 
   welcomePopup: {

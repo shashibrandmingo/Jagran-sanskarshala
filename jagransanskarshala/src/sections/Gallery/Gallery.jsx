@@ -209,7 +209,7 @@ export default function GallerySection({ initialYear = "All" }) {
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight mb-4">
               {lang === "hi"
                 ? "दैनिक जागरण संस्कारशाला फोटो गैलरी"
-                : "Dainik Jagran Sanskarshala Gallery"}
+                : "Dainik Jagran Sanskarshaala Gallery"}
             </h2>
 
             <div className="w-16 sm:w-20 h-1.5 bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] rounded-full mb-4 sm:mb-6" />

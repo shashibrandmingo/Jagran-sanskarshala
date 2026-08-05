@@ -129,11 +129,11 @@ export default function YearTalk() {
                             {topic.desc}
                           </p>
                           <div className="mt-3 pt-2.5 border-t border-white/20 flex flex-wrap items-center justify-between gap-1.5">
-                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/15 border border-white/20 shrink-0">
-                              <FaCalendarAlt className="text-white text-[10px] shrink-0" />
-                              <span className="text-white text-xs font-bold leading-none">{topic.publishDate}</span>
+                            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/15 border border-white/20 shrink-0">
+                              <FaCalendarAlt className="text-white text-xs shrink-0 self-center" />
+                              <span className="text-white text-xs font-semibold whitespace-nowrap leading-none self-center">{topic.publishDate}</span>
                             </div>
-                            <span className="text-[10px] sm:text-xs font-extrabold text-white bg-white/25 px-2 py-0.5 rounded-md uppercase tracking-wider shrink-0">
+                            <span className="text-[10px] sm:text-xs font-bold text-white bg-white/25 px-2 py-0.5 rounded-md uppercase tracking-wider shrink-0">
                               {isHindi ? "प्रकाशित" : "Published"}
                             </span>
                           </div>
@@ -172,12 +172,12 @@ export default function YearTalk() {
                       <p className="text-white/80 text-xs sm:text-sm font-medium leading-relaxed line-clamp-2 flex-1">
                         {topic.desc}
                       </p>
-                      <div className="mt-3 pt-2.5 border-t border-white/15 flex flex-wrap items-center justify-between gap-1.5">
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/15 border border-white/20 shrink-0">
-                          <FaCalendarAlt className="text-white/80 text-[10px] shrink-0" />
-                          <span className="text-white/90 text-xs font-bold leading-none">{topic.publishDate}</span>
+                      <div className="mt-auto pt-3 border-t border-white/15 flex items-center justify-between gap-1">
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/15 border border-white/20 shrink-0">
+                          <FaCalendarAlt className="text-white/90 text-xs shrink-0 self-center" />
+                          <span className="text-white/90 text-xs font-semibold whitespace-nowrap leading-none self-center">{topic.publishDate}</span>
                         </div>
-                        <span className="text-[10px] sm:text-xs font-bold text-white/90 uppercase tracking-wider shrink-0">
+                        <span className="text-[10px] sm:text-[11px] font-bold text-white/90 uppercase tracking-wider shrink-0 text-right leading-tight">
                           {isHindi ? "प्रकाशन जल्द" : "Publishing Soon"}
                         </span>
                       </div>
@@ -250,11 +250,11 @@ export default function YearTalk() {
                               {topic.desc}
                             </p>
                             <div className="mt-3 pt-2.5 border-t border-white/20 flex items-center justify-between">
-                              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/15 border border-white/25">
-                                <FaCalendarAlt className="text-white text-[11px] shrink-0" />
-                                <span className="text-white text-xs font-bold leading-none">{topic.publishDate}</span>
+                              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/15 border border-white/25">
+                                <FaCalendarAlt className="text-white text-xs shrink-0 self-center" />
+                                <span className="text-white text-xs font-semibold whitespace-nowrap leading-none self-center">{topic.publishDate}</span>
                               </div>
-                              <span className="text-xs font-extrabold text-white bg-white/25 px-2.5 py-1 rounded-md uppercase tracking-wider">
+                              <span className="text-[10px] xl:text-xs font-bold text-white bg-white/25 px-2.5 py-1 rounded-md uppercase tracking-wider">
                                 {isHindi ? "प्रकाशित" : "Published"}
                               </span>
                             </div>
@@ -293,12 +293,12 @@ export default function YearTalk() {
                         <p className="text-white/80 text-xs xl:text-sm font-medium leading-relaxed line-clamp-2 flex-1">
                           {topic.desc}
                         </p>
-                        <div className="mt-3 pt-2.5 border-t border-white/15 flex items-center justify-between">
-                          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/15 border border-white/20">
-                            <FaCalendarAlt className="text-white/80 text-[11px] shrink-0" />
-                            <span className="text-white/90 text-xs font-bold leading-none">{topic.publishDate}</span>
+                        <div className="mt-auto pt-3 border-t border-white/15 flex items-center justify-between gap-1">
+                          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/15 border border-white/20 shrink-0">
+                            <FaCalendarAlt className="text-white/90 text-xs shrink-0 self-center" />
+                            <span className="text-white/90 text-xs font-semibold whitespace-nowrap leading-none self-center">{topic.publishDate}</span>
                           </div>
-                          <span className="text-xs font-bold text-white/80 uppercase tracking-wider">
+                          <span className="text-[10px] xl:text-[11px] font-bold text-white/90 uppercase tracking-wider shrink-0 text-right leading-tight">
                             {isHindi ? "प्रकाशन जल्द" : "Publishing Soon"}
                           </span>
                         </div>
