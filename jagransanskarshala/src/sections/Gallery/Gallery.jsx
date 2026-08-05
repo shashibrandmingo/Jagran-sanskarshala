@@ -54,7 +54,40 @@ export default function GallerySection({ initialYear = "All" }) {
             let years = json.data.years || [];
 
             if (years.length > 0) {
-              setDynamicTabs(years);
+              const mergedTabs = galleryTabs.map((defaultTab) => {
+                const foundInBackend = years.find(
+                  (y) => String(y.year).toLowerCase() === String(defaultTab.year).toLowerCase()
+                );
+                if (!foundInBackend) return defaultTab;
+                return {
+                  ...defaultTab,
+                  ...foundInBackend,
+                  title:
+                    foundInBackend.title && (foundInBackend.title.en || foundInBackend.title.hi)
+                      ? foundInBackend.title
+                      : defaultTab.title,
+                  subtitle:
+                    foundInBackend.subtitle && (foundInBackend.subtitle.en || foundInBackend.subtitle.hi)
+                      ? foundInBackend.subtitle
+                      : defaultTab.subtitle,
+                };
+              });
+
+              years.forEach((bYear) => {
+                const exists = mergedTabs.some(
+                  (t) => String(t.year).toLowerCase() === String(bYear.year).toLowerCase()
+                );
+                if (!exists) {
+                  mergedTabs.push({
+                    id: bYear._id || bYear.id || bYear.year,
+                    year: bYear.year,
+                    title: bYear.title || { en: `Sanskarshala ${bYear.year}`, hi: `संस्कारशाला ${bYear.year}` },
+                    subtitle: bYear.subtitle || { en: `(${bYear.year})`, hi: `(${bYear.year})` },
+                  });
+                }
+              });
+
+              setDynamicTabs(mergedTabs);
             }
 
             if (activeTab && activeTab !== "All" && activeTab !== "all") {
@@ -187,7 +220,7 @@ export default function GallerySection({ initialYear = "All" }) {
 
               return (
                 <div
-                  key={tab.id}
+                  key={tab._id || tab.id || tab.year || idx}
                   className="flex items-center flex-1 justify-center relative min-w-0"
                 >
                   <button
@@ -245,11 +278,15 @@ export default function GallerySection({ initialYear = "All" }) {
                 <FaCalendarDays className="text-[var(--primary)] text-lg" />
                 <div className="flex flex-col">
                   <span className="text-sm font-bold">
-                    {activeTabObj.title[lang] || activeTabObj.title.en}
+                    {typeof activeTabObj?.title === "object"
+                      ? activeTabObj.title[lang] || activeTabObj.title.en
+                      : activeTabObj?.title}
                   </span>
-                  {activeTabObj.subtitle && (
+                  {activeTabObj?.subtitle && (
                     <span className="text-xs text-gray-600 font-medium">
-                      {activeTabObj.subtitle[lang] || activeTabObj.subtitle.en}
+                      {typeof activeTabObj.subtitle === "object"
+                        ? activeTabObj.subtitle[lang] || activeTabObj.subtitle.en
+                        : activeTabObj.subtitle}
                     </span>
                   )}
                 </div>
@@ -268,12 +305,12 @@ export default function GallerySection({ initialYear = "All" }) {
 
             {dropdownOpen && (
               <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 z-30 p-2 overflow-hidden animate-fadeIn">
-                {dynamicTabs.map((tab) => {
+                {dynamicTabs.map((tab, idx) => {
                   const tabTitle = typeof tab.title === "object" ? (tab.title[lang] || tab.title.en) : tab.title;
                   const tabSubtitle = typeof tab.subtitle === "object" ? (tab.subtitle[lang] || tab.subtitle.en) : tab.subtitle;
                   return (
                     <button
-                      key={tab._id || tab.id || tab.year}
+                      key={tab._id || tab.id || tab.year || `dropdown-${idx}`}
                       onClick={() => {
                         setActiveTab(tab.year);
                         setDropdownOpen(false);
@@ -354,8 +391,8 @@ export default function GallerySection({ initialYear = "All" }) {
 
               <h3 className="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-3 tracking-tight">
                 {lang === "hi"
-                  ? `${activeTabObj.title.hi} के चित्र जल्द ही उपलब्ध होंगे`
-                  : `Glimpses of ${activeTabObj.title.en} Coming Soon`}
+                  ? `${typeof activeTabObj?.title === "object" ? activeTabObj.title.hi || activeTabObj.title.en : activeTabObj?.title || activeTab} के चित्र जल्द ही उपलब्ध होंगे`
+                  : `Glimpses of ${typeof activeTabObj?.title === "object" ? activeTabObj.title.en || activeTabObj.title.hi : activeTabObj?.title || activeTab} Coming Soon`}
               </h3>
 
               <p className="text-gray-600 text-sm sm:text-base max-w-md leading-relaxed mb-6 font-medium">
@@ -378,14 +415,14 @@ export default function GallerySection({ initialYear = "All" }) {
           </div>
         ) : (
           <div className="space-y-12 sm:space-y-14">
-            {categories.map((cat) => {
+            {categories.map((cat, catIdx) => {
               const title =
                 lang === "hi"
                   ? cat.categoryTitleHi || cat.categoryTitle
                   : cat.categoryTitle;
 
               return (
-                <div key={cat._id || cat.id} className="space-y-4">
+                <div key={cat._id || cat.id || cat.categoryTitle || catIdx} className="space-y-4">
                   {/* Category Heading (Assembly Take Over, News Paper Reading, Principal Meet) */}
                   {/* Category Heading (Assembly Take Over, News Paper Reading, Principal Meet) */}
                   <div className="flex items-center justify-between pb-3 border-b-2 border-red-100/80">
