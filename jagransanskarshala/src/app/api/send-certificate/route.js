@@ -68,6 +68,8 @@ export async function POST(req) {
     const from =
       process.env.SMTP_FROM || `"Dainik Jagran Sanskarshala" <${user}>`;
 
+    console.log(`[SMTP CONFIG] host=${host} port=${port} user=${user} passLength=${pass.length}`);
+
     // High-quality HTML Email Template
     const htmlContent = `
     <!DOCTYPE html>
@@ -140,15 +142,28 @@ export async function POST(req) {
     const transporter = nodemailer.createTransport({
       host,
       port,
-      secure: port === 465,
+      secure: port === 465,         // port 465 = true (SSL), port 587 = false (STARTTLS)
       auth: { user, pass },
       tls: {
-        rejectUnauthorized: false,
+        rejectUnauthorized: false,  // self-signed cert bhi allow
+        ciphers: "SSLv3",
       },
-      connectionTimeout: 10000,
-      greetingTimeout: 10000,
-      socketTimeout: 15000,
+      connectionTimeout: 15000,
+      greetingTimeout: 15000,
+      socketTimeout: 20000,
     });
+
+    // Verify SMTP connection before sending
+    try {
+      await transporter.verify();
+      console.log("[SMTP VERIFY] Connection OK");
+    } catch (verifyErr) {
+      console.error("[SMTP VERIFY FAILED]", verifyErr.message);
+      return NextResponse.json(
+        { success: false, error: `SMTP connection failed: ${verifyErr.message}` },
+        { status: 500 },
+      );
+    }
 
     const info = await transporter.sendMail({
       from,

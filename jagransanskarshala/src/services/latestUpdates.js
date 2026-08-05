@@ -7,19 +7,23 @@ const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
 
 export async function getLatestUpdates() {
+  let publishedNotifications = [];
   try {
     const res = await fetch(`${BACKEND_URL}/api/v1/notifications/published`, {
       cache: "no-store",
     });
 
-    let publishedNotifications = [];
     if (res.ok) {
       const json = await res.json();
       if (json.success && Array.isArray(json.data)) {
         publishedNotifications = json.data;
       }
     }
+  } catch (err) {
+    console.warn("Backend notifications API offline, using local fallback");
+  }
 
+  try {
     // Fetch active published stories and get the LATEST published story (highest storyId)
     const allStories = await getStories();
     const publishedStories = allStories.filter((s) =>

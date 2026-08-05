@@ -49,16 +49,19 @@ export async function GET(req) {
 
     const pdfBytes = await pdfDoc.save();
 
+    const pdfBuffer = Buffer.from(pdfBytes);
+
     const sanitizedFilename = `Sanskarshala_Certificate_${name
       .replace(/[^a-zA-Z0-9_\- ]/g, "")
       .replace(/\s+/g, "_")}.pdf`;
 
-    return new Response(pdfBytes, {
+    return new Response(pdfBuffer, {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="${sanitizedFilename}"`,
-        "Cache-Control": "no-cache",
+        "Content-Length": String(pdfBuffer.length),
+        "Cache-Control": "no-cache, no-store, must-revalidate",
       },
     });
   } catch (error) {
