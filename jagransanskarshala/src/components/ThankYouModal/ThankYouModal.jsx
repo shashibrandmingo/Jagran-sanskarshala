@@ -15,10 +15,7 @@ export default function ThankYouModal({ isOpen, onClose, participantName, partic
       emailSentRef.current = true;
       setEmailStatus("sending");
 
-      const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || "";
-      const sendCertUrl = BACKEND ? `${BACKEND}/api/v1/certificate/send` : "/api/send-certificate";
-
-      fetch(sendCertUrl, {
+      fetch("/api/send-certificate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -52,10 +49,7 @@ export default function ThankYouModal({ isOpen, onClose, participantName, partic
   if (!isOpen) return null;
 
   const handleDownloadCertificate = () => {
-    const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || "";
-    const downloadUrl = BACKEND
-      ? `${BACKEND}/api/v1/certificate/download?name=${encodeURIComponent(participantName || "Student")}`
-      : `/api/download-certificate?name=${encodeURIComponent(participantName || "Student")}`;
+    const downloadUrl = `/api/download-certificate?name=${encodeURIComponent(participantName || "Student")}`;
     const link = document.createElement("a");
     link.href = downloadUrl;
     link.download = `Sanskarshala_Certificate_${(participantName || "Student").replace(/\s+/g, "_")}.pdf`;
