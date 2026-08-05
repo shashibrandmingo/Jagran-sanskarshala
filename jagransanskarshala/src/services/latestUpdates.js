@@ -54,12 +54,21 @@ export async function getLatestUpdates() {
         targetLink = defaultStoryLink;
       }
 
+      // Detect if this notification should open the survey modal
+      const fullText = ((item.msgEn || "") + " " + (item.msgHi || "")).toLowerCase();
+      const isSurveyItem =
+        fullText.includes("survey") ||
+        fullText.includes("participate") ||
+        fullText.includes("सर्वेक्षण") ||
+        fullText.includes("भाग लें") ||
+        fullText.includes("participate in india");
+
       return {
         id: item._id,
         titleEn: item.msgEn || "",
         titleHi: item.msgHi || "",
         link: targetLink,
-        actionType: "navigate",
+        actionType: isSurveyItem ? "surveyModal" : "navigate",
       };
     });
   } catch (error) {
