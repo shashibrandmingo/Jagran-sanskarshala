@@ -193,8 +193,13 @@ export default function PushNotificationView() {
     setLanguage(item.language || "Both");
     setMessageEn(item.msgEn || "");
     setMessageHi(item.msgHi || "");
-    setLinkUrl(item.link || "");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    setLinkUrl(item.link === "-" ? "" : item.link || "");
+    const formEl = document.getElementById("notification-form-card");
+    if (formEl) {
+      formEl.scrollIntoView({ behavior: "smooth", block: "center" });
+    } else {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   };
 
   // Delete Notification
@@ -335,7 +340,7 @@ export default function PushNotificationView() {
       )}
 
       {/* Send / Edit Notification Card */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-xs border border-gray-200/80 space-y-6">
+      <div id="notification-form-card" className="bg-white rounded-3xl p-6 sm:p-8 shadow-xs border border-gray-200/80 space-y-6">
         <div className="flex items-center justify-between border-b border-gray-100 pb-4">
           <div>
             <h3 className="text-lg font-black text-gray-900 tracking-tight">
@@ -386,15 +391,15 @@ export default function PushNotificationView() {
               <div className="relative">
                 <FaLink className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none" />
                 <input
-                  type="url"
+                  type="text"
                   value={linkUrl}
                   onChange={(e) => setLinkUrl(e.target.value)}
-                  placeholder="https://example.com"
+                  placeholder="e.g. /story/1 or https://example.com"
                   className="w-full pl-9 pr-4 py-2.5 rounded-2xl border border-gray-200 text-xs font-bold bg-white text-slate-800 focus:outline-none focus:border-[var(--primary)] transition-all"
                 />
               </div>
-              <p className="text-[11px] text-gray-400 font-bold mt-1">
-                Users can click this link from notification banner
+              <p className="text-[11px] font-bold text-gray-400 mt-1 flex items-center gap-1">
+                <span>Optional: Leave blank to auto-link to the latest published story.</span>
               </p>
             </div>
           </div>

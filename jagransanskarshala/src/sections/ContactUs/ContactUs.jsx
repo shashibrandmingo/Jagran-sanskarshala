@@ -13,6 +13,7 @@ import {
   FaChevronDown,
   FaCheckCircle,
   FaExclamationCircle,
+  FaSpinner,
 } from "react-icons/fa";
 
 // Maps each translation-driven icon key to its FontAwesome component
@@ -37,6 +38,8 @@ export default function ContactUs() {
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [serverError, setServerError] = useState("");
   const [focusedField, setFocusedField] = useState(null);
 
   const [isSubjectOpen, setIsSubjectOpen] = useState(false);
@@ -112,6 +115,7 @@ export default function ContactUs() {
     }
 
     setForm((prev) => ({ ...prev, [name]: sanitizedValue }));
+    setServerError("");
 
     if (touched[name]) {
       const err = validateField(name, sanitizedValue);
@@ -126,8 +130,9 @@ export default function ContactUs() {
     setErrors((prev) => ({ ...prev, [fieldName]: err }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setServerError("");
 
     // Mark all as touched
     setTouched({
@@ -142,31 +147,70 @@ export default function ContactUs() {
       return;
     }
 
-    // Save lead into LocalStorage for Admin Panel sync
+    setIsSubmitting(true);
+
     try {
-      const newLead = {
-        _id: `lead_${Date.now()}`,
-        leadId: `L-${Math.floor(10000 + Math.random() * 90000)}`,
-        name: form.name.trim(),
-        email: form.email.trim(),
-        mobile: form.mobile.trim(),
-        subject: form.subject,
-        message: form.message.trim(),
-        submittedOn: new Date().toISOString(),
-      };
+      const API_BASE =
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
-      const existing = JSON.parse(
-        localStorage.getItem("jagran_admin_contact_leads") || "[]"
+      const response = await fetch(`${API_BASE}/contact/submit`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: form.name.trim(),
+          email: form.email.trim(),
+          mobile: form.mobile.trim(),
+          subject: form.subject,
+          message: form.message.trim(),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        if (data.errors && typeof data.errors === "object") {
+          setErrors(data.errors);
+        }
+        throw new Error(
+          data.message || "Failed to submit message. Please try again."
+        );
+      }
+
+      // Sync lead into LocalStorage as backup for Admin Panel sync
+      try {
+        const newLead = data.data || {
+          _id: `lead_${Date.now()}`,
+          leadId: `L-${Math.floor(10000 + Math.random() * 90000)}`,
+          name: form.name.trim(),
+          email: form.email.trim(),
+          mobile: form.mobile.trim(),
+          subject: form.subject,
+          message: form.message.trim(),
+          submittedOn: new Date().toISOString(),
+        };
+
+        const existing = JSON.parse(
+          localStorage.getItem("jagran_admin_contact_leads") || "[]"
+        );
+        localStorage.setItem(
+          "jagran_admin_contact_leads",
+          JSON.stringify([newLead, ...existing])
+        );
+      } catch (err) {
+        console.error("Localstorage sync warning:", err);
+      }
+
+      setSubmitted(true);
+    } catch (err) {
+      console.error("Error submitting contact form:", err);
+      setServerError(
+        err.message || "Something went wrong. Please check your network and try again."
       );
-      localStorage.setItem(
-        "jagran_admin_contact_leads",
-        JSON.stringify([newLead, ...existing])
-      );
-    } catch (e) {
-      console.error("Error saving lead", e);
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setSubmitted(true);
   };
 
   const handleSendAnother = () => {
@@ -610,15 +654,35 @@ export default function ContactUs() {
                       )}
                     </div>
 
+                    {/* Server Error Alert */}
+                    {serverError && (
+                      <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-600 text-xs font-semibold flex items-center gap-2">
+                        <FaExclamationCircle className="w-4 h-4 shrink-0" />
+                        <span>{serverError}</span>
+                      </div>
+                    )}
+
                     {/* Submit Button */}
                     <motion.button
                       type="submit"
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      className="primary-btn w-full sm:w-auto gap-2 hover:shadow-lg cursor-pointer"
+                      disabled={isSubmitting}
+                      whileHover={{ scale: isSubmitting ? 1 : 1.02 }}
+                      whileTap={{ scale: isSubmitting ? 1 : 0.98 }}
+                      className={`primary-btn w-full sm:w-auto gap-2 hover:shadow-lg cursor-pointer ${
+                        isSubmitting ? "opacity-75 cursor-not-allowed" : ""
+                      }`}
                     >
-                      <FaPaperPlane className="w-3.5 h-3.5" />
-                      {c.form?.submitBtn || "Send Message"}
+                      {isSubmitting ? (
+                        <>
+                          <FaSpinner className="w-3.5 h-3.5 animate-spin" />
+                          <span>Submitting...</span>
+                        </>
+                      ) : (
+                        <>
+                          <FaPaperPlane className="w-3.5 h-3.5" />
+                          <span>{c.form?.submitBtn || "Send Message"}</span>
+                        </>
+                      )}
                     </motion.button>
                   </form>
                 </motion.div>

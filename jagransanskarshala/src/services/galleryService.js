@@ -66,8 +66,8 @@ export const galleryTabs = [
   {
     id: "2024",
     title: {
-      hi: "Sanskarshala 2024",
-      en: "Sanskarshala 2024",
+      hi: "Sanskarshaala 2024",
+      en: "Sanskarshaala 2024",
     },
     subtitle: {
       hi: "",
@@ -78,8 +78,8 @@ export const galleryTabs = [
   {
     id: "2025",
     title: {
-      hi: "Sanskarshala 2025",
-      en: "Sanskarshala 2025",
+      hi: "Sanskarshaala 2025",
+      en: "Sanskarshaala 2025",
     },
     subtitle: {
       hi: "",
@@ -110,5 +110,3 @@ export async function getGalleryData(year = "All") {
   }
   return Promise.resolve(categories);
 }
-
-

@@ -12,89 +12,9 @@ import {
   FaChevronDown,
   FaArrowRotateLeft,
   FaCommentDots,
+  FaEnvelope,
 } from "react-icons/fa6";
 import * as XLSX from "xlsx";
-
-// Initial Contact Leads matching ContactUs.jsx fields (Name, Email, Subject, Message)
-const INITIAL_CONTACT_LEADS = [
-  {
-    _id: "lead_101",
-    leadId: "L-12534",
-    name: "Rahul Kumar",
-    email: "rahul.kumar@gmail.com",
-    mobile: "9876543210",
-    subject: "School Partnership",
-    message:
-      "We would like to conduct the Jagran Sanskarshala survey program at our school in Noida. Please share details and scheduling options.",
-    submittedOn: "2026-07-31T10:35:00",
-  },
-  {
-    _id: "lead_102",
-    leadId: "L-12533",
-    name: "Ananya Sharma",
-    email: "ananya.sharma@gmail.com",
-    mobile: "9711223344",
-    subject: "General Inquiry",
-    message:
-      "I am a parent wanting to know how to participate in the upcoming moral value workshops for middle school students.",
-    submittedOn: "2026-07-31T10:22:00",
-  },
-  {
-    _id: "lead_103",
-    leadId: "L-12532",
-    name: "Sanjay Verma",
-    email: "sanjayv@gmail.com",
-    mobile: "9655443322",
-    subject: "Media & Press",
-    message:
-      "Seeking official press release materials and media kits for coverage in local educational daily newspaper.",
-    submittedOn: "2026-07-31T09:47:00",
-  },
-  {
-    _id: "lead_104",
-    leadId: "L-12531",
-    name: "Priya Singh",
-    email: "priya.singh@gmail.com",
-    mobile: "9544332211",
-    subject: "Sponsorship",
-    message:
-      "Interested in sponsoring regional Sanskarshala awards and student recognition certificates for 2026-27.",
-    submittedOn: "2026-07-30T20:15:00",
-  },
-  {
-    _id: "lead_105",
-    leadId: "L-12530",
-    name: "Amit Patel",
-    email: "amitpatel@gmail.com",
-    mobile: "9322110099",
-    subject: "Feedback",
-    message:
-      "Great initiative by Dainik Jagran for promoting core cultural values among school children. Keep up the good work!",
-    submittedOn: "2026-07-30T19:42:00",
-  },
-  {
-    _id: "lead_106",
-    leadId: "L-12529",
-    name: "Vikram Rathore",
-    email: "vikram.rathore@yahoo.com",
-    mobile: "9829012345",
-    subject: "School Partnership",
-    message:
-      "Principal of St. Xavier's School Jaipur. We want to organize Sanskarshala inter-school quiz competition.",
-    submittedOn: "2026-07-29T16:15:00",
-  },
-  {
-    _id: "lead_107",
-    leadId: "L-12528",
-    name: "Meenakshi Sundaram",
-    email: "meenakshi.s@gmail.com",
-    mobile: "9444011223",
-    subject: "General Inquiry",
-    message:
-      "Can students from outside North India participate in the online digital sanskar modules?",
-    submittedOn: "2026-07-29T14:10:00",
-  },
-];
 
 const SUBJECT_OPTIONS = [
   "All Subjects",
@@ -144,20 +64,52 @@ function getMonthDays(year, month) {
 }
 
 export default function ContactLeadsView() {
-  // State for leads list
-  const [leads] = useState(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("jagran_admin_contact_leads");
-      if (saved) {
-        try {
-          return JSON.parse(saved);
-        } catch (e) {
-          console.error("Error loading leads from storage", e);
+  // State for leads list - fetches directly from MongoDB backend API
+  const [leads, setLeads] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch real MongoDB contact leads from backend
+  const fetchBackendLeads = async () => {
+    setIsLoading(true);
+    try {
+      const API_BASE =
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+      const res = await fetch(`${API_BASE}/contact/all`);
+      const result = await res.json();
+
+      if (res.ok && result.success && result.data?.leads) {
+        const apiLeads = result.data.leads.map((item) => ({
+          ...item,
+          submittedOn: item.createdAt || item.submittedOn || new Date().toISOString(),
+        }));
+        setLeads(apiLeads);
+      } else {
+        // Fallback to local storage if API returns empty/error
+        const saved = localStorage.getItem("jagran_admin_contact_leads");
+        if (saved) {
+          setLeads(JSON.parse(saved));
         }
       }
+    } catch (err) {
+      console.warn("Backend API fetch notice (falling back to local state):", err);
+      if (typeof window !== "undefined") {
+        const saved = localStorage.getItem("jagran_admin_contact_leads");
+        if (saved) {
+          try {
+            setLeads(JSON.parse(saved));
+          } catch (e) {
+            console.error("Storage parse error", e);
+          }
+        }
+      }
+    } finally {
+      setIsLoading(false);
     }
-    return INITIAL_CONTACT_LEADS;
-  });
+  };
+
+  useEffect(() => {
+    fetchBackendLeads();
+  }, []);
 
   // Filter States
   const [subjectFilter, setSubjectFilter] = useState("All Subjects");
@@ -174,9 +126,9 @@ export default function ContactLeadsView() {
 
   // Custom Calendar Modal State
   const [isCustomCalendarOpen, setIsCustomCalendarOpen] = useState(false);
-  const [calBaseDate, setCalBaseDate] = useState(new Date(2026, 6, 1)); // Default July 2026
-  const [tempStartDate, setTempStartDate] = useState(new Date(2026, 6, 2)); // July 2, 2026
-  const [tempEndDate, setTempEndDate] = useState(new Date(2026, 7, 1)); // Aug 1, 2026
+  const [calBaseDate, setCalBaseDate] = useState(() => new Date());
+  const [tempStartDate, setTempStartDate] = useState(() => new Date());
+  const [tempEndDate, setTempEndDate] = useState(() => new Date());
 
   // Submission Details Modal State
   const [activeModalLead, setActiveModalLead] = useState(null);
@@ -204,7 +156,7 @@ export default function ContactLeadsView() {
 
   // Filtered Leads Calculation
   const filteredLeads = useMemo(() => {
-    const now = new Date("2026-08-04T12:00:00"); // Baseline date
+    const now = new Date();
 
     return leads.filter((lead) => {
       // Subject Filter
@@ -216,7 +168,11 @@ export default function ContactLeadsView() {
       }
 
       // Date Range Preset Filter
-      const leadDate = new Date(lead.submittedOn);
+      const rawDateStr = lead.createdAt || lead.submittedOn;
+      if (!rawDateStr) return true;
+      const leadDate = new Date(rawDateStr);
+      if (isNaN(leadDate.getTime())) return true;
+
       if (dateRangePreset === "Today") {
         if (leadDate.toDateString() !== now.toDateString()) return false;
       } else if (dateRangePreset === "Yesterday") {
@@ -226,10 +182,12 @@ export default function ContactLeadsView() {
       } else if (dateRangePreset === "Last 7 days") {
         const sevenDaysAgo = new Date(now);
         sevenDaysAgo.setDate(now.getDate() - 7);
+        sevenDaysAgo.setHours(0, 0, 0, 0);
         if (leadDate < sevenDaysAgo) return false;
       } else if (dateRangePreset === "Last 30 days") {
         const thirtyDaysAgo = new Date(now);
         thirtyDaysAgo.setDate(now.getDate() - 30);
+        thirtyDaysAgo.setHours(0, 0, 0, 0);
         if (leadDate < thirtyDaysAgo) return false;
       } else if (dateRangePreset === "This Month") {
         if (
@@ -246,7 +204,11 @@ export default function ContactLeadsView() {
           leadDate.getFullYear() !== lastMonthYear
         )
           return false;
-      } else if (dateRangePreset === "Custom" || dateRangePreset.includes("to") || dateRangePreset.includes("-")) {
+      } else if (
+        dateRangePreset === "Custom" ||
+        dateRangePreset.includes("to") ||
+        dateRangePreset.includes("-")
+      ) {
         if (dateFrom) {
           const fromDate = new Date(dateFrom);
           fromDate.setHours(0, 0, 0, 0);

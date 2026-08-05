@@ -38,27 +38,35 @@
 
 /* Hide scrollbar but keep scroll functionality */
 .no-scrollbar {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;     /* Firefox */
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
 }
+
 .no-scrollbar::-webkit-scrollbar {
-  display: none;             /* Chrome, Safari, Opera */
+  display: none;
+  /* Chrome, Safari, Opera */
 }
 
 /* Lightweight thin horizontal scrollbar for admin tables */
 .thin-scrollbar::-webkit-scrollbar {
   height: 4px;
 }
+
 .thin-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
+
 .thin-scrollbar::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.15);
   border-radius: 99px;
 }
+
 .thin-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.28);
 }
+
 .thin-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
@@ -116,9 +124,12 @@ html {
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
 .no-scrollbar {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
 }
 
 
@@ -173,12 +184,7 @@ html {
 =========================== */
 
 .primary-btn {
-  @apply inline-flex items-center justify-center
-  px-8 lg:px-10
-  py-3 lg:py-4
-  rounded-full
-  font-semibold
-  text-white;
+  @apply inline-flex items-center justify-center px-8 lg:px-10 py-3 lg:py-4 rounded-full font-semibold text-white;
 
   background: var(--primary);
   transition: var(--transition);
@@ -189,11 +195,7 @@ html {
 }
 
 .secondary-btn {
-  @apply inline-flex items-center justify-center
-  px-8 lg:px-10
-  py-3 lg:py-4
-  rounded-full
-  font-semibold;
+  @apply inline-flex items-center justify-center px-8 lg:px-10 py-3 lg:py-4 rounded-full font-semibold;
 
   background: var(--primary);
   color: #fff;
@@ -256,6 +258,7 @@ html {
     opacity: 0;
     transform: translateY(24px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -294,6 +297,7 @@ html {
   0% {
     transform: translateX(0%);
   }
+
   100% {
     transform: translateX(-50%);
   }
@@ -308,4 +312,3 @@ html {
 .animate-marquee-scroll:hover {
   animation-play-state: paused;
 }
-

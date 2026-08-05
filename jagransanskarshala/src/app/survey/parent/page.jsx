@@ -757,7 +757,7 @@ export default function ParentSurveyPage() {
             2026
           </span>
           <h1 className="text-3xl sm:text-5xl font-black leading-tight">
-            Jagran Sanskarshala Parent Survey
+            Jagran Sanskarshaala Parent Survey
           </h1>
           <p className="text-white/90 text-sm sm:text-base max-w-2xl mx-auto mt-3 font-medium">
             Please fill out your profile details first to unlock the national
