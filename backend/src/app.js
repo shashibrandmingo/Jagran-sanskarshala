@@ -89,6 +89,8 @@ import adminRoutes from "./routes/adminRoutes.js";
 import surveyRoutes from "./routes/surveyRoutes.js";
 import galleryRoutes from "./routes/galleryRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
+import contactRoutes from "./routes/contactRoutes.js";
+import storyRoutes from "./routes/storyRoutes.js";
 
 /* ================================
    API Routes
@@ -98,6 +100,8 @@ app.use(`${API_VERSION}/admin`, adminRoutes);
 app.use(`${API_VERSION}/survey`, surveyRoutes);
 app.use(`${API_VERSION}/gallery`, galleryRoutes);
 app.use(`${API_VERSION}/notifications`, notificationRoutes);
+app.use(`${API_VERSION}/contact`, contactRoutes);
+app.use(`${API_VERSION}/stories`, storyRoutes);
 
 /* ================================
    404 Route

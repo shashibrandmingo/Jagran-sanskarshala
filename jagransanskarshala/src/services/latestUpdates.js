@@ -1,5 +1,7 @@
 // src/services/latestUpdates.js
-// API service for Latest Updates - Fetches published notifications from backend.
+// Production service layer connected to Node.js Backend API & MongoDB Database.
+
+import { getStories, resolveStoryPublishStatus } from "./stories";
 
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
@@ -10,24 +12,52 @@ export async function getLatestUpdates() {
       cache: "no-store",
     });
 
-    if (!res.ok) {
-      throw new Error(`API error: ${res.status}`);
+    let publishedNotifications = [];
+    if (res.ok) {
+      const json = await res.json();
+      if (json.success && Array.isArray(json.data)) {
+        publishedNotifications = json.data;
+      }
     }
 
-    const json = await res.json();
+    // Fetch active published stories and get the LATEST published story (highest storyId)
+    const allStories = await getStories();
+    const publishedStories = allStories.filter((s) =>
+      resolveStoryPublishStatus(s)
+    );
 
-    if (!json.success || !Array.isArray(json.data)) {
-      return [];
-    }
+    // Sort descending by storyId to pick the latest published story
+    publishedStories.sort(
+      (a, b) => Number(b.id || b.storyId) - Number(a.id || a.storyId)
+    );
 
-    // Map backend notification fields to frontend expected format
-    return json.data.map((item) => ({
-      id: item._id,
-      titleEn: item.msgEn || "",
-      titleHi: item.msgHi || "",
-      link: item.link || "#",
-      actionType: item.link && item.link !== "#" ? "navigate" : "none",
-    }));
+    const latestPublishedStory = publishedStories[0];
+    const defaultStoryLink = latestPublishedStory
+      ? `/story/${latestPublishedStory.id || latestPublishedStory.storyId}`
+      : "/#till-now";
+
+    return publishedNotifications.map((item) => {
+      let rawLink = (item.link || "").trim();
+      let targetLink = defaultStoryLink;
+
+      if (rawLink && rawLink !== "-" && rawLink !== "#") {
+        targetLink = rawLink;
+      }
+
+      // If text mentions "Latest Stories" or "नवीनतम कहानियाँ", auto route to latest published story!
+      const msgText = ((item.msgEn || "") + " " + (item.msgHi || "")).toLowerCase();
+      if (msgText.includes("latest stor") || msgText.includes("नवीनतम कहानियाँ")) {
+        targetLink = defaultStoryLink;
+      }
+
+      return {
+        id: item._id,
+        titleEn: item.msgEn || "",
+        titleHi: item.msgHi || "",
+        link: targetLink,
+        actionType: "navigate",
+      };
+    });
   } catch (error) {
     console.error("Failed to fetch latest updates:", error);
     return [];

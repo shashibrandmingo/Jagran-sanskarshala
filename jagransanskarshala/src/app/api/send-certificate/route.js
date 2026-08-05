@@ -136,12 +136,18 @@ export async function POST(req) {
       });
     }
 
-    // Live Transporter
+    // Live Transporter with VPS SSL compatibility options
     const transporter = nodemailer.createTransport({
       host,
       port,
-      secure: true, // port 465 SSL
+      secure: port === 465,
       auth: { user, pass },
+      tls: {
+        rejectUnauthorized: false,
+      },
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
     });
 
     const info = await transporter.sendMail({

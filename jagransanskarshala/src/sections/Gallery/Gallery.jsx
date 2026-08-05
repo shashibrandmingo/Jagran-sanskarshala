@@ -31,12 +31,21 @@ export default function GallerySection({ initialYear = "All" }) {
   const [lightboxIndex, setLightboxIndex] = useState(0);
 
   const [dynamicTabs, setDynamicTabs] = useState(galleryTabs);
+  const tabsContainerRef = useState(null)[0];
+
+  const scrollTabs = (direction) => {
+    const el = document.getElementById("gallery-tabs-scroll-container");
+    if (el) {
+      el.scrollBy({
+        left: direction === "left" ? -280 : 280,
+        behavior: "smooth",
+      });
+    }
+  };
 
   // Sync initialYear if prop changes
   useEffect(() => {
-    if (initialYear) {
-      setActiveTab(initialYear);
-    }
+    setActiveTab(initialYear);
   }, [initialYear]);
 
   // Fetch category-grouped gallery data
@@ -45,71 +54,71 @@ export default function GallerySection({ initialYear = "All" }) {
     async function fetchGallery() {
       setLoading(true);
       try {
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+        const backendUrl =
+          process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
         const res = await fetch(`${backendUrl}/api/v1/gallery`);
         if (res.ok) {
           const json = await res.json();
           if (isMounted && json.data) {
-            let categories = json.data.categories || [];
-            let years = json.data.years || [];
+            let dbCategories = json.data.categories || [];
+            let dbYears = json.data.years || [];
 
-            if (years.length > 0) {
-              const mergedTabs = galleryTabs.map((defaultTab) => {
-                const foundInBackend = years.find(
-                  (y) => String(y.year).toLowerCase() === String(defaultTab.year).toLowerCase()
-                );
-                if (!foundInBackend) return defaultTab;
-                return {
-                  ...defaultTab,
-                  ...foundInBackend,
-                  title:
-                    foundInBackend.title && (foundInBackend.title.en || foundInBackend.title.hi)
-                      ? foundInBackend.title
-                      : defaultTab.title,
-                  subtitle:
-                    foundInBackend.subtitle && (foundInBackend.subtitle.en || foundInBackend.subtitle.hi)
-                      ? foundInBackend.subtitle
-                      : defaultTab.subtitle,
-                };
+            // Always start with "Sanskriti Se Sanskar (All Images)" tab
+            const allTab = {
+              id: "all",
+              year: "All",
+              title: { hi: "संस्कृति से संस्कार", en: "Sanskriti Se Sanskar" },
+              subtitle: { hi: "(All Images)", en: "(All Images)" },
+            };
+
+            let formattedTabs = [allTab];
+
+            if (dbYears.length > 0) {
+              dbYears.forEach((y, index) => {
+                formattedTabs.push({
+                  id: y._id || y.id || y.year,
+                  year: String(y.year),
+                  title: y.title || {
+                    en: `Sanskarshala ${y.year}`,
+                    hi: `संस्कारशाला ${y.year}`,
+                  },
+                  subtitle: y.subtitle || {
+                    en: `(${y.year})`,
+                    hi: `(${y.year})`,
+                  },
+                  isLatest: index === 0, // First sorted edition in MongoDB gets LATEST badge
+                });
               });
-
-              years.forEach((bYear) => {
-                const exists = mergedTabs.some(
-                  (t) => String(t.year).toLowerCase() === String(bYear.year).toLowerCase()
-                );
-                if (!exists) {
-                  mergedTabs.push({
-                    id: bYear._id || bYear.id || bYear.year,
-                    year: bYear.year,
-                    title: bYear.title || { en: `Sanskarshala ${bYear.year}`, hi: `संस्कारशाला ${bYear.year}` },
-                    subtitle: bYear.subtitle || { en: `(${bYear.year})`, hi: `(${bYear.year})` },
-                  });
-                }
-              });
-
-              setDynamicTabs(mergedTabs);
+            } else {
+              formattedTabs = galleryTabs;
             }
 
+            setDynamicTabs(formattedTabs);
+
+            // Filter categories by activeTab
+            let filteredCats = [...dbCategories];
             if (activeTab && activeTab !== "All" && activeTab !== "all") {
-              categories = categories.filter((cat) => cat.year === activeTab);
+              filteredCats = filteredCats.filter(
+                (cat) => String(cat.year) === String(activeTab)
+              );
             }
-            setCategories(categories);
+
+            setCategories(filteredCats);
             setLoading(false);
             return;
           }
         }
       } catch (err) {
-        console.warn(
-          "Backend API fetch error, using local fallback data:",
-          err,
-        );
+        console.warn("Backend API fetch error, using local fallback data:", err);
       }
 
-      // Local fallback data
       if (isMounted) {
+        setDynamicTabs(galleryTabs);
         let filtered = [...initialGalleryCategories];
         if (activeTab !== "All" && activeTab !== "all") {
-          filtered = filtered.filter((cat) => cat.year === activeTab);
+          filtered = filtered.filter(
+            (cat) => String(cat.year) === String(activeTab)
+          );
         }
         setCategories(filtered);
         setLoading(false);
@@ -124,8 +133,19 @@ export default function GallerySection({ initialYear = "All" }) {
 
   // Active tab object for label display
   const activeTabObj = useMemo(() => {
-    return dynamicTabs.find((t) => t.year === activeTab) || dynamicTabs[0] || galleryTabs[0];
+    return (
+      dynamicTabs.find(
+        (t) => String(t.year).toLowerCase() === String(activeTab).toLowerCase()
+      ) ||
+      dynamicTabs[0] ||
+      galleryTabs[0]
+    );
   }, [activeTab, dynamicTabs]);
+
+  // Calculate total photos in active tab to trigger Coming Soon if 0 photos exist
+  const totalPhotosInActiveTab = useMemo(() => {
+    return categories.reduce((sum, cat) => sum + (cat.images?.length || 0), 0);
+  }, [categories]);
 
   // Open Lightbox Slider for specific Category and Image Index
   const openLightbox = (category, index) => {
@@ -141,14 +161,14 @@ export default function GallerySection({ initialYear = "All" }) {
   const handlePrevImage = useCallback(() => {
     if (!lightboxCategory) return;
     setLightboxIndex((prev) =>
-      prev === 0 ? lightboxCategory.images.length - 1 : prev - 1,
+      prev === 0 ? lightboxCategory.images.length - 1 : prev - 1
     );
   }, [lightboxCategory]);
 
   const handleNextImage = useCallback(() => {
     if (!lightboxCategory) return;
     setLightboxIndex((prev) =>
-      prev === lightboxCategory.images.length - 1 ? 0 : prev + 1,
+      prev === lightboxCategory.images.length - 1 ? 0 : prev + 1
     );
   }, [lightboxCategory]);
 
@@ -166,36 +186,31 @@ export default function GallerySection({ initialYear = "All" }) {
   }, [lightboxCategory, handlePrevImage, handleNextImage]);
 
   return (
-    <section className="relative w-full py-8 md:py-14 overflow-hidden min-h-[80vh]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* ==========================================================
-            HERO HEADER
-           ========================================================== */}
-        <div className="relative w-full py-4 sm:py-6 md:py-8 mb-8 md:mb-12">
-          <div className="hidden md:flex absolute right-4 lg:right-12 xl:right-16 top-0 bottom-0 pointer-events-none items-center justify-end z-0">
-            <Image
-              src={GalleryRightBg}
-              alt="Decorative Pattern"
-              className="h-full w-auto object-contain object-right max-h-[260px] lg:max-h-[300px] xl:max-h-[340px]"
-              priority
-            />
-          </div>
+    <section id="gallery" className="relative py-16 sm:py-20 md:py-24 bg-[#fffaf5] overflow-hidden">
+      {/* Decorative Background Accent */}
+      <div className="absolute top-0 right-0 w-80 sm:w-96 md:w-[480px] h-[480px] opacity-15 pointer-events-none z-0">
+        <Image
+          src={GalleryRightBg}
+          alt=""
+          fill
+          className="object-contain object-top-right"
+        />
+      </div>
 
-          <div className="relative z-10 max-w-2xl">
-            <div className="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white/80 backdrop-blur-xs shadow-xs flex items-center justify-center shrink-0 border border-red-100">
-                <FaImages
-                  className="text-2xl sm:text-3xl"
-                  style={{ color: "var(--primary)" }}
-                />
-              </div>
-              <h1
-                className="heading-lg text-2xl sm:text-4xl lg:text-5xl font-black leading-tight"
-                style={{ color: "var(--primary)" }}
-              >
-                Gallery
-              </h1>
-            </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        {/* Section Header */}
+        <div className="mb-10 sm:mb-14">
+          <div className="flex flex-col items-start">
+            <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-red-100/80 text-[var(--primary)] text-xs font-bold uppercase tracking-wider mb-3">
+              <FaImages className="text-xs" />
+              {lang === "hi" ? "चित्र प्रदर्शनी" : "Glimpses & Events"}
+            </span>
+
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight mb-4">
+              {lang === "hi"
+                ? "दैनिक जागरण संस्कारशाला फोटो गैलरी"
+                : "Dainik Jagran Sanskarshala Gallery"}
+            </h2>
 
             <div className="w-16 sm:w-20 h-1.5 bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] rounded-full mb-4 sm:mb-6" />
 
@@ -208,142 +223,186 @@ export default function GallerySection({ initialYear = "All" }) {
         </div>
 
         {/* ==========================================================
-            YEARLY FILTERING TABS (DESKTOP BAR + MOBILE DROPDOWN)
+            YEARLY FILTERING TABS (DYNAMIC SLIDER VS FULL-WIDTH BAR)
            ========================================================== */}
         <div className="mb-8 md:mb-12">
-          <div className="hidden lg:flex items-stretch justify-between bg-[#fbf3ea]/90 backdrop-blur-xs p-2 rounded-2xl border border-[#ebd8c5] shadow-xs w-full">
-            {dynamicTabs.map((tab, idx) => {
-              const isActive = activeTab === tab.year;
-              const isLast = idx === dynamicTabs.length - 1;
-              const tabTitle = typeof tab.title === "object" ? (tab.title[lang] || tab.title.en) : tab.title;
-              const tabSubtitle = typeof tab.subtitle === "object" ? (tab.subtitle[lang] || tab.subtitle.en) : tab.subtitle;
+          {/* Desktop & Laptop Bar (Conditional Slider if > 7 Tabs) */}
+          <div className="hidden lg:flex items-center gap-2 relative bg-[#fbf3ea]/95 backdrop-blur-xs p-2.5 rounded-3xl border border-[#ebd8c5] shadow-xs w-full">
+            {/* Show Left Arrow Button Only when > 7 Tabs */}
+            {dynamicTabs.length > 7 && (
+              <button
+                type="button"
+                onClick={() => scrollTabs("left")}
+                className="shrink-0 w-9 h-9 rounded-full bg-white text-gray-700 hover:text-[var(--primary)] hover:bg-red-50 flex items-center justify-center border border-amber-900/10 shadow-2xs transition-all cursor-pointer z-10"
+                title="Previous Years"
+              >
+                <FaChevronLeft className="text-xs" />
+              </button>
+            )}
 
-              return (
-                <div
-                  key={tab._id || tab.id || tab.year || idx}
-                  className="flex items-center flex-1 justify-center relative min-w-0"
-                >
+            {/* Tabs Track (Scrollable if > 7, Full-Width Flex-1 if <= 7) */}
+            <div
+              id="gallery-tabs-scroll-container"
+              className={`flex items-center gap-2.5 w-full py-0.5 px-1 ${dynamicTabs.length > 7
+                  ? "overflow-x-auto no-scrollbar scroll-smooth"
+                  : "justify-between"
+                }`}
+            >
+              {dynamicTabs.map((tab, idx) => {
+                const isActive = activeTab === tab.year;
+                const tabTitle =
+                  typeof tab.title === "object"
+                    ? tab.title[lang] || tab.title.en
+                    : tab.title;
+
+                return (
                   <button
+                    key={tab._id || tab.id || tab.year || idx}
                     onClick={() => setActiveTab(tab.year)}
-                    className={`relative flex flex-col items-center justify-center text-center px-2 py-2.5 rounded-xl transition-all duration-300 cursor-pointer w-full h-full ${
-                      isActive
-                        ? "bg-[var(--primary)] text-white shadow-md shadow-red-900/20 scale-[1.02]"
-                        : "text-gray-800 hover:text-[var(--primary)] hover:bg-[var(--primary)]/5"
-                    }`}
+                    className={`flex flex-col items-center justify-center text-center px-3 py-3 rounded-2xl transition-all duration-300 cursor-pointer ${dynamicTabs.length > 7
+                        ? "shrink-0 min-w-[155px] max-w-[210px]"
+                        : "flex-1 min-w-0"
+                      } ${isActive
+                        ? "bg-gradient-to-r from-[var(--primary)] to-red-700 text-white shadow-md shadow-red-900/20 scale-[1.02] border border-red-800"
+                        : "bg-white/85 text-slate-800 hover:text-[var(--primary)] hover:bg-white hover:shadow-xs border border-amber-900/10"
+                      }`}
                   >
-                    <div className="flex items-center justify-center gap-1.5 flex-wrap">
-                      <span className="text-[12px] xl:text-[13px] font-bold leading-tight">
+                    <div className="flex flex-col items-center justify-center text-center w-full min-w-0">
+                      <span className="text-xs xl:text-sm font-extrabold tracking-tight leading-tight truncate w-full">
                         {tabTitle}
                       </span>
-                      {tab.isLatest && (
-                        <span
-                          className={`text-[9px] xl:text-[10px] px-2.5 h-4.5 inline-flex items-center justify-center rounded-full font-black tracking-wider uppercase leading-none text-center ${
-                            isActive
-                              ? "bg-white text-[var(--primary)] shadow-2xs"
-                              : "bg-[#fff7ee] text-[#c71518] border border-red-200"
-                          }`}
-                        >
-                          <span className="translate-y-[0.5px]">LATEST</span>
-                        </span>
-                      )}
+                      <div className="flex items-center justify-center gap-1.5 mt-1 whitespace-nowrap">
+                        {tab.isLatest && (
+                          <span
+                            className="text-[8px] sm:text-[9px] px-2 py-0.5 rounded-full font-black tracking-wider uppercase leading-none text-white shadow-2xs"
+                            style={{ background: "var(--secondary, #f07f22)" }}
+                          >
+                            LATEST
+                          </span>
+                        )}
+                        {tab.subtitle && (
+                          <span
+                            className={`text-[10px] sm:text-[11px] font-bold leading-none ${isActive ? "text-white" : "text-slate-500"
+                              }`}
+                          >
+                            {typeof tab.subtitle === "object"
+                              ? tab.subtitle[lang] || tab.subtitle.en
+                              : tab.subtitle}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    {tabSubtitle && (
-                      <span
-                        className={`text-[11px] xl:text-[12px] font-medium leading-tight mt-0.5 ${
-                          isActive ? "text-white/90" : "text-gray-600"
-                        }`}
-                      >
-                        {tabSubtitle}
-                      </span>
-                    )}
                   </button>
+                );
+              })}
+            </div>
 
-                  {!isLast &&
-                    !isActive &&
-                    activeTab !== galleryTabs[idx + 1]?.year && (
-                      <span className="absolute right-0 top-1/2 -translate-y-1/2 h-8 w-[1px] bg-[#e5cfba]" />
-                    )}
-                </div>
-              );
-            })}
+            {/* Show Right Arrow Button Only when > 7 Tabs */}
+            {dynamicTabs.length > 7 && (
+              <button
+                type="button"
+                onClick={() => scrollTabs("right")}
+                className="shrink-0 w-9 h-9 rounded-full bg-white text-gray-700 hover:text-[var(--primary)] hover:bg-red-50 flex items-center justify-center border border-amber-900/10 shadow-2xs transition-all cursor-pointer z-10"
+                title="More Years"
+              >
+                <FaChevronRight className="text-xs" />
+              </button>
+            )}
           </div>
 
-          {/* Tablet & Mobile Dropdown Filter */}
+          {/* Mobile & Tablet Dropdown Selector (lg:hidden) */}
           <div className="lg:hidden relative">
             <button
+              type="button"
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="w-full flex items-center justify-between p-4 bg-[#fbf3ea] rounded-2xl shadow-sm border border-[#ebd8c5] text-left font-bold text-gray-800"
+              className="w-full flex items-center justify-between p-3.5 sm:p-4 bg-[#fbf3ea] rounded-2xl shadow-sm border border-[#ebd8c5] text-left font-bold text-gray-800 cursor-pointer"
             >
-              <div className="flex items-center gap-2.5">
-                <FaCalendarDays className="text-[var(--primary)] text-lg" />
-                <div className="flex flex-col">
-                  <span className="text-sm font-bold">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <FaCalendarDays className="text-[var(--primary)] text-lg shrink-0" />
+                <div className="flex flex-col min-w-0">
+                  <span className="text-xs sm:text-sm font-extrabold truncate">
                     {typeof activeTabObj?.title === "object"
                       ? activeTabObj.title[lang] || activeTabObj.title.en
                       : activeTabObj?.title}
                   </span>
-                  {activeTabObj?.subtitle && (
-                    <span className="text-xs text-gray-600 font-medium">
-                      {typeof activeTabObj.subtitle === "object"
-                        ? activeTabObj.subtitle[lang] || activeTabObj.subtitle.en
-                        : activeTabObj.subtitle}
-                    </span>
-                  )}
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    {activeTabObj?.isLatest && (
+                      <span
+                        className="text-[8px] px-2 py-0.5 rounded-full font-black uppercase text-white shadow-2xs"
+                        style={{ background: "var(--secondary, #f07f22)" }}
+                      >
+                        LATEST
+                      </span>
+                    )}
+                    {activeTabObj?.subtitle && (
+                      <span className="text-[11px] text-gray-600 font-semibold">
+                        {typeof activeTabObj.subtitle === "object"
+                          ? activeTabObj.subtitle[lang] || activeTabObj.subtitle.en
+                          : activeTabObj.subtitle}
+                      </span>
+                    )}
+                  </div>
                 </div>
-                {activeTabObj.isLatest && (
-                  <span className="ml-2 text-[10px] bg-[var(--primary)] text-white px-2 py-0.5 rounded-full font-black uppercase">
-                    LATEST
-                  </span>
-                )}
               </div>
               <FaChevronDown
-                className={`text-gray-500 transition-transform duration-300 ${
-                  dropdownOpen ? "rotate-180" : ""
-                }`}
+                className={`text-gray-500 text-sm transition-transform duration-300 shrink-0 ml-2 ${dropdownOpen ? "rotate-180" : ""
+                  }`}
               />
             </button>
 
             {dropdownOpen && (
               <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 z-30 p-2 overflow-hidden animate-fadeIn">
                 {dynamicTabs.map((tab, idx) => {
-                  const tabTitle = typeof tab.title === "object" ? (tab.title[lang] || tab.title.en) : tab.title;
-                  const tabSubtitle = typeof tab.subtitle === "object" ? (tab.subtitle[lang] || tab.subtitle.en) : tab.subtitle;
+                  const tabTitle =
+                    typeof tab.title === "object"
+                      ? tab.title[lang] || tab.title.en
+                      : tab.title;
+                  const tabSubtitle =
+                    typeof tab.subtitle === "object"
+                      ? tab.subtitle[lang] || tab.subtitle.en
+                      : tab.subtitle;
+
+                  const isCurrent = activeTab === tab.year;
+
                   return (
                     <button
                       key={tab._id || tab.id || tab.year || `dropdown-${idx}`}
+                      type="button"
                       onClick={() => {
                         setActiveTab(tab.year);
                         setDropdownOpen(false);
                       }}
-                      className={`w-full flex items-center justify-between p-3 rounded-xl text-left transition-colors ${
-                        activeTab === tab.year
-                          ? "bg-[var(--primary)] text-white"
+                      className={`w-full flex items-center justify-between p-3 rounded-xl text-left transition-colors cursor-pointer ${isCurrent
+                          ? "bg-[var(--primary)] text-white font-bold"
                           : "text-gray-700 hover:bg-red-50"
-                      }`}
+                        }`}
                     >
                       <div className="flex flex-col">
-                        <span className="text-sm font-bold">
+                        <span className="text-xs sm:text-sm font-extrabold">
                           {tabTitle}
                         </span>
-                        {tabSubtitle && (
-                          <span
-                            className={`text-xs ${activeTab === tab.year ? "text-white/80" : "text-gray-500"}`}
-                          >
-                            {tabSubtitle}
-                          </span>
-                        )}
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          {tab.isLatest && (
+                            <span
+                              className={`text-[8px] px-1.5 py-0.5 rounded-full font-black uppercase ${isCurrent
+                                  ? "bg-white text-[var(--primary)]"
+                                  : "text-white"
+                                }`}
+                              style={!isCurrent ? { background: "var(--secondary, #f07f22)" } : {}}
+                            >
+                              LATEST
+                            </span>
+                          )}
+                          {tabSubtitle && (
+                            <span
+                              className={`text-[11px] ${isCurrent ? "text-white/80" : "text-gray-500"
+                                }`}
+                            >
+                              {tabSubtitle}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      {tab.isLatest && (
-                        <span
-                          className={`text-[10px] px-2 py-0.5 rounded-full font-black uppercase ${
-                            activeTab === tab.year
-                              ? "bg-white text-[var(--primary)]"
-                              : "bg-[var(--primary)] text-white"
-                          }`}
-                        >
-                          LATEST
-                        </span>
-                      )}
                     </button>
                   );
                 })}
@@ -376,39 +435,32 @@ export default function GallerySection({ initialYear = "All" }) {
               </div>
             ))}
           </div>
-        ) : categories.length === 0 ? (
-          <div className="relative w-full max-w-2xl mx-auto my-10 p-8 sm:p-12 bg-white/90 backdrop-blur-md rounded-3xl shadow-xl border border-[#ebd8c5] text-center overflow-hidden">
-            <div className="relative z-10 flex flex-col items-center justify-center">
-              <div className="relative mb-6">
-                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-red-50 to-orange-50 border border-red-100 text-[var(--primary)] flex items-center justify-center shadow-md">
-                  <FaImages className="text-4xl" />
-                </div>
+        ) : categories.length === 0 || totalPhotosInActiveTab === 0 ? (
+          <div className="w-full max-w-md mx-auto my-8 p-6 bg-white/90 backdrop-blur-md rounded-2xl shadow-sm border border-[#ebd8c5] text-center">
+            <div className="flex flex-col items-center justify-center">
+              <div className="w-14 h-14 rounded-full bg-red-50 text-[var(--primary)] flex items-center justify-center mb-3 border border-red-100 shadow-2xs">
+                <FaImages className="text-2xl" />
               </div>
 
-              <span className="inline-block px-3.5 py-1 rounded-full bg-red-50 text-[var(--primary)] text-xs font-extrabold uppercase tracking-wider mb-3 border border-red-100">
-                {lang === "hi" ? "जल्द आ रहा है" : "Coming Soon"}
-              </span>
-
-              <h3 className="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-3 tracking-tight">
-                {lang === "hi"
-                  ? `${typeof activeTabObj?.title === "object" ? activeTabObj.title.hi || activeTabObj.title.en : activeTabObj?.title || activeTab} के चित्र जल्द ही उपलब्ध होंगे`
-                  : `Glimpses of ${typeof activeTabObj?.title === "object" ? activeTabObj.title.en || activeTabObj.title.hi : activeTabObj?.title || activeTab} Coming Soon`}
+              <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 mb-1.5 tracking-tight">
+                {lang === "hi" ? "तस्वीरें जल्द उपलब्ध होंगी" : "Photos Coming Soon"}
               </h3>
 
-              <p className="text-gray-600 text-sm sm:text-base max-w-md leading-relaxed mb-6 font-medium">
+              <p className="text-xs sm:text-sm text-gray-500 max-w-xs leading-relaxed font-medium mb-4">
                 {lang === "hi"
-                  ? "इस आर्काइव वर्ष की तस्वीरें अपलोड की जा रही हैं। नया मीडिया पोस्ट होते ही यहाँ लाइव दिखाई देगा।"
-                  : "We are currently curating and uploading photos for this archive year. New media will appear live here as soon as it is posted."}
+                  ? "इस संस्करण की तस्वीरें जल्द ही अपलोड कर दी जाएंगी।"
+                  : "Photos for this edition are currently being uploaded."}
               </p>
 
               <button
-                onClick={() => setActiveTab("2025")}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[var(--primary)] text-white text-sm font-bold shadow-md hover:bg-red-700 transition-all cursor-pointer"
+                type="button"
+                onClick={() => setActiveTab(dynamicTabs[1]?.year || "2025")}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[var(--primary)] to-red-700 text-white text-xs font-bold shadow-xs hover:shadow-md transition-all cursor-pointer"
               >
                 <span>
                   {lang === "hi"
-                    ? "संस्कारशाला 2025 (Latest) देखें"
-                    : "View Sanskarshala 2025 (Latest)"}
+                    ? `संस्कारशाला ${dynamicTabs[1]?.year || "2025"} (Latest) देखें`
+                    : `View Sanskarshala ${dynamicTabs[1]?.year || "2025"} (Latest)`}
                 </span>
               </button>
             </div>
@@ -490,7 +542,7 @@ export default function GallerySection({ initialYear = "All" }) {
                 <span className="text-white font-extrabold text-sm sm:text-base lg:text-lg truncate">
                   {lang === "hi"
                     ? lightboxCategory.categoryTitleHi ||
-                      lightboxCategory.categoryTitle
+                    lightboxCategory.categoryTitle
                     : lightboxCategory.categoryTitle}
                 </span>
                 <span className="text-[11px] sm:text-xs font-bold px-2 sm:px-2.5 py-0.5 rounded-full bg-white/15 text-white/90 shrink-0">
@@ -543,11 +595,10 @@ export default function GallerySection({ initialYear = "All" }) {
                 <button
                   key={img._id || img.id || idx}
                   onClick={() => setLightboxIndex(idx)}
-                  className={`relative w-12 h-9 sm:w-14 sm:h-10 rounded-lg overflow-hidden shrink-0 border-2 transition-all cursor-pointer ${
-                    lightboxIndex === idx
+                  className={`relative w-12 h-9 sm:w-14 sm:h-10 rounded-lg overflow-hidden shrink-0 border-2 transition-all cursor-pointer ${lightboxIndex === idx
                       ? "border-[var(--primary)] scale-105 opacity-100 ring-2 ring-red-500/40"
                       : "border-transparent opacity-40 hover:opacity-90"
-                  }`}
+                    }`}
                 >
                   <img
                     src={img.url}

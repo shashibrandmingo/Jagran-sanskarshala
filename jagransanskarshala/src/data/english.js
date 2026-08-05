@@ -10,7 +10,7 @@ const english = {
 
   navbar: {
     links: [
-      { id: "hero", label: "About Sanskarshala" },
+      { id: "hero", label: "About Sanskarshaala" },
       { id: "this-year", label: "This Year's Talk" },
       { id: "till-now", label: "Talks So Far" },
       { id: "contact", label: "Contact Us" },
@@ -52,14 +52,20 @@ const english = {
           },
           {
             id: "archive-2024",
-            label: "Sanskarshala 2024",
+            label: "Sanskarshaala 2024",
             link: "https://jagransanskarshala.com/sanskarshala-2024/",
           },
           {
             id: "archive-2025",
-            label: "Sanskarshala 2025",
+            label: "Sanskarshaala 2025",
             link: "https://jagransanskarshala.com/jss2025/",
-            subDropdown: [{ id: "gallery-2025", label: "Gallery", link: "/gallery?year=2025" }],
+            subDropdown: [
+              {
+                id: "gallery-2025",
+                label: "Gallery",
+                link: "/gallery?year=2025",
+              },
+            ],
           },
         ],
       },
@@ -71,14 +77,14 @@ const english = {
     highlight: "Digital\n",
     suffix: "Conduct",
     primaryBtn: "Read This Year's Talk",
-    secondaryBtn: "Know About Sanskarshala",
+    secondaryBtn: "Know About Sanskarshaala",
   },
 
   about: {
     headingMain: "About",
-    headingHighlight: "Sanskarshala",
+    headingHighlight: "Sanskarshaala",
     paragraph:
-      "For over a decade, Jagran Sanskarshala has been empowering young minds with the values, skills, and vision needed to build a stronger tomorrow. Launched in 2010, the initiative proudly enters its 17th edition, continuing its mission of shaping responsible, confident, and future-ready youth. As an extension of Dainik Jagran's enduring commitment to nation-building, Jagran Sanskarshala goes beyond journalism to create meaningful social impact through active community engagement. Rooted in Jagran's ethos, the program inspires teenagers and young citizens to become compassionate leaders and responsible change-makers. By nurturing character, encouraging social responsibility, and fostering civic values, Jagran Sanskarshala is not just preparing the next generation for success—it is empowering them to build a better, stronger, and more inclusive India.",
+      "For over a decade, Jagran Sanskarshaala has been empowering young minds with the values, skills, and vision needed to build a stronger tomorrow. Launched in 2010, the initiative proudly enters its 17th edition, continuing its mission of shaping responsible, confident, and future-ready youth. As an extension of Dainik Jagran's enduring commitment to nation-building, Jagran Sanskarshaala goes beyond journalism to create meaningful social impact through active community engagement. Rooted in Jagran's ethos, the program inspires teenagers and young citizens to become compassionate leaders and responsible change-makers. By nurturing character, encouraging social responsibility, and fostering civic values, Jagran Sanskarshaala is not just preparing the next generation for success—it is empowering them to build a better, stronger, and more inclusive India.",
     highlight: "",
     button: "Learn More",
   },
@@ -87,7 +93,7 @@ const english = {
     headingMain: "This Year's",
     headingHighlight: "Talk",
     paragraph:
-      'Today\'s adolescents are the first generation of true digital natives, where digital is no longer an external tool but an integral part of everyday life. However, the challenges of the infinite digital world extend far beyond those of the physical world. To help young minds understand these challenges and explore practical, rational solutions, the theme of Sanskarshala 2026 is "Digital Consciousness." Through stories, articles, and discussions, Sanskarshala will encourage adolescents to reflect on how digital behaviours influence their attention, relationships, family bonding, conversations, reading habits, self-reflection, and overall well-being.',
+      'Today\'s adolescents are the first generation of true digital natives, where digital is no longer an external tool but an integral part of everyday life. However, the challenges of the infinite digital world extend far beyond those of the physical world. To help young minds understand these challenges and explore practical, rational solutions, the theme of Sanskarshaala 2026 is "Digital Consciousness." Through stories, articles, and discussions, Sanskarshaala will encourage adolescents to reflect on how digital behaviours influence their attention, relationships, family bonding, conversations, reading habits, self-reflection, and overall well-being.',
   },
 
   yearTalk: {
@@ -110,7 +116,7 @@ const english = {
 
   surveyCTA: {
     badge: "Share Your Voice",
-    headingMain: "Take the Sanskarshala",
+    headingMain: "Take the Sanskarshaala",
     headingHighlight: "2026 Survey",
     description:
       "Your perspective matters! Take a quick 2-minute survey to help us empower young minds and build a stronger, value-driven future together.",
@@ -178,12 +184,12 @@ const english = {
 
   footer: {
     tagline: "For a Prosperous Society and a Strong Nation",
-    rights: "Jagran Sanskarshala. All Rights Reserved.",
+    rights: "Jagran Sanskarshaala. All Rights Reserved.",
     email: "info@jagransanskarsala.com",
   },
 
   welcomePopup: {
-    heading: "Welcome to Jagran Sanskarshala",
+    heading: "Welcome to Jagran Sanskarshaala",
     description:
       "Join us in exploring digital consciousness and making a positive impact in the digital world.",
     button: "Get Started",

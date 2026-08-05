@@ -207,11 +207,10 @@ export default function Navbar() {
 
       {/* Mobile drawer */}
       <div
-        className={`lg:hidden fixed inset-0 z-[60] transition-opacity duration-300 ${
-          menuOpen
-            ? "opacity-100 pointer-events-auto"
-            : "opacity-0 pointer-events-none"
-        }`}
+        className={`lg:hidden fixed inset-0 z-[60] transition-opacity duration-300 ${menuOpen
+          ? "opacity-100 pointer-events-auto"
+          : "opacity-0 pointer-events-none"
+          }`}
       >
         {/* Backdrop */}
         <div
