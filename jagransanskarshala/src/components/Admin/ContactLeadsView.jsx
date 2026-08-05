@@ -72,8 +72,8 @@ export default function ContactLeadsView() {
   const fetchBackendLeads = async () => {
     setIsLoading(true);
     try {
-      const API_BASE =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+      const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+      const API_BASE = process.env.NEXT_PUBLIC_API_URL || `${BACKEND}/api/v1`;
       const res = await fetch(`${API_BASE}/contact/all`);
       const result = await res.json();
 

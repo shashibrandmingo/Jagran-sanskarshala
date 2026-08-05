@@ -150,8 +150,8 @@ export default function ContactUs() {
     setIsSubmitting(true);
 
     try {
-      const API_BASE =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+      const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+      const API_BASE = process.env.NEXT_PUBLIC_API_URL || `${BACKEND}/api/v1`;
 
       const response = await fetch(`${API_BASE}/contact/submit`, {
         method: "POST",
