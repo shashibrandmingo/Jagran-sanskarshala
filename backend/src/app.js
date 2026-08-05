@@ -91,6 +91,7 @@ import galleryRoutes from "./routes/galleryRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import contactRoutes from "./routes/contactRoutes.js";
 import storyRoutes from "./routes/storyRoutes.js";
+import certificateRoutes from "./routes/certificateRoutes.js";
 
 /* ================================
    API Routes
@@ -102,6 +103,7 @@ app.use(`${API_VERSION}/gallery`, galleryRoutes);
 app.use(`${API_VERSION}/notifications`, notificationRoutes);
 app.use(`${API_VERSION}/contact`, contactRoutes);
 app.use(`${API_VERSION}/stories`, storyRoutes);
+app.use(`${API_VERSION}/certificate`, certificateRoutes);
 
 /* ================================
    404 Route
