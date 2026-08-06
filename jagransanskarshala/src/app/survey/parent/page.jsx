@@ -183,7 +183,7 @@ function SearchableSelect({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [customMode, setCustomMode] = useState(false);
+  const [isTypingCustom, setIsTypingCustom] = useState(false);
   const [customText, setCustomText] = useState("");
   const containerRef = useRef(null);
   const inputRef = useRef(null);
@@ -200,18 +200,25 @@ function SearchableSelect({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Sync customMode if value is set/cleared from outside
+  // Sync custom text when value changes
   useEffect(() => {
     if (!value) {
-      setCustomMode(false);
       setCustomText("");
+      setIsTypingCustom(false);
+    } else {
+      const isKnown = options.some(
+        (o) => (typeof o === "object" ? o.value : o) === value,
+      );
+      if (!isKnown && value !== "Other / अन्य" && value !== "Other") {
+        setCustomText(value);
+        setIsTypingCustom(true);
+      }
     }
-  }, [value]);
+  }, [value, options]);
 
   const getLabel = (opt) => (typeof opt === "object" ? opt.label : opt);
   const getValue = (opt) => (typeof opt === "object" ? opt.value : opt);
 
-  // Prepare options with "Other / अन्य" and "Type Here... / यहाँ टाइप करें ✎" at bottom
   const displayOptions = useMemo(() => {
     if (!allowCustom) return options;
 
@@ -220,11 +227,7 @@ function SearchableSelect({
       return v !== "Other / अन्य" && v !== "Other" && v !== "__TYPE_HERE__";
     });
 
-    return [
-      ...cleanList,
-      { value: "Other / अन्य", label: "Other / अन्य" },
-      { value: "__TYPE_HERE__", label: "Type Here... / यहाँ टाइप करें ✎" },
-    ];
+    return [...cleanList, { value: "Other / अन्य", label: "Other / अन्य" }];
   }, [options, allowCustom]);
 
   const filteredOptions = displayOptions.filter((opt) =>
@@ -232,13 +235,13 @@ function SearchableSelect({
   );
 
   const selectedLabel = useMemo(() => {
-    if (!value || customMode) return null;
+    if (!value) return null;
     const found = displayOptions.find((o) => getValue(o) === value);
     return found ? getLabel(found) : value;
-  }, [value, customMode, displayOptions]);
+  }, [value, displayOptions]);
 
   const handleToggle = () => {
-    if (disabled || customMode) return;
+    if (disabled) return;
     setIsOpen((prev) => {
       const nextState = !prev;
       if (nextState && showSearch) {
@@ -250,80 +253,40 @@ function SearchableSelect({
   };
 
   const handleOptionClick = (val) => {
-    if (val === "__TYPE_HERE__") {
-      setCustomMode(true);
-      setCustomText("");
-      onChange({ target: { name, value: "Other" } });
-      setIsOpen(false);
-      setQuery("");
-      setTimeout(() => customInputRef.current?.focus(), 80);
-    } else if (val === "Other / अन्य" || val === "Other") {
-      setCustomMode(false);
-      onChange({ target: { name, value: "Other / अन्य" } });
-      setIsOpen(false);
-      setQuery("");
+    if (allowCustom && (val === "Other / अन्य" || val === "Other")) {
+      if (isTypingCustom) {
+        onChange({
+          target: { name, value: customText.trim() || "Other / अन्य" },
+        });
+        setIsOpen(false);
+      } else {
+        setIsTypingCustom(true);
+        onChange({
+          target: { name, value: customText ? customText : "Other / अन्य" },
+        });
+        setTimeout(() => customInputRef.current?.focus(), 80);
+      }
     } else {
-      setCustomMode(false);
+      setIsTypingCustom(false);
+      setCustomText("");
       onChange({ target: { name, value: val } });
       setIsOpen(false);
       setQuery("");
     }
   };
 
-  const handleCustomChange = (e) => {
-    const text = e.target.value;
-    setCustomText(text);
-    onChange({ target: { name, value: text ? text : "Other" } });
+  const handleCustomInputChange = (e) => {
+    const val = e.target.value;
+    setCustomText(val);
+    onChange({ target: { name, value: val ? val : "Other / अन्य" } });
   };
 
-  const handleBackToSelect = () => {
-    setCustomMode(false);
-    setCustomText("");
-    onChange({ target: { name, value: "" } });
+  const handleConfirmCustom = () => {
+    onChange({
+      target: { name, value: customText.trim() || "Other / अन्य" },
+    });
+    setIsOpen(false);
   };
-
-  // ── SINGLE MAIN FIELD CONVERTS TO INPUT ON TYPE HERE ──────────────────────────
-  if (customMode && allowCustom) {
-    return (
-      <div className="relative w-full min-w-0" ref={containerRef}>
-        {label && (
-          <label className="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
-            {label} {required && <span className="text-red-500">*</span>}
-          </label>
-        )}
-        <div className="relative w-full">
-          <input
-            ref={customInputRef}
-            type="text"
-            value={customText}
-            onChange={handleCustomChange}
-            placeholder="Type here... / यहाँ टाइप करें"
-            autoComplete="off"
-            className={`w-full pl-3.5 pr-10 py-3 text-xs sm:text-sm rounded-xl border font-semibold ${
-              error
-                ? "border-red-500 bg-red-50/20 ring-1 ring-red-200"
-                : customText
-                  ? "border-emerald-500/80 bg-emerald-50/5"
-                  : "border-[var(--primary)] ring-2 ring-red-100"
-            } focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] outline-none transition bg-white text-gray-900`}
-          />
-          <button
-            type="button"
-            onClick={handleBackToSelect}
-            title="Back to dropdown list / वापस लिस्ट से चुनें"
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-[var(--primary)] hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
-          >
-            <FiX className="text-base" />
-          </button>
-        </div>
-        {error && (
-          <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
-            <FiAlertCircle /> {error}
-          </p>
-        )}
-      </div>
-    );
-  }
 
   return (
     <div className="relative w-full min-w-0" ref={containerRef}>
@@ -383,7 +346,7 @@ function SearchableSelect({
                 </div>
               </div>
             )}
-            <div className="max-h-52 overflow-y-auto p-1.5 space-y-0.5 [scrollbar-width:thin]">
+            <div className="max-h-52 overflow-y-auto p-1.5 space-y-1 [scrollbar-width:thin]">
               {filteredOptions.length === 0 ? (
                 <div className="px-3.5 py-3 text-xs text-gray-400 text-center">
                   No matching options found
@@ -394,25 +357,51 @@ function SearchableSelect({
                   const lbl = getLabel(opt);
                   const isSelected = val === value;
                   const isOther = val === "Other / अन्य" || val === "Other";
-                  const isTypeHere = val === "__TYPE_HERE__";
 
                   return (
-                    <div
-                      key={`${val}-${idx}`}
-                      onClick={() => handleOptionClick(val)}
-                      className={`px-3.5 py-2.5 rounded-xl text-xs sm:text-sm cursor-pointer transition-colors flex items-center justify-between font-semibold ${
-                        isSelected
-                          ? "bg-red-50 text-[var(--primary)] font-bold"
-                          : isTypeHere
-                            ? "bg-red-50/60 text-[var(--primary)] hover:bg-red-100/70 font-bold border border-red-100"
+                    <div key={`${val}-${idx}`}>
+                      <div
+                        onClick={() => handleOptionClick(val)}
+                        className={`px-3.5 py-2.5 rounded-xl text-xs sm:text-sm cursor-pointer transition-colors flex items-center justify-between font-semibold ${
+                          isSelected || (isOther && isTypingCustom)
+                            ? "bg-red-50 text-[var(--primary)] font-bold"
                             : isOther
                               ? "text-[var(--primary)] hover:bg-red-50/50 italic font-bold"
                               : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
-                      }`}
-                    >
-                      <span className="truncate">{lbl}</span>
-                      {isSelected && (
-                        <FiCheck className="text-[var(--primary)] text-sm shrink-0" />
+                        }`}
+                      >
+                        <span className="truncate">{lbl}</span>
+                        {isSelected && !isTypingCustom && (
+                          <FiCheck className="text-[var(--primary)] text-sm shrink-0" />
+                        )}
+                      </div>
+
+                      {/* Inline Custom Input inside same dropdown list when Other is clicked */}
+                      {allowCustom && isOther && isTypingCustom && (
+                        <div className="relative mt-1.5 px-0.5 pb-1">
+                          <input
+                            ref={customInputRef}
+                            type="text"
+                            value={customText}
+                            onChange={handleCustomInputChange}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                handleConfirmCustom();
+                              }
+                            }}
+                            placeholder="Type Here... / यहाँ टाइप करें ✎"
+                            className="w-full pl-3.5 pr-10 py-2.5 text-xs sm:text-sm rounded-xl border border-red-300 focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] outline-none bg-red-50/40 text-gray-900 font-semibold"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleConfirmCustom}
+                            title="Confirm & Select / ओके करें"
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 bg-[var(--primary)] hover:bg-red-700 text-white rounded-lg transition-colors cursor-pointer flex items-center justify-center shadow-xs"
+                          >
+                            <FiCheck className="text-xs" />
+                          </button>
+                        </div>
                       )}
                     </div>
                   );

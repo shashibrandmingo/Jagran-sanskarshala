@@ -3,6 +3,8 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import {
   FaCalendarDays,
+  FaRegCalendar,
+  FaSliders,
   FaChevronDown,
   FaChevronUp,
   FaChevronLeft,
@@ -413,35 +415,38 @@ export default function AnalyticsView({ liveSurveys = [] }) {
             <button
               type="button"
               onClick={() => setComparisonMode("month")}
-              className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 ${
                 comparisonMode === "month"
                   ? "bg-white text-[var(--primary)] shadow-xs"
                   : "text-gray-600 hover:text-gray-900"
               }`}
             >
-              📅 Month vs Month (माह तुलना)
+              <FaCalendarDays className="text-xs" />
+              <span>Month vs Month (माह तुलना)</span>
             </button>
             <button
               type="button"
               onClick={() => setComparisonMode("week")}
-              className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 ${
                 comparisonMode === "week"
                   ? "bg-white text-[var(--primary)] shadow-xs"
                   : "text-gray-600 hover:text-gray-900"
               }`}
             >
-              🗓️ Week vs Week (सप्ताह तुलना)
+              <FaRegCalendar className="text-xs" />
+              <span>Week vs Week (सप्ताह तुलना)</span>
             </button>
             <button
               type="button"
               onClick={() => setComparisonMode("custom")}
-              className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 ${
                 comparisonMode === "custom"
                   ? "bg-white text-[var(--primary)] shadow-xs"
                   : "text-gray-600 hover:text-gray-900"
               }`}
             >
-              ⚙️ Custom Range vs Range
+              <FaSliders className="text-xs" />
+              <span>Custom Range vs Range</span>
             </button>
           </div>
 

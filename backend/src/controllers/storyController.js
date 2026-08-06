@@ -122,8 +122,9 @@ export const createOrUpdateStory = asyncHandler(async (req, res) => {
     const cloudinaryResponse = await uploadOnCloudinary(req.file.path, "jagran_stories");
     if (cloudinaryResponse) {
       // Delete old Cloudinary image if updating existing story
-      if (imagePublicId) {
-        await deleteFromCloudinary(imagePublicId);
+      const oldImageTarget = story ? (story.imagePublicId || story.image) : null;
+      if (oldImageTarget) {
+        await deleteFromCloudinary(oldImageTarget);
       }
       imageUrl = cloudinaryResponse.secure_url;
       imagePublicId = cloudinaryResponse.public_id;
@@ -213,8 +214,9 @@ export const deleteStory = asyncHandler(async (req, res) => {
     throw ApiError.notFound(`Story with ID ${id} not found`);
   }
 
-  if (story.imagePublicId) {
-    await deleteFromCloudinary(story.imagePublicId);
+  const targetImage = story.imagePublicId || story.image;
+  if (targetImage) {
+    await deleteFromCloudinary(targetImage);
   }
 
   await Story.deleteOne({ storyId: numStoryId });

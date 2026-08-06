@@ -48,13 +48,55 @@ export const uploadOnCloudinary = async (localFilePath, folder = "jagran_gallery
 };
 
 /**
- * Delete image from Cloudinary using public_id
- * @param {string} publicId - Cloudinary image public_id
+ * Extract Cloudinary public_id from a Cloudinary URL or return the publicId as-is
+ * @param {string} urlOrPublicId
+ * @returns {string|null}
+ */
+export const extractCloudinaryPublicId = (urlOrPublicId) => {
+  if (!urlOrPublicId || typeof urlOrPublicId !== "string") return null;
+
+  // If it's already a public_id (not a full HTTP/HTTPS URL)
+  if (!urlOrPublicId.startsWith("http://") && !urlOrPublicId.startsWith("https://")) {
+    return urlOrPublicId;
+  }
+
+  try {
+    const uploadIndex = urlOrPublicId.indexOf("/upload/");
+    if (uploadIndex === -1) return null;
+
+    let path = urlOrPublicId.substring(uploadIndex + 8); // string after "/upload/"
+
+    // Handle transformations or version numbers (e.g. "v1712345678/folder/file.jpg")
+    const parts = path.split("/");
+    if (parts[0] && /^v\d+$/.test(parts[0])) {
+      parts.shift(); // Remove version segment
+    }
+    path = parts.join("/");
+
+    // Remove file extension (.jpg, .png, .webp, etc.)
+    const lastDotIndex = path.lastIndexOf(".");
+    if (lastDotIndex !== -1) {
+      path = path.substring(0, lastDotIndex);
+    }
+
+    return path;
+  } catch (error) {
+    console.error("Error extracting public_id from URL:", error);
+    return null;
+  }
+};
+
+/**
+ * Delete image from Cloudinary using public_id or full Cloudinary URL
+ * @param {string} publicIdOrUrl - Cloudinary image public_id or image URL
  * @returns {object|null} Cloudinary deletion response
  */
-export const deleteFromCloudinary = async (publicId) => {
+export const deleteFromCloudinary = async (publicIdOrUrl) => {
   try {
+    if (!publicIdOrUrl) return null;
+    const publicId = extractCloudinaryPublicId(publicIdOrUrl);
     if (!publicId) return null;
+
     const cld = getCloudinary();
     const response = await cld.uploader.destroy(publicId);
     console.log(`🗑️ Deleted from Cloudinary: ${publicId}`);
