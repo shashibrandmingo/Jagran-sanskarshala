@@ -58,10 +58,10 @@ export async function POST(req) {
     }
 
     // SMTP Configuration from environment variables (with active fallback)
-    const host = process.env.SMTP_HOST || "smtp.gmail.com";
+    const host = process.env.SMTP_HOST || "jagranhindi.in";
     const port = parseInt(process.env.SMTP_PORT || "465", 10);
-    const user = (process.env.SMTP_USER || "pradeepgaur1825@gmail.com").trim();
-    let pass = (process.env.SMTP_PASS || "cmpyanjzpeillmwi")
+    const user = (process.env.SMTP_USER || "info@jagransanskarshala.com").trim();
+    let pass = (process.env.SMTP_PASS || "Wh3FStH8ozWlMysv")
       .replace(/^your-/i, "")
       .replace(/\s+/g, "")
       .trim();
@@ -95,8 +95,11 @@ export async function POST(req) {
     <body>
       <div class="container">
         <div class="header">
-          <div class="badge">National Digital Conduct Survey 2026</div>
-          <h1>Jagran Sanskarshala</h1>
+          <div style="background: rgba(255,255,255,0.95); display: inline-block; padding: 10px 22px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">
+            <img src="cid:jagranlogo" alt="Dainik Jagran Sanskarshala" style="max-height: 55px; width: auto; display: block;" />
+          </div>
+          <div class="badge" style="display: block; margin: 0 auto 10px auto; width: fit-content;">National Digital Conduct Survey 2026</div>
+          <h1 style="margin-top: 5px;">Jagran Sanskarshala</h1>
           <p>Building Digital Consciousness & Values</p>
         </div>
 
@@ -128,8 +131,17 @@ export async function POST(req) {
     </html>
     `;
 
-    // Process PDF Certificate Attachment
+    // Process PDF Certificate Attachment & Logo
     const attachments = [];
+    let logoPath = path.join(process.cwd(), "public", "logo.png");
+    if (fs.existsSync(logoPath)) {
+      attachments.push({
+        filename: "logo.png",
+        path: logoPath,
+        cid: "jagranlogo",
+      });
+    }
+
     if (pdfBuffer) {
       attachments.push({
         filename: `Sanskarshala_Certificate_${name.replace(/\s+/g, "_")}.pdf`,
