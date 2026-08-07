@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar/Navbar";
 import Footer from "@/components/Footer/Footer";
 import ThankYouModal from "@/components/ThankYouModal/ThankYouModal";
 import schoolsData from "@/data/schoolsData.json";
+import { QUESTIONS, calculateGrade } from "@/services/surveyQuestions";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FiUser,
@@ -33,137 +34,6 @@ const SUPPORTED_STATES = [
   "Uttarakhand",
   "Punjab",
   "Other / अन्य",
-];
-
-const QUESTIONS = [
-  {
-    id: "q1",
-    question: "Do you own a mobile phone?",
-    options: ["Yes", "No"],
-    type: "single",
-  },
-  {
-    id: "q2",
-    question: "How many hours a day you spend on your phone?",
-    options: ["1-2", "2-4", "more than 4 hrs"],
-    type: "single",
-  },
-  {
-    id: "q3",
-    question: "What kind of content you consume most on Phones?",
-    options: [
-      "Educational",
-      "Entertainment",
-      "Gaming",
-      "Social Media",
-      "News & Information",
-      "Devotional",
-    ],
-    type: "multiple",
-  },
-  {
-    id: "q4",
-    question:
-      "I need to re-read paragraphs or review information due to distractions from device notification",
-    options: ["Always", "Sometime", "Never"],
-    type: "single",
-  },
-  {
-    id: "q5",
-    question:
-      "I pick-up the phone for something Important and end-up scrolling through unnecessary content",
-    options: ["Always", "Sometime", "Never"],
-    type: "single",
-  },
-  {
-    id: "q6",
-    question: "I check my phone during in-person conversation",
-    options: ["Always", "Sometime", "Never"],
-    type: "single",
-  },
-  {
-    id: "q7",
-    question:
-      "Habit to scroll phone interrupts me from reading book or watching content on bigger screen.",
-    options: ["Always", "Sometime", "Never"],
-    type: "single",
-  },
-  {
-    id: "q8",
-    question:
-      "I find myself scrolling through my phone even if I am no longer interested or entertained.",
-    options: ["Always", "Sometime", "Never"],
-    type: "single",
-  },
-  {
-    id: "q9",
-    question:
-      "Returning to original work after phone-breaks interrupts my focus.",
-    options: ["Always", "Sometime", "Never"],
-    type: "single",
-  },
-  {
-    id: "q10",
-    question:
-      "After seeing other's post, I feel my own looks/life/ successes aren't good enough",
-    options: ["Always", "Sometime", "Never"],
-    type: "single",
-  },
-  {
-    id: "q11",
-    question:
-      "Do you feel your phone takes away time from things that matter to you?",
-    options: ["Yes", "Sometime", "No"],
-    type: "single",
-  },
-  {
-    id: "q12",
-    question: "Have you ever tried to reduce or control your phone use?",
-    options: [
-      "Yes, and it worked",
-      "Yes, but it didn't last",
-      "Thought about it, but never tried",
-      "No",
-    ],
-    type: "single",
-  },
-  {
-    id: "q13",
-    question: "When you think about your phone habits, you mostly feel",
-    options: [
-      "Frustrated with myself",
-      "A little guilty",
-      "I really don't think about it",
-      "It doesn't bother me",
-      "It's normal, everyone is like this",
-    ],
-    type: "single",
-  },
-  {
-    id: "q14",
-    question: "The biggest thing that pulls you back to the phone is?",
-    options: [
-      "Habit",
-      "Fear of Missing out",
-      "Boredom",
-      "All my friends are there",
-      "Notifications",
-      "Nothing else to do",
-    ],
-    type: "single",
-  },
-  {
-    id: "q15",
-    question:
-      "How much infinite short-format content on your phone affect your ability to deeply understand complex issues?",
-    options: [
-      "Completely prevents deep understanding",
-      "Significantly reduces my understanding",
-      "Has a minor effect",
-      "Does not affect my understanding at all",
-    ],
-    type: "single",
-  },
 ];
 
 // Searchable Select Dropdown — supports inline custom text mode via allowCustom prop
@@ -443,7 +313,7 @@ export default function StudentSurveyPage() {
   const [answers, setAnswers] = useState({});
   const [agreed, setAgreed] = useState(false);
   const [isThankYouOpen, setIsThankYouOpen] = useState(false);
-  const [score, setScore] = useState(0);
+  const [calculatedGrade, setCalculatedGrade] = useState("A");
   const [submittedName, setSubmittedName] = useState("");
   const [submittedEmail, setSubmittedEmail] = useState("");
   const [toast, setToast] = useState(null);
@@ -672,22 +542,8 @@ export default function StudentSurveyPage() {
       return;
     }
 
-    // Calculate score by matching user answers against ideal dummy answers
-    let matchedCount = 0;
-    QUESTIONS.forEach((q) => {
-      const userAns = answers[q.id];
-      if (q.type === "single" && userAns === q.idealAnswer) {
-        matchedCount += 1;
-      } else if (
-        q.type === "multiple" &&
-        Array.isArray(userAns) &&
-        userAns.includes(q.idealAnswer)
-      ) {
-        matchedCount += 1;
-      }
-    });
-
-    const calculatedScore = Math.round((matchedCount / QUESTIONS.length) * 100);
+    // Calculate grade based on answers (Q2-Q15)
+    const { grade } = calculateGrade(answers);
 
     // Call Backend API to Save in MongoDB
     const backendUrl =
@@ -709,6 +565,7 @@ export default function StudentSurveyPage() {
         city: form.city,
         school: form.school || "-",
         answers,
+        grade,
       }),
     })
       .then(async (res) => {
@@ -737,7 +594,7 @@ export default function StudentSurveyPage() {
         // On Success — display thank you modal with certificate
         setSubmittedName(`${form.firstName.trim()} ${form.lastName.trim()}`);
         setSubmittedEmail(form.email.trim());
-        setScore(calculatedScore);
+        setCalculatedGrade(grade);
         setIsThankYouOpen(true);
 
         // Clear all input fields and questionnaire responses
@@ -1282,7 +1139,7 @@ export default function StudentSurveyPage() {
         onClose={() => setIsThankYouOpen(false)}
         participantName={submittedName}
         participantEmail={submittedEmail}
-        questionnaireScore={score}
+        grade={calculatedGrade}
       />
     </div>
   );

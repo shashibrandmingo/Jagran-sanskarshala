@@ -61,6 +61,11 @@ const surveySubmissionSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.Mixed,
       default: {},
     },
+    grade: {
+      type: String,
+      enum: ["A++", "A+", "A"],
+      default: "A",
+    },
   },
   {
     timestamps: true,

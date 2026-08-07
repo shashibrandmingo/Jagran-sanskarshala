@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   FaTableCells,
   FaChartPie,
@@ -12,12 +12,15 @@ import {
   FaXmark,
   FaImages,
   FaNewspaper,
+  FaGraduationCap,
 } from "react-icons/fa6";
 import Logo from "@/assets/images/Logo-english.png";
 
 export default function AdminSidebar({ sidebarOpen, setSidebarOpen, activeMenu, setActiveMenu }) {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const currentTab = searchParams.get("tab") || "survey-data";
 
   const handleLogout = () => {
     localStorage.removeItem("adminToken");
@@ -34,6 +37,13 @@ export default function AdminSidebar({ sidebarOpen, setSidebarOpen, activeMenu, 
       subLabel: "सर्वे फॉर्म डेटा",
       icon: FaTableCells,
       href: "/admin/dashboard",
+    },
+    {
+      id: "survey-grades",
+      label: "Survey Grades & Responses",
+      subLabel: "सर्वे उत्तर एवं ग्रेड",
+      icon: FaGraduationCap,
+      href: "/admin/dashboard?tab=survey-grades",
     },
     {
       id: "story-publish",
@@ -117,6 +127,10 @@ export default function AdminSidebar({ sidebarOpen, setSidebarOpen, activeMenu, 
               const Icon = item.icon;
               const isSelected = activeMenu
                 ? activeMenu === item.id
+                : item.id === "survey-grades"
+                ? currentTab === "survey-grades"
+                : item.id === "survey-data"
+                ? currentTab === "survey-data" && pathname === "/admin/dashboard"
                 : pathname === item.href ||
                   (item.id === "gallery-mgmt" && pathname.startsWith("/admin/gallery")) ||
                   (item.id === "story-publish" && pathname.startsWith("/admin/publish-story")) ||

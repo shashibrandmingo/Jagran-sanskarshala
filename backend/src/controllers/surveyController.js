@@ -21,6 +21,7 @@ export const submitSurvey = async (req, res) => {
       city,
       school,
       answers,
+      grade,
     } = req.body;
 
     // Basic Validations
@@ -77,6 +78,7 @@ export const submitSurvey = async (req, res) => {
       city: city.trim(),
       school: school || "-",
       answers: answers || {},
+      grade: ["A++", "A+", "A"].includes(grade) ? grade : "A",
     });
 
     return res.status(201).json({
@@ -174,6 +176,8 @@ export const getAllSurveys = async (req, res) => {
       state: item.state,
       city: item.city,
       school: item.school,
+      grade: item.grade || "A",
+      answers: item.answers || {},
       submittedOn: item.createdAt
         ? new Date(item.createdAt).toLocaleString("en-IN", {
             day: "2-digit",

@@ -4,9 +4,19 @@ import fs from "fs";
 import path from "path";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 
+const formatTitleCase = (str) => {
+  if (!str) return "Valued Student";
+  return str
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};
+
 export async function POST(req) {
   try {
-    const { email, participantName } = await req.json();
+    const { email, participantName, grade } = await req.json();
 
     if (!email || !email.includes("@")) {
       return NextResponse.json(
@@ -15,15 +25,32 @@ export async function POST(req) {
       );
     }
 
-    const name = participantName || "Valued Student";
+    const name = formatTitleCase(participantName);
+    const safeGrade = ["A++", "A+", "A"].includes(grade) ? grade : "A";
 
-    // 1. Generate Personalized PDF from Template
-    let templatePath = path.join(
-      process.cwd(),
-      "public",
-      "Certificatefinal.pdf",
-    );
+    // 1. Select correct Certificate PDF based on grade
+    const gradeFileMap = {
+      "A++": "CertificatefinalA++.pdf",
+      "A+": "CertificatefinalA+.pdf",
+      A: "CertificatefinalA.pdf",
+    };
 
+    const certificateFile = gradeFileMap[safeGrade] || "CertificatefinalA.pdf";
+    let templatePath = path.join(process.cwd(), "public", certificateFile);
+
+    // Fallback to generic certificate if grade-specific not found
+    if (!fs.existsSync(templatePath)) {
+      console.warn(
+        `[EMAIL] Grade-specific certificate not found: ${certificateFile}, falling back to Certificatefinal.pdf`
+      );
+      templatePath = path.join(
+        process.cwd(),
+        "public",
+        "Certificatefinal.pdf",
+      );
+    }
+
+    // 2. Generate Personalized PDF from Template
     let pdfBuffer;
     if (fs.existsSync(templatePath)) {
       const existingPdfBytes = fs.readFileSync(templatePath);
@@ -32,21 +59,22 @@ export async function POST(req) {
       const page = pdfDoc.getPages()[0];
       const { width } = page.getSize();
 
-      // Calculate font size & position — name appears AFTER "Mr. / Ms." on the line
-      let fontSize = 24;
-      if (name.length > 25) fontSize = 20;
-      if (name.length > 35) fontSize = 16;
+      // Calculate font size & center positioning on the dashed line after "Mr. / Ms."
+      let fontSize = 22;
+      if (name.length > 25) fontSize = 18;
+      if (name.length > 35) fontSize = 15;
 
-      // "Mr. / Ms." text ends around x=296, dashed line runs till x=602 (measured from certificate template)
-      const mrMsEndX = 296;
-      const lineEndX = 602;
+      const mrMsEndX = 315; // Dashed line starts after "Mr. / Ms."
+      const lineEndX = 610; // Dashed line ends
+      const availableWidth = lineEndX - mrMsEndX;
       const textWidth = font.widthOfTextAtSize(name, fontSize);
-      const availableWidth = lineEndX - mrMsEndX; // space after Mr./Ms. till end of dashed line
-      const x = mrMsEndX + (availableWidth - textWidth) / 2; // center within remaining space
-      const y = 210; // Baseline sits directly on top of the dashed line
+
+      // Center name horizontally across the dashed line segment
+      const x = mrMsEndX + Math.max(0, (availableWidth - textWidth) / 2);
+      const y = 202; // Baseline sits cleanly on top of the dashed line
 
       page.drawText(name, {
-        x: Math.max(mrMsEndX, x), // ensure never goes before Mr./Ms.
+        x,
         y,
         size: fontSize,
         font,
@@ -70,6 +98,9 @@ export async function POST(req) {
 
     console.log(`[SMTP CONFIG] host=${host} port=${port} user=${user} passLength=${pass.length}`);
 
+    // Grade display text for email
+    const gradeText = safeGrade;
+
     // High-quality HTML Email Template
     const htmlContent = `
     <!DOCTYPE html>
@@ -88,6 +119,7 @@ export async function POST(req) {
         .card { background: #fcf8ee; border: 1px solid #f3e8c8; border-radius: 14px; padding: 20px; margin: 25px 0; text-align: center; }
         .card h3 { margin: 0 0 8px 0; color: #a01013; font-size: 18px; }
         .card p { margin: 0; font-size: 13px; color: #64748b; }
+        .grade-badge { display: inline-block; background: linear-gradient(135deg, #a01013, #c59b27); color: white; font-size: 22px; font-weight: 900; padding: 8px 20px; border-radius: 12px; margin: 10px 0; letter-spacing: 1px; }
         .footer { background: #f1f5f9; padding: 20px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; }
         .badge { display: inline-block; background: rgba(255,255,255,0.2); padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: bold; text-transform: uppercase; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.4); }
       </style>
@@ -111,8 +143,14 @@ export async function POST(req) {
           <p>Your honest responses contribute directly to shaping national digital habit awareness programs across schools in India.</p>
 
           <div class="card">
-            <h3>🎓 Official Participation Certificate Attached</h3>
-            <p>Your official Certificate of Participation is attached to this email as a PDF file (${name.replace(/\s+/g, "_")}_Certificate.pdf).</p>
+            <h3>🎓 Your Digital Behaviour Grade</h3>
+            <div class="grade-badge">${gradeText}</div>
+            <p style="margin-top: 10px;">Based on your survey responses, you have been awarded Grade <strong>${gradeText}</strong> for your Digital Behaviour.</p>
+          </div>
+
+          <div class="card">
+            <h3>📄 Official Participation Certificate Attached</h3>
+            <p>Your official Certificate of Participation (Grade ${gradeText}) is attached to this email as a PDF file.</p>
           </div>
 
           <p>We encourage you to download, print, or share your certificate with pride!</p>
@@ -180,19 +218,19 @@ export async function POST(req) {
     const info = await transporter.sendMail({
       from,
       to: email,
-      subject: `🎓 Official Participation Certificate - Dainik Jagran Sanskarshala 2026`,
+      subject: `🎓 Grade ${gradeText} - Official Certificate - Dainik Jagran Sanskarshala 2026`,
       html: htmlContent,
       attachments,
     });
 
     console.log(
-      `[EMAIL DISPATCH SUCCESS] MessageId: ${info.messageId} to ${email}`,
+      `[EMAIL DISPATCH SUCCESS] MessageId: ${info.messageId} to ${email} (Grade: ${gradeText})`,
     );
 
     return NextResponse.json({
       success: true,
       messageId: info.messageId,
-      message: `Certificate & Thank You Email sent successfully to ${email}`,
+      message: `Certificate (Grade ${gradeText}) & Thank You Email sent successfully to ${email}`,
     });
   } catch (error) {
     console.error("Error sending certificate email:", error);

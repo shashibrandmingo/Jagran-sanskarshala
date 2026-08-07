@@ -41,6 +41,7 @@ import PublishStoryView from "@/components/Admin/PublishStoryView";
 import AnalyticsView from "@/components/Admin/AnalyticsView";
 import ContactLeadsView from "@/components/Admin/ContactLeadsView";
 import PushNotificationView from "@/components/Admin/PushNotificationView";
+import SurveyGradesView from "@/components/Admin/SurveyGradesView";
 import { storiesData as initialStories } from "@/services/stories";
 
 // Helper functions for Date calculations
@@ -656,6 +657,11 @@ function AdminDashboardContent() {
 
   const getHeaderInfo = () => {
     switch (currentTab) {
+      case "survey-grades":
+        return {
+          title: "Survey Grades & Responses",
+          subtitle: "सर्वे उत्तर एवं ग्रेड रिपोर्ट",
+        };
       case "story-publish":
         return {
           title: "Publish Story",
@@ -689,36 +695,42 @@ function AdminDashboardContent() {
     <>
       {/* Top Header Banner */}
       <header className="p-6 sm:p-8 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
-              {headerInfo.title}
-            </h1>
-            <p className="text-xs sm:text-sm text-gray-500 font-bold mt-0.5">
-              {headerInfo.subtitle}
-            </p>
-          </div>
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
+            {headerInfo.title}
+          </h1>
+          <p className="text-xs sm:text-sm text-gray-500 font-bold mt-0.5">
+            {headerInfo.subtitle}
+          </p>
+        </div>
 
-          <div className="flex items-center gap-3">
-            {currentTab === "survey-data" && (
-              <button
-                onClick={handleExportData}
-                className="bg-white border border-gray-200 hover:border-gray-300 px-4 py-2 rounded-2xl text-xs font-bold text-gray-700 shadow-2xs hover:bg-gray-50 transition-all flex items-center gap-2 cursor-pointer active:scale-95"
-                title={selectedRows.length > 0 ? `Export ${selectedRows.length} selected entries` : "Export all filtered data"}
-              >
-                <FaFileExport className="text-[var(--primary)]" />
-                <span>
-                  {selectedRows.length > 0
-                    ? `Export Selected (${selectedRows.length})`
-                    : "Export"}
-                </span>
-              </button>
-            )}
-          </div>
-        </header>
+        <div className="flex items-center gap-3">
+          {(currentTab === "survey-data" || currentTab === "survey-grades") && (
+            <button
+              onClick={handleExportData}
+              className="bg-white border border-gray-200 hover:border-gray-300 px-4 py-2.5 rounded-2xl text-xs font-bold text-gray-700 shadow-2xs hover:bg-gray-50 transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+              title={
+                selectedRows.length > 0
+                  ? `Export ${selectedRows.length} selected entries`
+                  : "Export all filtered data"
+              }
+            >
+              <FaFileExport className="text-[var(--primary)] text-sm" />
+              <span>
+                {selectedRows.length > 0
+                  ? `Export Selected (${selectedRows.length})`
+                  : "Export to Excel"}
+              </span>
+            </button>
+          )}
+        </div>
+      </header>
 
         {/* Content Container */}
         <div className="px-4 sm:px-8 pb-8 space-y-6">
-          {currentTab === "story-publish" ? (
+          {currentTab === "survey-grades" ? (
+            <SurveyGradesView liveSurveys={liveSurveys} />
+          ) : currentTab === "story-publish" ? (
             <PublishStoryView />
           ) : currentTab === "analytics" ? (
             <AnalyticsView liveSurveys={liveSurveys} />
