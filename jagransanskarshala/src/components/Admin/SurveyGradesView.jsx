@@ -25,7 +25,17 @@ import {
 } from "react-icons/fa6";
 import * as XLSX from "xlsx";
 import schoolsData from "@/data/schoolsData.json";
-import { QUESTIONS } from "@/services/surveyQuestions";
+import { QUESTIONS, calculateGrade } from "@/services/surveyQuestions";
+
+const getItemGrade = (item) => {
+  if (item.grade && ["A++", "A+", "A"].includes(item.grade)) {
+    return item.grade;
+  }
+  if (item.answers && typeof item.answers === "object" && Object.keys(item.answers).length > 0) {
+    return calculateGrade(item.answers);
+  }
+  return "A";
+};
 
 // Helper for date comparison & formatting
 const isSameDay = (d1, d2) => {
@@ -180,13 +190,14 @@ export default function SurveyGradesView({ liveSurveys = [] }) {
 
       // Grade Filter
       if (gradeFilter !== "all") {
-        const itemGrade = item.grade || "A";
+        const itemGrade = getItemGrade(item);
         if (itemGrade !== gradeFilter) return false;
       }
 
       // Search Query
       if (searchQuery.trim() !== "") {
         const q = searchQuery.trim().toLowerCase();
+        const itemGrade = getItemGrade(item);
         const fieldsToSearch = [
           item.id,
           item._id,
@@ -195,7 +206,7 @@ export default function SurveyGradesView({ liveSurveys = [] }) {
           `${item.firstName || ""} ${item.lastName || ""}`,
           item.email,
           item.mobile,
-          item.grade,
+          itemGrade,
           item.type,
           item.school,
           item.city,
@@ -263,7 +274,7 @@ export default function SurveyGradesView({ liveSurveys = [] }) {
     let countA0 = 0;
 
     liveSurveys.forEach((item) => {
-      const g = item.grade || "A";
+      const g = getItemGrade(item);
       if (g === "A++") countA2++;
       else if (g === "A+") countA1++;
       else countA0++;
@@ -325,7 +336,7 @@ export default function SurveyGradesView({ liveSurveys = [] }) {
       const row = {
         "S.No": idx + 1,
         "ID": item.id || "-",
-        "Grade": item.grade || "A",
+        "Grade": getItemGrade(item),
         "Type": item.type || "-",
         "First Name": item.firstName || "-",
         "Last Name": item.lastName || "-",
@@ -785,7 +796,7 @@ export default function SurveyGradesView({ liveSurveys = [] }) {
                 paginatedData.map((row) => {
                   const rowId = getRowId(row);
                   const isChecked = selectedRows.includes(rowId);
-                  const rowGrade = row.grade || "A";
+                  const rowGrade = getItemGrade(row);
 
                   return (
                     <tr
@@ -943,14 +954,14 @@ export default function SurveyGradesView({ liveSurveys = [] }) {
               <div className="flex items-center gap-3">
                 <div
                   className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-md ${
-                    selectedSubmission.grade === "A++"
+                    getItemGrade(selectedSubmission) === "A++"
                       ? "bg-gradient-to-br from-emerald-500 to-green-700 shadow-emerald-500/30"
-                      : selectedSubmission.grade === "A+"
+                      : getItemGrade(selectedSubmission) === "A+"
                       ? "bg-gradient-to-br from-blue-600 to-indigo-700 shadow-blue-500/30"
                       : "bg-gradient-to-br from-amber-500 to-red-600 shadow-amber-500/30"
                   }`}
                 >
-                  {selectedSubmission.grade || "A"}
+                  {getItemGrade(selectedSubmission)}
                 </div>
                 <div>
                   <h3 className="text-lg font-black text-gray-900">
