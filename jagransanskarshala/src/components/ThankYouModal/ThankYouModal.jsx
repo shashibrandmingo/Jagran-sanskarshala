@@ -199,11 +199,10 @@ export default function ThankYouModal({
             {/* Email Dispatch Banner */}
             {participantEmail && (
               <div
-                className={`w-full px-3 py-2 rounded-xl border flex items-center gap-2 text-left text-[11px] sm:text-xs ${
-                  emailStatus === "sent"
+                className={`w-full px-3 py-2 rounded-xl border flex items-center gap-2 text-left text-[11px] sm:text-xs ${emailStatus === "sent"
                     ? "bg-emerald-50/90 border-emerald-200 text-emerald-900"
                     : "bg-amber-50/90 border-amber-200 text-amber-900"
-                }`}
+                  }`}
               >
                 <FiMail className="text-sm shrink-0 opacity-80" />
                 <div className="flex-1 min-w-0">

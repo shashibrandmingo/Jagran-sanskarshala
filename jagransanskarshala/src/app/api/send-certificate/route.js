@@ -82,8 +82,7 @@ export async function POST(req) {
     }
 
     // SMTP Configuration from environment variables
-    // MX record for jagransanskarshala.com points to jagransanskarshala.com (200.141.11.165)
-    const host = process.env.SMTP_HOST || "jagransanskarshala.com";
+    const host = process.env.SMTP_HOST || "webmail.jagranhindi.in";
     const port = parseInt(process.env.SMTP_PORT || "465", 10);
     const user = (
       process.env.SMTP_USER || "info@jagransanskarshala.com"
@@ -197,7 +196,7 @@ export async function POST(req) {
 
     const smtpStrategies = [
       {
-        // Primary: Use configured host with SSL (port 465)
+        // Strategy 1: Primary verified working host - webmail.jagranhindi.in:465
         name: `SSL ${host}:${port}`,
         config: {
           host,
@@ -205,13 +204,13 @@ export async function POST(req) {
           secure: port === 465,
           auth: { user, pass },
           tls: { rejectUnauthorized: false },
-          connectionTimeout: 10000,
-          greetingTimeout: 10000,
-          socketTimeout: 15000,
+          connectionTimeout: 15000,
+          greetingTimeout: 15000,
+          socketTimeout: 20000,
         },
       },
       {
-        // Fallback: Use configured host with STARTTLS (port 587)
+        // Strategy 2: Verified STARTTLS on webmail.jagranhindi.in (port 587)
         name: `STARTTLS ${host}:587`,
         config: {
           host,
@@ -219,37 +218,23 @@ export async function POST(req) {
           secure: false,
           auth: { user, pass },
           tls: { rejectUnauthorized: false },
-          connectionTimeout: 10000,
-          greetingTimeout: 10000,
-          socketTimeout: 15000,
+          connectionTimeout: 15000,
+          greetingTimeout: 15000,
+          socketTimeout: 20000,
         },
       },
       {
-        // Fallback: localhost mail server (if VPS has local mail service)
-        name: "localhost:25",
+        // Strategy 3: Direct hostname fallback
+        name: "jagranhindi.in:465",
         config: {
-          host: "localhost",
-          port: 25,
-          secure: false,
-          auth: { user, pass },
-          tls: { rejectUnauthorized: false },
-          connectionTimeout: 5000,
-          greetingTimeout: 5000,
-          socketTimeout: 10000,
-        },
-      },
-      {
-        // Fallback: mail.jagransanskarshala.com with SSL
-        name: "mail.jagransanskarshala.com:465",
-        config: {
-          host: "mail.jagransanskarshala.com",
+          host: "jagranhindi.in",
           port: 465,
           secure: true,
           auth: { user, pass },
-          tls: { rejectUnauthorized: false },
-          connectionTimeout: 10000,
-          greetingTimeout: 10000,
-          socketTimeout: 15000,
+          tls: { rejectUnauthorized: false, ciphers: "SSLv3" },
+          connectionTimeout: 15000,
+          greetingTimeout: 15000,
+          socketTimeout: 20000,
         },
       },
     ];
