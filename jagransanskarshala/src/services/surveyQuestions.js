@@ -132,7 +132,7 @@ export const QUESTIONS = [
   {
     id: "q15",
     question:
-      "How much infinite short-format content on your phone affect your ability to deeply understand complex issues?",
+      "Does infinite short-format content on your phone affect your ability to deeply understand complex issues?",
     options: [
       "Completely prevents deep understanding",
       "Significantly reduces my understanding",
