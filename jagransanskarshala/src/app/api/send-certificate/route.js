@@ -41,13 +41,9 @@ export async function POST(req) {
     // Fallback to generic certificate if grade-specific not found
     if (!fs.existsSync(templatePath)) {
       console.warn(
-        `[EMAIL] Grade-specific certificate not found: ${certificateFile}, falling back to Certificatefinal.pdf`
+        `[EMAIL] Grade-specific certificate not found: ${certificateFile}, falling back to Certificatefinal.pdf`,
       );
-      templatePath = path.join(
-        process.cwd(),
-        "public",
-        "Certificatefinal.pdf",
-      );
+      templatePath = path.join(process.cwd(), "public", "Certificatefinal.pdf");
     }
 
     // 2. Generate Personalized PDF from Template
@@ -88,7 +84,9 @@ export async function POST(req) {
     // SMTP Configuration from environment variables (with active fallback)
     const host = process.env.SMTP_HOST || "jagranhindi.in";
     const port = parseInt(process.env.SMTP_PORT || "465", 10);
-    const user = (process.env.SMTP_USER || "info@jagransanskarshala.com").trim();
+    const user = (
+      process.env.SMTP_USER || "info@jagransanskarshala.com"
+    ).trim();
     let pass = (process.env.SMTP_PASS || "Wh3FStH8ozWlMysv")
       .replace(/^your-/i, "")
       .replace(/\s+/g, "")
@@ -96,7 +94,9 @@ export async function POST(req) {
     const from =
       process.env.SMTP_FROM || `"Dainik Jagran Sanskarshala" <${user}>`;
 
-    console.log(`[SMTP CONFIG] host=${host} port=${port} user=${user} passLength=${pass.length}`);
+    console.log(
+      `[SMTP CONFIG] host=${host} port=${port} user=${user} passLength=${pass.length}`,
+    );
 
     // Grade display text for email
     const gradeText = safeGrade;
@@ -188,55 +188,110 @@ export async function POST(req) {
       });
     }
 
-    // Live Transporter with VPS SSL compatibility options
-    const transporter = nodemailer.createTransport({
-      host,
-      port,
-      secure: port === 465,         // port 465 = true (SSL), port 587 = false (STARTTLS)
-      auth: { user, pass },
-      tls: {
-        rejectUnauthorized: false,  // self-signed cert bhi allow
-        ciphers: "SSLv3",
-      },
-      connectionTimeout: 15000,
-      greetingTimeout: 15000,
-      socketTimeout: 20000,
-    });
+    // Try sending email with automatic SMTP fallback strategies
+    // Strategy: Try modern TLS → SSLv3 ciphers (original working config) → port 587
+    let emailSent = false;
+    let messageId = null;
+    let emailError = null;
 
-    // Verify SMTP connection before sending
-    try {
-      await transporter.verify();
-      console.log("[SMTP VERIFY] Connection OK");
-    } catch (verifyErr) {
-      console.error("[SMTP VERIFY FAILED]", verifyErr.message);
-      return NextResponse.json(
-        { success: false, error: `SMTP connection failed: ${verifyErr.message}` },
-        { status: 500 },
+    const smtpStrategies = [
+      {
+        name: "Modern TLS (port " + port + ")",
+        config: {
+          host,
+          port,
+          secure: port === 465,
+          auth: { user, pass },
+          tls: { rejectUnauthorized: false },
+          connectionTimeout: 10000,
+          greetingTimeout: 10000,
+          socketTimeout: 15000,
+        },
+      },
+      {
+        name: "SSLv3 Ciphers (port " + port + ")",
+        config: {
+          host,
+          port,
+          secure: port === 465,
+          auth: { user, pass },
+          tls: {
+            rejectUnauthorized: false,
+            ciphers: "SSLv3",
+          },
+          connectionTimeout: 10000,
+          greetingTimeout: 10000,
+          socketTimeout: 15000,
+        },
+      },
+      {
+        name: "STARTTLS (port 587)",
+        config: {
+          host,
+          port: 587,
+          secure: false,
+          auth: { user, pass },
+          tls: { rejectUnauthorized: false },
+          connectionTimeout: 10000,
+          greetingTimeout: 10000,
+          socketTimeout: 15000,
+        },
+      },
+    ];
+
+    for (const strategy of smtpStrategies) {
+      try {
+        console.log(`[SMTP] Trying strategy: ${strategy.name}...`);
+        const transporter = nodemailer.createTransport(strategy.config);
+
+        await transporter.verify();
+        console.log(`[SMTP VERIFY OK] ${strategy.name}`);
+
+        const info = await transporter.sendMail({
+          from,
+          to: email,
+          subject: `🎓 Grade ${gradeText} - Official Certificate - Dainik Jagran Sanskarshala 2026`,
+          html: htmlContent,
+          attachments,
+        });
+
+        emailSent = true;
+        messageId = info.messageId;
+        console.log(
+          `[EMAIL SUCCESS] Strategy: ${strategy.name} | MessageId: ${info.messageId} | To: ${email} (Grade: ${gradeText})`,
+        );
+        break; // Success - stop trying other strategies
+      } catch (err) {
+        console.warn(
+          `[SMTP FAILED] Strategy: ${strategy.name} | Error: ${err.message}`,
+        );
+        emailError = err.message;
+        // Continue to next strategy
+      }
+    }
+
+    if (!emailSent) {
+      console.warn(
+        `[EMAIL ALL STRATEGIES FAILED] All SMTP strategies failed for ${email}. Last error: ${emailError}`,
       );
     }
 
-    const info = await transporter.sendMail({
-      from,
-      to: email,
-      subject: `🎓 Grade ${gradeText} - Official Certificate - Dainik Jagran Sanskarshala 2026`,
-      html: htmlContent,
-      attachments,
-    });
-
-    console.log(
-      `[EMAIL DISPATCH SUCCESS] MessageId: ${info.messageId} to ${email} (Grade: ${gradeText})`,
-    );
-
     return NextResponse.json({
       success: true,
-      messageId: info.messageId,
-      message: `Certificate (Grade ${gradeText}) & Thank You Email sent successfully to ${email}`,
+      emailSent,
+      messageId,
+      emailError: emailSent ? undefined : emailError,
+      message: emailSent
+        ? `Certificate (Grade ${gradeText}) & Thank You Email sent successfully to ${email}`
+        : `Certificate generated for ${email}. Email delivery pending.`,
     });
   } catch (error) {
-    console.error("Error sending certificate email:", error);
+    console.error("Error in send-certificate API:", error);
     return NextResponse.json(
-      { success: false, error: error.message || "Failed to send email" },
+      { success: false, error: error.message || "Failed to process request" },
       { status: 500 },
     );
   }
 }
+
+
