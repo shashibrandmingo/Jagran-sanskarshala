@@ -36,6 +36,50 @@ const SUPPORTED_STATES = [
   "Other / अन्य",
 ];
 
+const normalizeStr = (str) =>
+  String(str || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+
+const getTokens = (str) =>
+  String(str || "")
+    .toLowerCase()
+    .split(/[\s.,\-/()]+/)
+    .filter(Boolean);
+
+function matchesQuery(label, query) {
+  if (!query || !query.trim()) return true;
+  const rawLabel = String(label || "").toLowerCase();
+  const rawQuery = String(query || "").trim().toLowerCase();
+
+  // 1. Direct standard substring match
+  if (rawLabel.includes(rawQuery)) return true;
+
+  // 2. Normalized match (ignores all spaces, dots, hyphens, quotes, symbols)
+  const normLabel = normalizeStr(rawLabel);
+  const normQuery = normalizeStr(rawQuery);
+  if (normQuery && normLabel.includes(normQuery)) return true;
+
+  // 3. Tokenized match (all search query tokens match some token or normalized token in label)
+  const queryTokens = getTokens(rawQuery);
+  if (queryTokens.length > 0) {
+    const labelTokens = getTokens(rawLabel);
+    const allTokensMatch = queryTokens.every((qToken) => {
+      const normQToken = normalizeStr(qToken);
+      if (!normQToken) return true;
+      return (
+        labelTokens.some((lToken) => {
+          const normLToken = normalizeStr(lToken);
+          return lToken.includes(qToken) || normLToken.includes(normQToken);
+        }) || normLabel.includes(normQToken)
+      );
+    });
+    if (allTokensMatch) return true;
+  }
+
+  return false;
+}
+
 // Searchable Select Dropdown — supports inline custom text mode via allowCustom prop
 function SearchableSelect({
   label,
@@ -99,9 +143,21 @@ function SearchableSelect({
     return [...cleanList, { value: "Other / अन्य", label: "Other / अन्य" }];
   }, [options, allowCustom]);
 
-  const filteredOptions = displayOptions.filter((opt) =>
-    getLabel(opt).toLowerCase().includes(query.toLowerCase()),
-  );
+  const filteredOptions = useMemo(() => {
+    const list = displayOptions.filter((opt) =>
+      matchesQuery(getLabel(opt), query),
+    );
+
+    if (
+      allowCustom &&
+      query.trim() &&
+      !list.some((o) => getValue(o) === "Other / अन्य" || getValue(o) === "Other")
+    ) {
+      list.push({ value: "Other / अन्य", label: "Other / अन्य" });
+    }
+
+    return list;
+  }, [displayOptions, query, allowCustom]);
 
   const selectedLabel = useMemo(() => {
     if (!value) return null;
