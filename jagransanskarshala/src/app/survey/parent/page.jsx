@@ -33,6 +33,7 @@ const SUPPORTED_STATES = [
   "Haryana",
   "Uttarakhand",
   "Punjab",
+  "Jammu & Kashmir",
   "Other / अन्य",
 ];
 
