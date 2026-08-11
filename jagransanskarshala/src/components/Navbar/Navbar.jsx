@@ -164,7 +164,7 @@ export default function Navbar() {
                 ) : (
                   <>
                     <Link
-                      href={`/#${link.id}`}
+                      href={link.link || `/#${link.id}`}
                       className="text-white/90 group-hover:text-white text-[16px] xl:text-[18px] font-semibold whitespace-nowrap transition-default flex items-center h-full"
                     >
                       {link.label}
@@ -357,7 +357,7 @@ export default function Navbar() {
                   </details>
                 ) : (
                   <Link
-                    href={`/#${link.id}`}
+                    href={link.link || `/#${link.id}`}
                     onClick={handleLinkClick}
                     className="group flex items-center justify-between px-3 py-4 text-[16px] font-semibold transition-default"
                     style={{ color: "var(--heading)" }}

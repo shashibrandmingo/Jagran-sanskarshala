@@ -15,6 +15,12 @@ const english = {
       { id: "till-now", label: "Talks So Far" },
       { id: "contact", label: "Contact Us" },
       {
+        id: "gallery",
+        label: "Gallery",
+        link: "/gallery?year=2025",
+      },
+      /*
+      {
         id: "archive",
         label: "Archive",
         dropdown: [
@@ -69,6 +75,7 @@ const english = {
           },
         ],
       },
+      */
     ],
   },
 

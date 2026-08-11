@@ -15,6 +15,12 @@ const hindi = {
       { id: "till-now", label: "अब तक की बातचीत" },
       { id: "contact", label: "संपर्क करें" },
       {
+        id: "gallery",
+        label: "गैलरी",
+        link: "/gallery?year=2025",
+      },
+      /*
+      {
         id: "archive",
         label: "आर्काइव",
         dropdown: [
@@ -70,6 +76,7 @@ const hindi = {
           },
         ],
       },
+      */
     ],
   },
 
