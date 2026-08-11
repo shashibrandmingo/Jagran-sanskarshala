@@ -107,9 +107,6 @@ export default function StoryDetailPage() {
               <div className="relative z-10 space-y-2 sm:space-y-2.5">
                 {/* Badges */}
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-[11px] sm:text-xs font-black uppercase tracking-wider bg-white/20 text-white px-3.5 py-1 rounded-full backdrop-blur-xs">
-                    {week}
-                  </span>
                   <span
                     className="text-[11px] sm:text-xs font-black text-white px-3.5 py-1 rounded-full flex items-center gap-1.5 shadow-xs"
                     style={{ background: "var(--secondary, #f07f22)" }}
@@ -208,9 +205,13 @@ export default function StoryDetailPage() {
                       {/* Top row */}
                       <div>
                         <div className="flex items-center justify-between mb-2.5 sm:mb-3">
-                          <span className="text-[10px] sm:text-[11px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider bg-white/25 text-white">
-                            {stWeek} {isCurrent ? "• Reading" : ""}
-                          </span>
+                          {isCurrent ? (
+                            <span className="text-[10px] sm:text-[11px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider bg-white/25 text-white">
+                              Reading
+                            </span>
+                          ) : (
+                            <span />
+                          )}
                           <span className="flex items-center gap-1 text-[10px] sm:text-[11px] font-bold px-2.5 py-1 rounded-full bg-white text-[var(--primary)] shadow-2xs">
                             <FaCheck className="text-[8px]" />
                             {isHindi ? "प्रकाशित" : "Published"}
@@ -264,10 +265,7 @@ export default function StoryDetailPage() {
 
                     {/* Top row */}
                     <div>
-                      <div className="flex items-center justify-between mb-2.5 sm:mb-3">
-                        <span className="text-[10px] sm:text-[11px] font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-500 uppercase tracking-wider">
-                          {stWeek}
-                        </span>
+                      <div className="flex items-center justify-end mb-2.5 sm:mb-3">
                         <span className="flex items-center gap-1 text-[10px] sm:text-[11px] font-medium text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full">
                           <FaLock className="text-[8px]" />
                           {isHindi ? "जल्द" : "Coming Soon"}

@@ -116,7 +116,7 @@ export default function YearTalk() {
                         <div className="relative z-10 p-4 sm:p-4.5 flex flex-col h-full">
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-xs font-extrabold px-3 py-1 rounded-full bg-white/25 text-white uppercase leading-none whitespace-nowrap">
-                              {topic.week} • {isHindi ? "सक्रिय" : "Active"}
+                              {isHindi ? "सक्रिय" : "Active"}
                             </span>
                             <span className="w-6.5 h-6.5 rounded-full bg-white/20 flex items-center justify-center shrink-0 ml-1">
                               <FaArrowRight className="text-[10px] text-white" />
@@ -157,11 +157,8 @@ export default function YearTalk() {
                       <FaLock className="text-white text-[48px]" />
                     </div>
                     <div className="relative z-10 p-4 sm:p-4.5 flex flex-col h-full">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-bold px-3 py-1 rounded-full bg-white/15 text-white/80 uppercase leading-none whitespace-nowrap">
-                          {topic.week}
-                        </span>
-                        <span className="flex items-center gap-1 text-xs text-white/80 bg-black/20 px-3 py-1 rounded-full ml-1 whitespace-nowrap font-bold">
+                      <div className="flex items-center justify-end mb-2">
+                        <span className="flex items-center gap-1 text-xs text-white/80 bg-black/20 px-3 py-1 rounded-full whitespace-nowrap font-bold">
                           <FaLock className="text-[9px]" />
                           {isHindi ? "जल्द" : "Soon"}
                         </span>
@@ -233,7 +230,7 @@ export default function YearTalk() {
                           <div className="relative z-10 p-4 xl:p-4.5 flex flex-col h-full">
                             <div className="flex items-center justify-between mb-2.5">
                               <span className="text-[11px] xl:text-xs font-extrabold px-3 py-1 rounded-full bg-white/25 text-white uppercase leading-none whitespace-nowrap">
-                                {topic.week} • {isHindi ? "सक्रिय" : "Active"}
+                                {isHindi ? "सक्रिय" : "Active"}
                               </span>
                               <motion.span
                                 whileHover={{ rotate: 45 }}
@@ -278,11 +275,8 @@ export default function YearTalk() {
                         <FaLock className="text-white text-[50px]" />
                       </div>
                       <div className="relative z-10 p-4 xl:p-4.5 flex flex-col h-full">
-                        <div className="flex items-center justify-between mb-2.5">
-                          <span className="text-[11px] xl:text-xs font-bold px-3 py-1 rounded-full bg-white/15 text-white/80 uppercase leading-none whitespace-nowrap">
-                            {topic.week}
-                          </span>
-                          <span className="flex items-center gap-1 text-[11px] text-white/80 bg-black/20 px-3 py-1 rounded-full ml-1 whitespace-nowrap font-bold">
+                        <div className="flex items-center justify-end mb-2.5">
+                          <span className="flex items-center gap-1 text-[11px] text-white/80 bg-black/20 px-3 py-1 rounded-full whitespace-nowrap font-bold">
                             <FaLock className="text-[9px]" />
                             {isHindi ? "जल्द" : "Soon"}
                           </span>

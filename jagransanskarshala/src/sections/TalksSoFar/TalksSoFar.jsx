@@ -83,7 +83,7 @@ export default function TalksSoFar() {
                       >
                         <div className="flex items-center justify-between mb-2.5">
                           <span className="text-xs font-extrabold px-3 py-1 rounded-full bg-white/25 text-white uppercase tracking-wider">
-                            {topic.week} • {isHindi ? "सक्रिय" : "Active"}
+                            {isHindi ? "सक्रिय" : "Active"}
                           </span>
                           <span className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center group-hover:bg-white group-hover:text-[var(--primary)] transition-all duration-300">
                             <FaArrowRight className="text-xs transition-transform duration-300 group-hover:translate-x-0.5" />
@@ -113,10 +113,7 @@ export default function TalksSoFar() {
                     }}
                     className="topic-card opacity-80 rounded-2xl p-6 cursor-not-allowed select-none relative overflow-hidden"
                   >
-                    <div className="flex items-center justify-between mb-2.5">
-                      <span className="text-xs font-bold px-3 py-1 rounded-full bg-white/15 text-white/80">
-                        {topic.week}
-                      </span>
+                    <div className="flex items-center justify-end mb-2.5">
                       <span className="flex items-center gap-1.5 text-xs font-bold text-white/80 bg-black/20 px-3 py-1 rounded-full">
                         <FaLock className="text-[10px]" />
                         <span>{isHindi ? "जल्द" : "Soon"}</span>
