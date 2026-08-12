@@ -669,48 +669,96 @@
       "Venkateshwar International School (Dwarka)"
     ],
     "Ghaziabad": [
-      "Amity International School (Vasundhara)",
-      "DAV Public School (Rajendra Nagar)",
-      "DLF Public School (Rajendra Nagar)",
-      "DPS Ghaziabad (Meerut Road)",
-      "Delhi Public School (Indirapuram)",
-      "Delhi Public School (Raj Nagar)",
-      "Kendriya Vidyalaya (Kamla Nehru Nagar)",
-      "Other / अन्य",
-      "Seth Anandram Jaipuria School (Vasundhara)",
-      "St. Francis School (Indirapuram)",
-      "St. Thomas School (Indirapuram)",
-      "Uttam School for Girls (Shastri Nagar)"
+      "Mahraja Agrasen Inter College",
+      "St. Teresa School",
+      "VIDYA BAL BHAWAN SEC SECONDARY SCHOOL",
+      "New Rainbow Public School",
+      "Allen House Public School",
+      "Shri Thakurdwara Balika Vidyalaya",
+      "JKG International School",
+      "Bhgirathi Public School",
+      "Sanskar World School",
+      "Other / अन्य"
     ],
     "Greater Noida": [
-      "Aster Public School (Delta II)",
-      "DPS Greater Noida (Sector Gamma II)",
-      "DPS World School (Greater Noida West)",
-      "Father Agnel School (Knowledge Park V)",
-      "Other / अन्य",
-      "Pacific World School (Tech Zone IV)",
-      "Ryan International School (Greater Noida)",
-      "Somerville School (Greater Noida)",
-      "St. Joseph's School (Alpha I)"
+      "Holy Public School",
+      "Rayan International School",
+      "Vanasthali Public School",
+      "Uma Public School",
+      "Bodhi taru international school",
+      "GD Goenka, Greater Noida",
+      "S.D. Public School",
+      "Other / अन्य"
     ],
     "Noida": [
-      "Amity International School (Sector 44)",
-      "Apeejay School (Sector 16A)",
-      "Army Public School (Sector 37)",
-      "DPS Gautam Buddh Nagar (Sector 132)",
-      "Delhi Public School (Sector 30)",
-      "Genesis Global School (Sector 132)",
-      "Kendriya Vidyalaya (Sector 24)",
-      "Kothari International School (Sector 50)",
-      "Lotus Valley International School (Sector 126)",
-      "Other / अन्य",
-      "Ryan International School (Sector 39)",
-      "Shiv Nadar School (Sector 168)",
-      "Somerville School (Sector 22)",
-      "Step by Step School (Sector 132)",
-      "Suncity School (Sector 54)",
-      "The Khaitan School (Sector 40)"
-    ]
+      "Jaypee Public School",
+      "GD Goenka Global School",
+      "Modern School",
+      "Indraprasth Global School",
+      "Genesis Global School",
+      "Delhi Public School",
+      "JBM Global School",
+      "Kothari International School",
+      "The Millenium School",
+      "Ramagya School",
+      "The Khitan School",
+      "LPS Global School",
+      "Manav Rachana International School",
+      "Mayoor School",
+      "Billabong High International School",
+      "Raghav Global School",
+      "Global Indian International School",
+      "Presidium School",
+      "Sapphire International School",
+      "Cambridge School",
+      "Apeejay School",
+      "Indus Vally School",
+      "Jagran Public School",
+      "Amity International School",
+      "City Public School",
+      "Vanasthali Public School",
+      "Noida Educational Academy",
+      "Maharishi Vidya Mandir School",
+      "Gyanshree School",
+      "Shanti International School",
+      "Vishva Bharati Public School",
+      "JSS Public School",
+      "Yadu Public School",
+      "Bal Bharati Public School",
+      "Radiant School",
+      "The Wisdom Tree",
+      "Sarvottam School",
+      "The Shri Ram Millenium School",
+      "Allence world School",
+      "Brahmananda Public School",
+      "SKS World School",
+      "Somerville School",
+      "DAV Sarla Chopra",
+      "holy Public School",
+      "GGIC",
+      "Indian National Public School",
+      "Panchsheel Inter College",
+      "Mahamaya Inter College",
+      "VPS global school",
+      "Modern Public School",
+      "Nav Jeewan Inter College",
+      "KCS Public Inter College",
+      "Karl Huber Public School",
+      "Bhaurav Devras Saraswati Vidya Mandir",
+      "Composite School Noida Sector 35",
+      "Composite School",
+      "Shyam Singh Smarak Kanya Inter College",
+      "GIC",
+      "Other / अन्य"
+    ],
+    "Hapur": [
+      "DAV Public School, Hapur",
+      "Dewan Public School, Hapur",
+      "Dev Memorial Public School",
+      "JMS World School",
+      "Other / अन्य"
+    ],
+    "Jewar": ["Pargyan Public School", "Other / अन्य"]
   },
   "Uttar Pradesh": {
     "Varanasi": [
@@ -810,10 +858,7 @@
       "Devo Mahesh Polytechnic College (Sukrit)",
       "Other / अन्य"
     ],
-    "Bijpur": [
-      "Hans Vahini Public School (Bijpur)",
-      "Other / अन्य"
-    ],
+    "Bijpur": ["Hans Vahini Public School (Bijpur)", "Other / अन्य"],
     "Duddhi": [
       "Shivam Inter College (Duddhi)",
       "Pm Shri Government Girls Inter College (Duddhi)",
@@ -2280,10 +2325,7 @@
       "Saint Mira Academy (Kanshiram Nagar)",
       "Other / अन्य"
     ],
-    "Rampur": [
-      "White Hall Public School (Rampur Civil Line)",
-      "Other / अन्य"
-    ]
+    "Rampur": ["White Hall Public School (Rampur Civil Line)", "Other / अन्य"]
   },
   "Bihar": {
     "Patna": [
@@ -2345,66 +2387,21 @@
       "RPS School (Biharsarif)",
       "Other / अन्य"
     ],
-    "Jehanabad": [
-      "DAV Public School (Jehanabad)",
-      "Other / अन्य"
-    ],
-    "Nawada": [
-      "RPS Convent Public School (Nawada)",
-      "Other / अन्य"
-    ],
-    "Arwal": [
-      "Kendriya Vidyalaya (Arwal)",
-      "Other / अन्य"
-    ],
-    "Aurangabad": [
-      "Kendriya Vidyalaya (Aurangabad)",
-      "Other / अन्य"
-    ],
-    "Begusarai": [
-      "Kendriya Vidyalaya (Begusarai)",
-      "Other / अन्य"
-    ],
-    "Bhojpur": [
-      "Kendriya Vidyalaya (Bhojpur)",
-      "Other / अन्य"
-    ],
-    "Buxar": [
-      "Kendriya Vidyalaya (Buxar)",
-      "Other / अन्य"
-    ],
-    "Gaya": [
-      "Kendriya Vidyalaya (Gaya)",
-      "Other / अन्य"
-    ],
-    "Gopalganj": [
-      "Kendriya Vidyalaya (Gopalganj)",
-      "Other / अन्य"
-    ],
-    "Kaimur Bhabua": [
-      "Kendriya Vidyalaya (Kaimur Bhabua)",
-      "Other / अन्य"
-    ],
-    "Nalanda": [
-      "Kendriya Vidyalaya (Nalanda)",
-      "Other / अन्य"
-    ],
-    "Rohtas": [
-      "Kendriya Vidyalaya (Rohtas)",
-      "Other / अन्य"
-    ],
-    "Saran": [
-      "Kendriya Vidyalaya (Saran)",
-      "Other / अन्य"
-    ],
-    "Sheikhpura": [
-      "Kendriya Vidyalaya (Sheikhpura)",
-      "Other / अन्य"
-    ],
-    "Siwan": [
-      "Kendriya Vidyalaya (Siwan)",
-      "Other / अन्य"
-    ],
+    "Jehanabad": ["DAV Public School (Jehanabad)", "Other / अन्य"],
+    "Nawada": ["RPS Convent Public School (Nawada)", "Other / अन्य"],
+    "Arwal": ["Kendriya Vidyalaya (Arwal)", "Other / अन्य"],
+    "Aurangabad": ["Kendriya Vidyalaya (Aurangabad)", "Other / अन्य"],
+    "Begusarai": ["Kendriya Vidyalaya (Begusarai)", "Other / अन्य"],
+    "Bhojpur": ["Kendriya Vidyalaya (Bhojpur)", "Other / अन्य"],
+    "Buxar": ["Kendriya Vidyalaya (Buxar)", "Other / अन्य"],
+    "Gaya": ["Kendriya Vidyalaya (Gaya)", "Other / अन्य"],
+    "Gopalganj": ["Kendriya Vidyalaya (Gopalganj)", "Other / अन्य"],
+    "Kaimur Bhabua": ["Kendriya Vidyalaya (Kaimur Bhabua)", "Other / अन्य"],
+    "Nalanda": ["Kendriya Vidyalaya (Nalanda)", "Other / अन्य"],
+    "Rohtas": ["Kendriya Vidyalaya (Rohtas)", "Other / अन्य"],
+    "Saran": ["Kendriya Vidyalaya (Saran)", "Other / अन्य"],
+    "Sheikhpura": ["Kendriya Vidyalaya (Sheikhpura)", "Other / अन्य"],
+    "Siwan": ["Kendriya Vidyalaya (Siwan)", "Other / अन्य"],
     "Bhagalpur": [
       "Diksha International School (Chhoti Dhankar Sabour)",
       "Happy Valley School (Mandroza Chowk)",
@@ -2503,10 +2500,11 @@
       "Other / अन्य"
     ],
     "Sitamarhi": [
-      "St. Xavier's High School",
-      "Sacred Heart School",
+      "Delhi Public School",
       "DAV Public School",
-      "Kendriya Vidyalaya",
+      "Arya Preparatory School",
+      "St. Joseph's Mission Preparatory School",
+      "Dr. R. N. International School",
       "Other / अन्य"
     ]
   },
@@ -2769,83 +2767,77 @@
       "Other / अन्य"
     ],
     "Hisar": [
-      "Delhi Public School, Hisar",
-      "Narayana E-Techno School, Hisar, Haryana",
-      "Id DAV School, Dabra Road, Hisar",
-      "St. Mary's School, Hisar",
+      "DELHI PUBLIC SCHOOL, Hisar",
+      "Narayana E-techno School, Hisar, Haryana",
+      "ID DAV SCHOOL, Dabra Road, Hisar",
+      "St Mary's school, Hisar",
       "The Aryan School, Hisar",
       "Modern Defence School, Hisar",
-      "Holy Child School Sr. Sec. School (Hisar)",
-      "I.d.dav Junior Public School (Hisar)",
-      "Small Wonders School Sec 16-17, Hisar",
-      "Rishikul Vidya Mandir, Hisar",
-      "St. Sophia School, Sec 15, Hisar",
-      "St. Paul High School, Hisar",
-      "Police DAV Public School, Hisar",
-      "Captain Rc Sr Sec School, Hisar",
+      "Holy Child School Sr. Sec. School",
+      "I.D.DAV JUNIOR PUBLIC SCHOOL",
+      "Small Wonders school Sec 16-17, Hisar",
+      "RishiKul Vidya Mandir , Hisar",
+      "St Sophia School, Sec 15, Hisar",
+      "St Paul High School, Hisar",
+      "POLICE DAV PUBLIC SCHOOL,HISAR",
+      "Captain RC Sr Sec School, Hisar",
       "Army Public School, Hisar",
-      "Kl Arya DAV School, Hisar",
+      "KL ARYA DAV SCHOOL, Hisar",
       "Dig Vijay Memorial School, Hisar",
-      "New Yashoda Public School, (Hisar)",
-      "Indus RPS School, Hisar",
+      "New Yashoda Public School,",
+      "INDUS RPS School, Hisar",
       "St. Francis Xavier School, Hisar",
-      "Vishwas Sr Sec. School (Hisar)",
+      "Vishwas Sr Sec. School",
       "New Lahoria Vidya Mandir Sr. Sec. School, Hisar",
       "St. Anthony's School Hisar",
-      "Vvm Convent School Hisar",
+      "VVM Convent school hisar",
       "Jagriti Sr Sec School, Hisar",
-      "Bharti Vidya Mandir (Hisar)",
-      "Cosmos Public School (Gangwa)",
-      "Sidharth International School (Hisar)",
-      "The Scotts (formerly Scottish) International School (South Bypass)",
-      "Scottish International School (Sec 16-17)",
-      "Cambridge Public School (Bhiwani Rohilla)",
-      "Millennium Public School (mps) (Hisar)",
-      "Holy Angel School (Tosham Rd.)",
-      "Blooming Dales School (Sector 15-A)",
+      "Bharti Vidya Mandir",
+      "COSMOS Public School",
+      "Sidharth International School",
+      "The Scotts (Formerly Scottish) International School",
+      "Scottish International School",
+      "CAMBRIDGE PUBLIC SCHOOL",
+      "Millennium Public School (MPS)",
+      "Holy Angel School",
+      "Blooming Dales School",
       "Springfield School, Sec 16-17",
-      "Guru Jambheshwar Senior Secondary School (Jawahar Nagar, Hisar)",
-      "Jain Girls Sr Sec School, Hisar",
-      "Op Jindal Modern School (opjms) (Hisar)",
-      "Suman Sr Sec. School (Hisar)",
-      "Chhaju Ram Public School (Rajgarh Road)",
-      "Doon International School (Hisar)",
-      "Darshan Academy (Hisar)",
-      "Thakur Dass Bhargava Sr. Sec. Model School (Hisar)",
+      "Guru Jambheshwar Senior Secondary School",
+      "Jain Girls Sr Sec School , Hisar",
+      "OP Jindal Modern School (OPJMS)",
+      "Suman Sr Sec. School",
+      "Chhaju Ram Public School",
+      "Doon International School",
+      "Darshan Academy",
+      "Thakur Dass Bhargava Sr. Sec. Model School",
       "The Anantya School Hisar",
-      "Campus School, Ccs-Hau (Hisar)",
+      "Campus School, CCS-HAU",
       "Moga Devi Minda Memorial School, Bagla, Hisar",
-      "Hksd Girls Sr Sec School (Hisar)",
-      "St. Joseph International School (Hisar)",
-      "P.g.s.d Sr Sec School, Hisar",
+      "HKSD GIRLS SR SEC SCHOOL",
+      "St Joseph International School",
+      "P.G.S.D Sr Sec School, Hisar",
       "Other / अन्य"
     ],
     "Uklana Mandi": [
-      "Rdm Saraswati Public School (Uklana Mandi)",
-      "Oxford Global School (Uklana Mandi)",
+      "RDM Saraswati Public School",
+      "Oxford Global School",
       "Other / अन्य"
     ],
     "Hansi": [
-      "RPS Public School (Hansi)",
-      "Sd Modern Public School (Hansi)",
-      "Guru Tegh Bahadur School (Hansi)",
-      "S D Kanya Sr. Sec. School (Hansi)",
-      "Manwati Arya Kanya High School (Hansi)",
-      "Shree Kali Devi Vidya Mandir (Hansi)",
-      "Baba Banda Bahadur Pub. School (Hansi)",
-      "Geeta Public Sr. Sec. School (Hansi)",
-      "St. Thomas Convent School (Hansi)",
-      "Anand Niketan Public Senior Secondary School (Hansi)",
+      "RPS PUBLIC SCHOOL",
+      "SD Modern Public School",
+      "Guru Tegh Bahadur School",
+      "S D Kanya Sr. Sec. School",
+      "Manwati Arya Kanya High School",
+      "Shree Kali Devi Vidya Mandir",
+      "Baba Banda Bahadur Pub. School",
+      "Geeta Public Sr. Sec. School",
+      "St Thomas Convent School",
+      "Anand Niketan Public Senior Secondary School",
       "Other / अन्य"
     ],
-    "Barwala": [
-      "Holi Homes Public School (Barwala)",
-      "Other / अन्य"
-    ],
-    "Hisar Cantt.": [
-      "Cantt Public School (Hisar Cantt)",
-      "Other / अन्य"
-    ],
+    "Barwala": ["Holi Homes Public School", "Other / अन्य"],
+    "Hisar Cantt.": ["CANTT PUBLIC SCHOOL", "Other / अन्य"],
     "Ateli": [
       "Government High School (Co-ed)",
       "Government Primary School (Co-ed)",
@@ -3592,10 +3584,7 @@
       "Sri Guru Ram Rai Public School (Rudraprayag)",
       "Other / अन्य"
     ],
-    "Srinagar": [
-      "Sri Guru Ram Rai Public School (Srinagar)",
-      "Other / अन्य"
-    ],
+    "Srinagar": ["Sri Guru Ram Rai Public School (Srinagar)", "Other / अन्य"],
     "Vikasnagar": [
       "Times World School (Kalyanpur, Vikasnagar)",
       "Bright Angels School (Jeevangarh, Vikasnagar)",
@@ -3634,10 +3623,7 @@
       "The Masters Sr. Sec. School (Haldwani)",
       "Other / अन्य"
     ],
-    "Jelolikot": [
-      "Naincy Convent (Jelolikot)",
-      "Other / अन्य"
-    ],
+    "Jelolikot": ["Naincy Convent (Jelolikot)", "Other / अन्य"],
     "Ramnagar": [
       "Baba Gurukul Academy (Ramnagar)",
       "DAV Nandraj Public School (Ramnagar)",
@@ -3865,20 +3851,14 @@
       "Sairas Hr. Sec. School (Bishnah)",
       "Other / अन्य"
     ],
-    "RS Pura": [
-      "Aaryan Public School (RS Pura)",
-      "Other / अन्य"
-    ],
+    "RS Pura": ["Aaryan Public School (RS Pura)", "Other / अन्य"],
     "Samba": [
       "Bharghav Public School (Vijaypur)",
       "Arvindo Ghosh (Vijapur)",
       "Mv International (Samba)",
       "Other / अन्य"
     ],
-    "Mira Sahib": [
-      "Sunshine Public Shcool (Mira Sahib)",
-      "Other / अन्य"
-    ],
+    "Mira Sahib": ["Sunshine Public Shcool (Mira Sahib)", "Other / अन्य"],
     "Akhnoor": [
       "Model Institue Of Education (Akhnoor)",
       "New Oriental Hr. Sec. School (Akhnoor)",
@@ -3903,9 +3883,6 @@
       "Parshant Public School (Udhampur)",
       "Other / अन्य"
     ],
-    "Pauni": [
-      "Vikas Memorial School (Pauni)",
-      "Other / अन्य"
-    ]
+    "Pauni": ["Vikas Memorial School (Pauni)", "Other / अन्य"]
   }
 }
