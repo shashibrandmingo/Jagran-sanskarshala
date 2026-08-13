@@ -15,57 +15,51 @@ const hindi = {
       { id: "till-now", label: "अब तक की बातचीत" },
       { id: "contact", label: "संपर्क करें" },
       {
-        id: "gallery",
-        label: "गैलरी",
-        link: "/gallery?year=2025",
-      },
-      /*
-      {
         id: "archive",
         label: "आर्काइव",
         dropdown: [
           {
             id: "archive-2020",
             label: "संस्कृति से संस्कार (2020)",
-            link: "https://jagransanskarshala.com/sanskrti-se-sanskaar-2020/",
+            link: "https://archive-jagransanskarshala.com/sanskrti-se-sanskaar-2020/",
           },
           {
             id: "archive-2021",
             label: "देश से हम और हमसे देश बनता है (2021)",
-            link: "https://jagransanskarshala.com/desh-se-ham-aur-hamase-desh-banata-hai-2021/",
+            link: "https://archive-jagransanskarshala.com/desh-se-ham-aur-hamase-desh-banata-hai-2021/",
           },
           {
             id: "archive-2022",
             label: "डिजिटल संस्कार (2022)",
-            link: "https://jagransanskarshala.com/dijital-sanskaar-2022/",
+            link: "https://archive-jagransanskarshala.com/dijital-sanskaar-2022/",
           },
           {
             id: "archive-2023",
             label: "ऊर्जा साक्षरता (2023)",
-            link: "https://jagransanskarshala.com/urja-saaksharata-2023/",
+            // link: "https://jagransanskarshala.com/urja-saaksharata-2023/",
             subDropdown2023: [
               {
                 id: "urja-2023-1",
                 label: "ऊर्जा के संस्कार",
-                link: "https://jagransanskarshala.com/urja-saaksharata-2023/",
+                link: "https://archive-jagransanskarshala.com/urja-saaksharata-2023/",
               },
               {
                 id: "urja-2023-2",
                 label:
                   "अपने कार्बन पदचिह्न की गणना करें (Calculate Carbon Footprint)",
-                link: "https://energy.jagransanskarshala.com/",
+                link: "https://energy-jagransanskarshala.com/",
               },
             ],
           },
           {
             id: "archive-2024",
             label: "संस्कारशाला 2024",
-            link: "https://jagransanskarshala.com/sanskarshala-2024/",
+            link: "https://archive-jagransanskarshala.com/sanskarshala-2024/",
           },
           {
             id: "archive-2025",
             label: "संस्कारशाला 2025",
-            link: "https://jagransanskarshala.com/jss2025/",
+            link: "https://archive-jagransanskarshala.com/jss2025/",
             subDropdown: [
               {
                 id: "gallery-2025",
@@ -76,7 +70,6 @@ const hindi = {
           },
         ],
       },
-      */
     ],
   },
 
