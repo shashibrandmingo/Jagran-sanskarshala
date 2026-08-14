@@ -106,13 +106,18 @@ function SearchableSelect({
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
+        if (isTypingCustom && customText.trim()) {
+          onChange({
+            target: { name, value: customText.trim() },
+          });
+        }
         setIsOpen(false);
         setQuery("");
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [isTypingCustom, customText, name, onChange]);
 
   // Sync custom text when value changes
   useEffect(() => {
@@ -180,15 +185,15 @@ function SearchableSelect({
 
   const handleOptionClick = (val) => {
     if (allowCustom && (val === "Other / अन्य" || val === "Other")) {
-      if (isTypingCustom) {
+      if (isTypingCustom && customText.trim()) {
         onChange({
-          target: { name, value: customText.trim() || "Other / अन्य" },
+          target: { name, value: customText.trim() },
         });
         setIsOpen(false);
       } else {
         setIsTypingCustom(true);
         onChange({
-          target: { name, value: customText ? customText : "Other / अन्य" },
+          target: { name, value: "Other / अन्य" },
         });
         setTimeout(() => customInputRef.current?.focus(), 80);
       }
@@ -202,14 +207,14 @@ function SearchableSelect({
   };
 
   const handleCustomInputChange = (e) => {
-    const val = e.target.value;
-    setCustomText(val);
-    onChange({ target: { name, value: val ? val : "Other / अन्य" } });
+    setCustomText(e.target.value);
   };
 
   const handleConfirmCustom = () => {
+    const trimmed = customText.trim();
+    if (!trimmed) return;
     onChange({
-      target: { name, value: customText.trim() || "Other / अन्य" },
+      target: { name, value: trimmed },
     });
     setIsOpen(false);
   };
@@ -392,9 +397,17 @@ export default function ParentSurveyPage() {
     return "";
   };
 
+  const isValidValue = (val) => {
+    if (!val) return false;
+    const str = String(val).trim();
+    if (!str) return false;
+    if (str === "Other / अन्य" || str === "__TYPE_HERE__") return false;
+    return true;
+  };
+
   // Available Cities based on selected State
   const availableCities = useMemo(() => {
-    if (!form.state) return [];
+    if (!isValidValue(form.state)) return [];
     const known = schoolsData[form.state]
       ? Object.keys(schoolsData[form.state]).sort()
       : [];
@@ -465,11 +478,11 @@ export default function ParentSurveyPage() {
       }
     }
 
-    if (!form.gender) newErrors.gender = "Please select gender / लिंग चुनें";
-    if (!form.occupation)
+    if (!isValidValue(form.gender)) newErrors.gender = "Please select gender / लिंग चुनें";
+    if (!isValidValue(form.occupation))
       newErrors.occupation = "Please select occupation / व्यवसाय चुनें";
-    if (!form.state) newErrors.state = "Please select state / राज्य चुनें";
-    if (!form.city) newErrors.city = "Please select city / शहर चुनें";
+    if (!isValidValue(form.state)) newErrors.state = "Please select state / राज्य चुनें";
+    if (!isValidValue(form.city)) newErrors.city = "Please select city / शहर चुनें";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -496,9 +509,9 @@ export default function ParentSurveyPage() {
     if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
     if (age < 19) return false;
 
-    if (!form.gender) return false;
-    if (!form.occupation) return false;
-    if (!form.state || !form.city) return false;
+    if (!isValidValue(form.gender)) return false;
+    if (!isValidValue(form.occupation)) return false;
+    if (!isValidValue(form.state) || !isValidValue(form.city)) return false;
 
     return true;
   }, [form]);
@@ -902,7 +915,6 @@ export default function ParentSurveyPage() {
               required
             />
 
-            {/* Occupation (Student option REMOVED) */}
             <SearchableSelect
               label="Occupation / व्यवसाय"
               name="occupation"
@@ -912,12 +924,12 @@ export default function ParentSurveyPage() {
                 { value: "Housemaker", label: "Housemaker / गृहणी" },
                 { value: "Business", label: "Business / व्यापार" },
                 { value: "Professional", label: "Professional / पेशेवर" },
-                { value: "Other", label: "Other / अन्य" },
               ]}
               placeholder="Select Occupation / व्यवसाय चुनें"
               onChange={handleChange}
               error={errors.occupation}
               required
+              allowCustom
             />
 
             {/* Row 4: State | City — allowCustom enables in-place text input on Other */}
@@ -939,13 +951,13 @@ export default function ParentSurveyPage() {
               value={form.city}
               options={availableCities}
               placeholder={
-                form.state
+                isValidValue(form.state)
                   ? "Select City / शहर चुनें"
                   : "Select State First / पहले राज्य चुनें"
               }
               onChange={handleChange}
               error={errors.city}
-              disabled={!form.state}
+              disabled={!isValidValue(form.state)}
               required
               allowCustom
             />

@@ -37,11 +37,14 @@ export default function AdminGalleryPage() {
   const [showUploadImageModal, setShowUploadImageModal] = useState(false);
   const [editingImage, setEditingImage] = useState(null);
   const [editingCategory, setEditingCategory] = useState(null);
+  const [editingYear, setEditingYear] = useState(null);
 
   // Form Inputs
   const [newYearInput, setNewYearInput] = useState("");
   const [newYearTitleInput, setNewYearTitleInput] = useState("");
+  const [newYearTitleHiInput, setNewYearTitleHiInput] = useState("");
   const [newYearSubtitleInput, setNewYearSubtitleInput] = useState("");
+  const [newYearSubtitleHiInput, setNewYearSubtitleHiInput] = useState("");
 
   const [newCatTitle, setNewCatTitle] = useState("");
   const [newCatTitleHi, setNewCatTitleHi] = useState("");
@@ -112,30 +115,78 @@ export default function AdminGalleryPage() {
     }
   };
 
-  // Add New Year Handler
-  const handleAddYear = async (e) => {
+  // Reset year form fields
+  const resetYearForm = () => {
+    setNewYearInput("");
+    setNewYearTitleInput("");
+    setNewYearTitleHiInput("");
+    setNewYearSubtitleInput("");
+    setNewYearSubtitleHiInput("");
+    setEditingYear(null);
+    setShowAddYearModal(false);
+  };
+
+  // Add or Update Year Handler
+  const handleSaveYear = async (e) => {
     e.preventDefault();
-    if (!newYearInput.trim() || !newYearTitleInput.trim()) return;
+    if (!newYearTitleInput.trim()) return;
+
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+
+    // UPDATE existing year
+    if (editingYear) {
+      const yearVal = editingYear.year;
+      try {
+        const res = await fetch(`${backendUrl}/api/v1/gallery/years/${yearVal}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: { en: newYearTitleInput.trim(), hi: newYearTitleHiInput.trim() || newYearTitleInput.trim() },
+            subtitle: { en: newYearSubtitleInput.trim(), hi: newYearSubtitleHiInput.trim() || newYearSubtitleInput.trim() },
+          }),
+        });
+        if (res.ok) {
+          await fetchBackendData();
+          resetYearForm();
+          return;
+        }
+      } catch (err) {
+        console.warn("Backend year update failed, using local save:", err);
+      }
+
+      // Local fallback for edit
+      const updated = galleryYears.map((y) =>
+        y.year === yearVal
+          ? {
+              ...y,
+              title: { en: newYearTitleInput.trim(), hi: newYearTitleHiInput.trim() || newYearTitleInput.trim() },
+              subtitle: { en: newYearSubtitleInput.trim(), hi: newYearSubtitleHiInput.trim() || newYearSubtitleInput.trim() },
+            }
+          : y
+      );
+      saveGalleryData(updated, null);
+      resetYearForm();
+      return;
+    }
+
+    // ADD new year
+    if (!newYearInput.trim()) return;
     const yearVal = newYearInput.trim();
 
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
       const res = await fetch(`${backendUrl}/api/v1/gallery/years`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           year: yearVal,
-          title: { en: newYearTitleInput.trim(), hi: newYearTitleInput.trim() },
-          subtitle: { en: newYearSubtitleInput.trim(), hi: newYearSubtitleInput.trim() },
+          title: { en: newYearTitleInput.trim(), hi: newYearTitleHiInput.trim() || newYearTitleInput.trim() },
+          subtitle: { en: newYearSubtitleInput.trim(), hi: newYearSubtitleHiInput.trim() || newYearSubtitleInput.trim() },
         }),
       });
 
       if (res.ok) {
         await fetchBackendData();
-        setNewYearInput("");
-        setNewYearTitleInput("");
-        setNewYearSubtitleInput("");
-        setShowAddYearModal(false);
+        resetYearForm();
         return;
       }
     } catch (err) {
@@ -144,15 +195,12 @@ export default function AdminGalleryPage() {
 
     const newTab = {
       id: yearVal.toLowerCase(),
-      title: { hi: newYearTitleInput.trim(), en: newYearTitleInput.trim() },
-      subtitle: { hi: newYearSubtitleInput.trim(), en: newYearSubtitleInput.trim() },
+      title: { en: newYearTitleInput.trim(), hi: newYearTitleHiInput.trim() || newYearTitleInput.trim() },
+      subtitle: { en: newYearSubtitleInput.trim(), hi: newYearSubtitleHiInput.trim() || newYearSubtitleInput.trim() },
       year: yearVal,
     };
     saveGalleryData([...galleryYears, newTab], null);
-    setNewYearInput("");
-    setNewYearTitleInput("");
-    setNewYearSubtitleInput("");
-    setShowAddYearModal(false);
+    resetYearForm();
   };
 
   // Delete Year Handler
@@ -515,6 +563,26 @@ export default function AdminGalleryPage() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
+                        setEditingYear(t);
+                        setNewYearInput(t.year || "");
+                        setNewYearTitleInput(t.title?.en || "");
+                        setNewYearTitleHiInput(t.title?.hi || "");
+                        setNewYearSubtitleInput(t.subtitle?.en || "");
+                        setNewYearSubtitleHiInput(t.subtitle?.hi || "");
+                        setShowAddYearModal(true);
+                      }}
+                      className={`p-1 rounded-full transition-colors ${
+                        isActive
+                          ? "hover:bg-white/20 text-white"
+                          : "hover:bg-gray-300 text-gray-500"
+                      }`}
+                      title={`Edit ${t.year} edition`}
+                    >
+                      <FaPen className="text-[10px]" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
                         handleDeleteYear(t.year);
                       }}
                       className={`p-1 rounded-full transition-colors ${
@@ -664,39 +732,44 @@ export default function AdminGalleryPage() {
           })()}
         </div>
 
-      {/* MODAL 1: ADD YEAR / EDITION */}
+      {/* MODAL 1: ADD / EDIT YEAR / EDITION */}
       {showAddYearModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-gray-100 relative">
             <button
-              onClick={() => setShowAddYearModal(false)}
+              onClick={() => resetYearForm()}
               className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100"
             >
               <FaXmark className="text-lg" />
             </button>
             <h3 className="text-lg font-black text-gray-900 mb-1 flex items-center gap-2">
               <FaCalendarPlus className="text-[var(--primary)]" />
-              <span>Add New Year / Edition</span>
+              <span>{editingYear ? `Edit Edition ${editingYear.year}` : "Add New Year / Edition"}</span>
             </h3>
             <p className="text-xs text-gray-500 mb-5">
-              Add a new year tab (e.g., 2026, 2027) to organize Sanskarshala gallery images.
+              {editingYear
+                ? "Update the English & Hindi titles for this edition tab."
+                : "Add a new year tab (e.g., 2026, 2027) to organize Sanskarshala gallery images."}
             </p>
 
-            <form onSubmit={handleAddYear} className="space-y-4 text-xs font-semibold">
-              <div>
-                <label className="block text-gray-700 font-bold mb-1">Year (e.g. 2026)</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="2026"
-                  value={newYearInput}
-                  onChange={(e) => setNewYearInput(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[var(--primary)] text-slate-800"
-                />
-              </div>
+            <form onSubmit={handleSaveYear} className="space-y-4 text-xs font-semibold">
+              {/* Year field - only shown for new years, disabled for editing */}
+              {!editingYear && (
+                <div>
+                  <label className="block text-gray-700 font-bold mb-1">Year (e.g. 2026)</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="2026"
+                    value={newYearInput}
+                    onChange={(e) => setNewYearInput(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[var(--primary)] text-slate-800"
+                  />
+                </div>
+              )}
 
               <div>
-                <label className="block text-gray-700 font-bold mb-1">Edition Title (English / Hindi)</label>
+                <label className="block text-gray-700 font-bold mb-1">Edition Title (English)</label>
                 <input
                   type="text"
                   required
@@ -708,7 +781,20 @@ export default function AdminGalleryPage() {
               </div>
 
               <div>
-                <label className="block text-gray-700 font-bold mb-1">Subtitle (Optional)</label>
+                <label className="block text-gray-700 font-bold mb-1">Edition Title (Hindi / हिंदी)</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="संस्कारशाला 2026"
+                  value={newYearTitleHiInput}
+                  onChange={(e) => setNewYearTitleHiInput(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[var(--primary)] text-slate-800"
+                />
+                <p className="text-[10px] text-gray-400 mt-1">⚠️ Hindi title ज़रूरी है — यही Hindi mode में tab पर दिखेगा</p>
+              </div>
+
+              <div>
+                <label className="block text-gray-700 font-bold mb-1">Subtitle English (Optional)</label>
                 <input
                   type="text"
                   placeholder="(2026)"
@@ -718,10 +804,22 @@ export default function AdminGalleryPage() {
                 />
               </div>
 
+              <div>
+                <label className="block text-gray-700 font-bold mb-1">Subtitle Hindi (Optional / हिंदी)</label>
+                <input
+                  type="text"
+                  placeholder="(2026)"
+                  value={newYearSubtitleHiInput}
+                  onChange={(e) => setNewYearSubtitleHiInput(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[var(--primary)] text-slate-800"
+                />
+                <p className="text-[10px] text-gray-400 mt-1">अगर खाली छोड़ा तो English subtitle ही दिखेगा</p>
+              </div>
+
               <div className="flex items-center gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => setShowAddYearModal(false)}
+                  onClick={() => resetYearForm()}
                   className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-bold hover:bg-gray-50 transition-all cursor-pointer"
                 >
                   Cancel
@@ -730,7 +828,7 @@ export default function AdminGalleryPage() {
                   type="submit"
                   className="flex-1 py-2.5 rounded-xl bg-[var(--primary)] text-white font-extrabold shadow-md hover:bg-red-700 transition-all cursor-pointer"
                 >
-                  Save Year
+                  {editingYear ? "Update Year" : "Save Year"}
                 </button>
               </div>
             </form>

@@ -106,13 +106,18 @@ function SearchableSelect({
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
+        if (isTypingCustom && customText.trim()) {
+          onChange({
+            target: { name, value: customText.trim() },
+          });
+        }
         setIsOpen(false);
         setQuery("");
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [isTypingCustom, customText, name, onChange]);
 
   // Sync custom text when value changes
   useEffect(() => {
@@ -180,15 +185,15 @@ function SearchableSelect({
 
   const handleOptionClick = (val) => {
     if (allowCustom && (val === "Other / अन्य" || val === "Other")) {
-      if (isTypingCustom) {
+      if (isTypingCustom && customText.trim()) {
         onChange({
-          target: { name, value: customText.trim() || "Other / अन्य" },
+          target: { name, value: customText.trim() },
         });
         setIsOpen(false);
       } else {
         setIsTypingCustom(true);
         onChange({
-          target: { name, value: customText ? customText : "Other / अन्य" },
+          target: { name, value: "Other / अन्य" },
         });
         setTimeout(() => customInputRef.current?.focus(), 80);
       }
@@ -202,14 +207,14 @@ function SearchableSelect({
   };
 
   const handleCustomInputChange = (e) => {
-    const val = e.target.value;
-    setCustomText(val);
-    onChange({ target: { name, value: val ? val : "Other / अन्य" } });
+    setCustomText(e.target.value);
   };
 
   const handleConfirmCustom = () => {
+    const trimmed = customText.trim();
+    if (!trimmed) return;
     onChange({
-      target: { name, value: customText.trim() || "Other / अन्य" },
+      target: { name, value: trimmed },
     });
     setIsOpen(false);
   };
@@ -394,9 +399,17 @@ export default function StudentSurveyPage() {
     return "";
   };
 
+  const isValidValue = (val) => {
+    if (!val) return false;
+    const str = String(val).trim();
+    if (!str) return false;
+    if (str === "Other / अन्य" || str === "__TYPE_HERE__") return false;
+    return true;
+  };
+
   // Available Cities based on selected State
   const availableCities = useMemo(() => {
-    if (!form.state) return [];
+    if (!isValidValue(form.state)) return [];
     const known = schoolsData[form.state]
       ? Object.keys(schoolsData[form.state]).sort()
       : [];
@@ -405,7 +418,7 @@ export default function StudentSurveyPage() {
 
   // Available Schools based on selected State & City
   const availableSchools = useMemo(() => {
-    if (!form.state || !form.city) return [];
+    if (!isValidValue(form.state) || !isValidValue(form.city)) return [];
     const known = schoolsData[form.state]?.[form.city] || [];
     return Array.from(new Set([...known, "Other / अन्य"]));
   }, [form.state, form.city]);
@@ -478,15 +491,12 @@ export default function StudentSurveyPage() {
       }
     }
 
-    if (!form.gender) newErrors.gender = "Please select gender / लिंग चुनें";
-    if (!form.studentClass)
+    if (!isValidValue(form.gender)) newErrors.gender = "Please select gender / लिंग चुनें";
+    if (!isValidValue(form.studentClass))
       newErrors.studentClass = "Please select class / कक्षा चुनें";
-    if (!form.state) newErrors.state = "Please select state / राज्य चुनें";
-    if (!form.city) newErrors.city = "Please select city / शहर चुनें";
-    const hasKnownSchools = !!(
-      schoolsData[form.state] && schoolsData[form.state][form.city]
-    );
-    if (hasKnownSchools && !form.school)
+    if (!isValidValue(form.state)) newErrors.state = "Please select state / राज्य चुनें";
+    if (!isValidValue(form.city)) newErrors.city = "Please select city / शहर चुनें";
+    if (!isValidValue(form.school))
       newErrors.school = "Please select school / विद्यालय चुनें";
 
     setErrors(newErrors);
@@ -514,13 +524,10 @@ export default function StudentSurveyPage() {
     if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
     if (age < 4 || age > 18) return false;
 
-    if (!form.gender) return false;
-    if (!form.studentClass) return false;
-    if (!form.state || !form.city) return false;
-    const hasKnownSchools = !!(
-      schoolsData[form.state] && schoolsData[form.state][form.city]
-    );
-    if (hasKnownSchools && !form.school) return false;
+    if (!isValidValue(form.gender)) return false;
+    if (!isValidValue(form.studentClass)) return false;
+    if (!isValidValue(form.state) || !isValidValue(form.city)) return false;
+    if (!isValidValue(form.school)) return false;
 
     return true;
   }, [form]);
@@ -980,13 +987,13 @@ export default function StudentSurveyPage() {
               value={form.city}
               options={availableCities}
               placeholder={
-                form.state
+                isValidValue(form.state)
                   ? "Select City / शहर चुनें"
                   : "Select State First / पहले राज्य चुनें"
               }
               onChange={handleChange}
               error={errors.city}
-              disabled={!form.state}
+              disabled={!isValidValue(form.state)}
               required
               allowCustom
             />
@@ -997,15 +1004,15 @@ export default function StudentSurveyPage() {
                 label="School / विद्यालय"
                 name="school"
                 value={form.school}
-                options={form.city ? availableSchools : []}
+                options={isValidValue(form.city) ? availableSchools : []}
                 placeholder={
-                  form.city
+                  isValidValue(form.city)
                     ? "Select School / विद्यालय चुनें"
                     : "Select City First / पहले शहर चुनें"
                 }
                 onChange={handleChange}
                 error={errors.school}
-                disabled={!form.city}
+                disabled={!isValidValue(form.city)}
                 required
                 allowCustom
               />

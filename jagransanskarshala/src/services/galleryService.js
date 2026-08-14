@@ -10,7 +10,7 @@ export const galleryTabs = [
       en: "Sanskriti Se Sanskar",
     },
     subtitle: {
-      hi: "(All Images)",
+      hi: "(सभी तस्वीरें)",
       en: "(All Images)",
     },
     year: "All",
@@ -18,7 +18,7 @@ export const galleryTabs = [
   {
     id: "2020",
     title: {
-      hi: "Sanskrti Se Sanskar",
+      hi: "संस्कृति से संस्कार",
       en: "Sanskrti Se Sanskar",
     },
     subtitle: {
@@ -30,11 +30,11 @@ export const galleryTabs = [
   {
     id: "2021",
     title: {
-      hi: "Desh Se Hum Aur",
+      hi: "देश से हम और हमसे देश बनता है",
       en: "Desh Se Hum Aur",
     },
     subtitle: {
-      hi: "Humse Desh Banta Hai (2021)",
+      hi: "(2021)",
       en: "Humse Desh Banta Hai (2021)",
     },
     year: "2021",
@@ -42,7 +42,7 @@ export const galleryTabs = [
   {
     id: "2022",
     title: {
-      hi: "Digital Sanskar",
+      hi: "डिजिटल संस्कार",
       en: "Digital Sanskar",
     },
     subtitle: {
@@ -54,7 +54,7 @@ export const galleryTabs = [
   {
     id: "2023",
     title: {
-      hi: "Urja Saksharta",
+      hi: "ऊर्जा साक्षरता",
       en: "Urja Saksharta",
     },
     subtitle: {
@@ -66,7 +66,7 @@ export const galleryTabs = [
   {
     id: "2024",
     title: {
-      hi: "Sanskarshaala 2024",
+      hi: "संस्कारशाला 2024",
       en: "Sanskarshaala 2024",
     },
     subtitle: {
@@ -78,7 +78,7 @@ export const galleryTabs = [
   {
     id: "2025",
     title: {
-      hi: "Sanskarshaala 2025",
+      hi: "संस्कारशाला 2025",
       en: "Sanskarshaala 2025",
     },
     subtitle: {

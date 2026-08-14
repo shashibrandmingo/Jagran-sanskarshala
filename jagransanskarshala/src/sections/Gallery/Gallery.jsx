@@ -201,12 +201,12 @@ export default function GallerySection({ initialYear = "All" }) {
         {/* Section Header */}
         <div className="mb-10 sm:mb-14">
           <div className="flex flex-col items-start">
-            <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-red-100/80 text-[var(--primary)] text-xs font-bold uppercase tracking-wider mb-3">
+            <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-red-100/80 text-[var(--primary)] text-xs font-bold uppercase tracking-wider mb-4">
               <FaImages className="text-xs" />
               {lang === "hi" ? "चित्र प्रदर्शनी" : "Glimpses & Events"}
             </span>
 
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight mb-4">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight leading-snug mb-4">
               {lang === "hi"
                 ? "दैनिक जागरण संस्कारशाला फोटो गैलरी"
                 : "Dainik Jagran Sanskarshaala Gallery"}
@@ -244,8 +244,8 @@ export default function GallerySection({ initialYear = "All" }) {
             <div
               id="gallery-tabs-scroll-container"
               className={`flex items-center gap-2.5 w-full py-0.5 px-1 ${dynamicTabs.length > 7
-                  ? "overflow-x-auto no-scrollbar scroll-smooth"
-                  : "justify-between"
+                ? "overflow-x-auto no-scrollbar scroll-smooth"
+                : "justify-between"
                 }`}
             >
               {dynamicTabs.map((tab, idx) => {
@@ -260,15 +260,15 @@ export default function GallerySection({ initialYear = "All" }) {
                     key={tab._id || tab.id || tab.year || idx}
                     onClick={() => setActiveTab(tab.year)}
                     className={`flex flex-col items-center justify-center text-center px-3 py-3 rounded-2xl transition-all duration-300 cursor-pointer ${dynamicTabs.length > 7
-                        ? "shrink-0 min-w-[155px] max-w-[210px]"
-                        : "flex-1 min-w-0"
+                      ? "shrink-0 min-w-[155px] max-w-[210px]"
+                      : "flex-1 min-w-0"
                       } ${isActive
                         ? "bg-gradient-to-r from-[var(--primary)] to-red-700 text-white shadow-md shadow-red-900/20 scale-[1.02] border border-red-800"
                         : "bg-white/85 text-slate-800 hover:text-[var(--primary)] hover:bg-white hover:shadow-xs border border-amber-900/10"
                       }`}
                   >
                     <div className="flex flex-col items-center justify-center text-center w-full min-w-0">
-                      <span className="text-xs xl:text-sm font-extrabold tracking-tight leading-tight truncate w-full">
+                      <span className="text-xs xl:text-sm font-extrabold tracking-tight leading-normal truncate w-full">
                         {tabTitle}
                       </span>
                       <div className="flex items-center justify-center gap-1.5 mt-1 whitespace-nowrap">
@@ -373,8 +373,8 @@ export default function GallerySection({ initialYear = "All" }) {
                         setDropdownOpen(false);
                       }}
                       className={`w-full flex items-center justify-between p-3 rounded-xl text-left transition-colors cursor-pointer ${isCurrent
-                          ? "bg-[var(--primary)] text-white font-bold"
-                          : "text-gray-700 hover:bg-red-50"
+                        ? "bg-[var(--primary)] text-white font-bold"
+                        : "text-gray-700 hover:bg-red-50"
                         }`}
                     >
                       <div className="flex flex-col">
@@ -385,8 +385,8 @@ export default function GallerySection({ initialYear = "All" }) {
                           {tab.isLatest && (
                             <span
                               className={`text-[8px] px-1.5 py-0.5 rounded-full font-black uppercase ${isCurrent
-                                  ? "bg-white text-[var(--primary)]"
-                                  : "text-white"
+                                ? "bg-white text-[var(--primary)]"
+                                : "text-white"
                                 }`}
                               style={!isCurrent ? { background: "var(--secondary, #f07f22)" } : {}}
                             >
@@ -596,8 +596,8 @@ export default function GallerySection({ initialYear = "All" }) {
                   key={img._id || img.id || idx}
                   onClick={() => setLightboxIndex(idx)}
                   className={`relative w-12 h-9 sm:w-14 sm:h-10 rounded-lg overflow-hidden shrink-0 border-2 transition-all cursor-pointer ${lightboxIndex === idx
-                      ? "border-[var(--primary)] scale-105 opacity-100 ring-2 ring-red-500/40"
-                      : "border-transparent opacity-40 hover:opacity-90"
+                    ? "border-[var(--primary)] scale-105 opacity-100 ring-2 ring-red-500/40"
+                    : "border-transparent opacity-40 hover:opacity-90"
                     }`}
                 >
                   <img

@@ -2,6 +2,7 @@ import express from "express";
 import {
   getGalleryData,
   addGalleryYear,
+  updateGalleryYear,
   deleteGalleryYear,
   addGalleryCategory,
   updateGalleryCategory,
@@ -23,6 +24,7 @@ router.delete("/categories/:id", deleteGalleryCategory);
 
 // Admin Year Edition Routes
 router.post("/years", addGalleryYear);
+router.put("/years/:yearVal", updateGalleryYear);
 router.delete("/years/:yearVal", deleteGalleryYear);
 
 // Admin Photo Upload & Delete Routes (With Multer Middleware)

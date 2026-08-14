@@ -79,6 +79,33 @@ export const deleteGalleryYear = asyncHandler(async (req, res) => {
 });
 
 /**
+ * @desc Update Edition Year Tab (Title / Subtitle)
+ * @route PUT /api/v1/gallery/years/:yearVal
+ */
+export const updateGalleryYear = asyncHandler(async (req, res) => {
+  const { yearVal } = req.params;
+  const { title, subtitle } = req.body;
+
+  const yearDoc = await GalleryYear.findOne({ year: yearVal });
+  if (!yearDoc) {
+    throw ApiError.notFound("Edition year not found");
+  }
+
+  if (title) {
+    if (title.en !== undefined) yearDoc.title.en = title.en;
+    if (title.hi !== undefined) yearDoc.title.hi = title.hi;
+  }
+  if (subtitle) {
+    if (subtitle.en !== undefined) yearDoc.subtitle.en = subtitle.en;
+    if (subtitle.hi !== undefined) yearDoc.subtitle.hi = subtitle.hi;
+  }
+
+  await yearDoc.save();
+
+  return new ApiResponse(200, yearDoc, "Edition year updated successfully").send(res);
+});
+
+/**
  * @desc Add New Category
  * @route POST /api/v1/gallery/categories
  */
