@@ -180,14 +180,14 @@ export const getAllSurveys = async (req, res) => {
       answers: item.answers || {},
       submittedOn: item.createdAt
         ? new Date(item.createdAt).toLocaleString("en-IN", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: true,
-            timeZone: "Asia/Kolkata",
-          })
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+          timeZone: "Asia/Kolkata",
+        })
         : "-",
     }));
 

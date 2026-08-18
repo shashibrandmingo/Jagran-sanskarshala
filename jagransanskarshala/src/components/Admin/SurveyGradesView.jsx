@@ -385,15 +385,14 @@ export default function SurveyGradesView({ liveSurveys = [] }) {
   return (
     <>
       <div className="bg-white rounded-3xl p-5 sm:p-7 shadow-xs border border-gray-200/80 space-y-6">
-      {/* Top Sub-Tabs: All Data / Parent Data / Student Data */}
+        {/* Top Sub-Tabs: All Data / Parent Data / Student Data */}
         <div className="flex items-center gap-8 border-b border-gray-100 pb-4">
           <button
             onClick={() => setTabFilter("all")}
-            className={`text-xs sm:text-sm font-extrabold pb-2 relative transition-all cursor-pointer ${
-              tabFilter === "all"
+            className={`text-xs sm:text-sm font-extrabold pb-2 relative transition-all cursor-pointer ${tabFilter === "all"
                 ? "text-[var(--primary)]"
                 : "text-gray-500 hover:text-gray-800"
-            }`}
+              }`}
           >
             <span>All Data ({gradeCounts.total})</span>
             {tabFilter === "all" && (
@@ -403,11 +402,10 @@ export default function SurveyGradesView({ liveSurveys = [] }) {
 
           <button
             onClick={() => setTabFilter("parent")}
-            className={`text-xs sm:text-sm font-extrabold pb-2 relative transition-all cursor-pointer ${
-              tabFilter === "parent"
+            className={`text-xs sm:text-sm font-extrabold pb-2 relative transition-all cursor-pointer ${tabFilter === "parent"
                 ? "text-[var(--primary)]"
                 : "text-gray-500 hover:text-gray-800"
-            }`}
+              }`}
           >
             <span>Parent Data</span>
             {tabFilter === "parent" && (
@@ -417,11 +415,10 @@ export default function SurveyGradesView({ liveSurveys = [] }) {
 
           <button
             onClick={() => setTabFilter("student")}
-            className={`text-xs sm:text-sm font-extrabold pb-2 relative transition-all cursor-pointer ${
-              tabFilter === "student"
+            className={`text-xs sm:text-sm font-extrabold pb-2 relative transition-all cursor-pointer ${tabFilter === "student"
                 ? "text-[var(--primary)]"
                 : "text-gray-500 hover:text-gray-800"
-            }`}
+              }`}
           >
             <span>Student Data</span>
             {tabFilter === "student" && (
@@ -510,11 +507,10 @@ export default function SurveyGradesView({ liveSurveys = [] }) {
                       setDateRangeLabel(p.label);
                       setOpenDropdown("none");
                     }}
-                    className={`w-full px-3.5 py-2 text-left text-xs font-semibold flex items-center justify-between hover:bg-red-50 hover:text-[var(--primary)] ${
-                      datePreset === p.id
+                    className={`w-full px-3.5 py-2 text-left text-xs font-semibold flex items-center justify-between hover:bg-red-50 hover:text-[var(--primary)] ${datePreset === p.id
                         ? "text-[var(--primary)] font-bold bg-red-50/50"
                         : "text-gray-700"
-                    }`}
+                      }`}
                   >
                     <span>{p.label}</span>
                     {datePreset === p.id && <FaCheck className="text-xs" />}
@@ -553,11 +549,10 @@ export default function SurveyGradesView({ liveSurveys = [] }) {
                       setGradeFilter(g.value);
                       setOpenDropdown("none");
                     }}
-                    className={`w-full px-3.5 py-2 text-left text-xs font-semibold flex items-center justify-between hover:bg-red-50 hover:text-[var(--primary)] ${
-                      gradeFilter === g.value
+                    className={`w-full px-3.5 py-2 text-left text-xs font-semibold flex items-center justify-between hover:bg-red-50 hover:text-[var(--primary)] ${gradeFilter === g.value
                         ? "text-[var(--primary)] font-bold bg-red-50/50"
                         : "text-gray-700"
-                    }`}
+                      }`}
                   >
                     <span>{g.label}</span>
                     {gradeFilter === g.value && <FaCheck className="text-xs" />}
@@ -592,11 +587,10 @@ export default function SurveyGradesView({ liveSurveys = [] }) {
                       setSchoolFilter("all");
                       setOpenDropdown("none");
                     }}
-                    className={`w-full px-3.5 py-2 text-left text-xs font-semibold flex items-center justify-between hover:bg-red-50 hover:text-[var(--primary)] ${
-                      stateFilter === st.value
+                    className={`w-full px-3.5 py-2 text-left text-xs font-semibold flex items-center justify-between hover:bg-red-50 hover:text-[var(--primary)] ${stateFilter === st.value
                         ? "text-[var(--primary)] font-bold bg-red-50/50"
                         : "text-gray-700"
-                    }`}
+                      }`}
                   >
                     <span className="truncate">{st.label}</span>
                     {stateFilter === st.value && (
@@ -632,11 +626,10 @@ export default function SurveyGradesView({ liveSurveys = [] }) {
                       setSchoolFilter("all");
                       setOpenDropdown("none");
                     }}
-                    className={`w-full px-3.5 py-2 text-left text-xs font-semibold flex items-center justify-between hover:bg-red-50 hover:text-[var(--primary)] ${
-                      cityFilter === c.value
+                    className={`w-full px-3.5 py-2 text-left text-xs font-semibold flex items-center justify-between hover:bg-red-50 hover:text-[var(--primary)] ${cityFilter === c.value
                         ? "text-[var(--primary)] font-bold bg-red-50/50"
                         : "text-gray-700"
-                    }`}
+                      }`}
                   >
                     <span className="truncate">{c.label}</span>
                     {cityFilter === c.value && (
@@ -671,11 +664,10 @@ export default function SurveyGradesView({ liveSurveys = [] }) {
                       setSchoolFilter(sch.value);
                       setOpenDropdown("none");
                     }}
-                    className={`w-full px-3.5 py-2 text-left text-xs font-semibold flex items-center justify-between hover:bg-red-50 hover:text-[var(--primary)] ${
-                      schoolFilter === sch.value
+                    className={`w-full px-3.5 py-2 text-left text-xs font-semibold flex items-center justify-between hover:bg-red-50 hover:text-[var(--primary)] ${schoolFilter === sch.value
                         ? "text-[var(--primary)] font-bold bg-red-50/50"
                         : "text-gray-700"
-                    }`}
+                      }`}
                   >
                     <span className="truncate">{sch.label}</span>
                     {schoolFilter === sch.value && (
@@ -736,11 +728,10 @@ export default function SurveyGradesView({ liveSurveys = [] }) {
                         setItemsPerPage(num);
                         setOpenDropdown("none");
                       }}
-                      className={`w-full px-3 py-1.5 text-left text-xs font-bold flex items-center justify-between hover:bg-red-50 hover:text-[var(--primary)] ${
-                        itemsPerPage === num
+                      className={`w-full px-3 py-1.5 text-left text-xs font-bold flex items-center justify-between hover:bg-red-50 hover:text-[var(--primary)] ${itemsPerPage === num
                           ? "text-[var(--primary)] font-extrabold bg-red-50/50"
                           : "text-gray-700"
-                      }`}
+                        }`}
                     >
                       <span>{num}</span>
                       {itemsPerPage === num && (
@@ -801,9 +792,8 @@ export default function SurveyGradesView({ liveSurveys = [] }) {
                   return (
                     <tr
                       key={rowId}
-                      className={`hover:bg-red-50/20 transition-colors ${
-                        isChecked ? "bg-red-50/30" : ""
-                      }`}
+                      className={`hover:bg-red-50/20 transition-colors ${isChecked ? "bg-red-50/30" : ""
+                        }`}
                     >
                       <td className="py-3.5 px-4 text-center">
                         <input
@@ -822,13 +812,12 @@ export default function SurveyGradesView({ liveSurveys = [] }) {
                       {/* Grade Badge */}
                       <td className="py-3.5 px-4 whitespace-nowrap">
                         <span
-                          className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded-full font-black text-xs text-white shadow-2xs ${
-                            rowGrade === "A++"
+                          className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded-full font-black text-xs text-white shadow-2xs ${rowGrade === "A++"
                               ? "bg-gradient-to-r from-emerald-500 to-green-600 shadow-emerald-500/20"
                               : rowGrade === "A+"
-                              ? "bg-gradient-to-r from-blue-600 to-indigo-600 shadow-blue-500/20"
-                              : "bg-gradient-to-r from-amber-500 to-orange-600 shadow-amber-500/20"
-                          }`}
+                                ? "bg-gradient-to-r from-blue-600 to-indigo-600 shadow-blue-500/20"
+                                : "bg-gradient-to-r from-amber-500 to-orange-600 shadow-amber-500/20"
+                            }`}
                         >
                           {rowGrade}
                         </span>
@@ -847,11 +836,10 @@ export default function SurveyGradesView({ liveSurveys = [] }) {
                       {/* Type Badge */}
                       <td className="py-3.5 px-4 whitespace-nowrap">
                         <span
-                          className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                            row.type === "Student"
+                          className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${row.type === "Student"
                               ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                               : "bg-orange-50 text-orange-700 border border-orange-200"
-                          }`}
+                            }`}
                         >
                           {row.type}
                         </span>
@@ -901,11 +889,10 @@ export default function SurveyGradesView({ liveSurveys = [] }) {
             <button
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={validPage === 1}
-              className={`w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center transition-colors cursor-pointer ${
-                validPage === 1
+              className={`w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center transition-colors cursor-pointer ${validPage === 1
                   ? "opacity-40 cursor-not-allowed bg-gray-50 text-gray-300"
                   : "hover:bg-gray-100 text-gray-700"
-              }`}
+                }`}
             >
               <FaChevronLeft className="text-xs" />
             </button>
@@ -918,11 +905,10 @@ export default function SurveyGradesView({ liveSurveys = [] }) {
                 <button
                   key={pNum}
                   onClick={() => setCurrentPage(pNum)}
-                  className={`w-8 h-8 rounded-full font-black text-xs transition-colors cursor-pointer flex items-center justify-center ${
-                    isCurrent
+                  className={`w-8 h-8 rounded-full font-black text-xs transition-colors cursor-pointer flex items-center justify-center ${isCurrent
                       ? "bg-[var(--primary)] text-white shadow-md shadow-red-500/20"
                       : "hover:bg-gray-100 text-gray-700"
-                  }`}
+                    }`}
                 >
                   {pNum}
                 </button>
@@ -933,11 +919,10 @@ export default function SurveyGradesView({ liveSurveys = [] }) {
             <button
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               disabled={validPage === totalPages}
-              className={`w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center transition-colors cursor-pointer ${
-                validPage === totalPages
+              className={`w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center transition-colors cursor-pointer ${validPage === totalPages
                   ? "opacity-40 cursor-not-allowed bg-gray-50 text-gray-300"
                   : "hover:bg-gray-100 text-gray-700"
-              }`}
+                }`}
             >
               <FaChevronRight className="text-xs" />
             </button>
@@ -953,13 +938,12 @@ export default function SurveyGradesView({ liveSurveys = [] }) {
             <div className="flex items-center justify-between pb-4 border-b border-gray-100 shrink-0">
               <div className="flex items-center gap-3">
                 <div
-                  className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-md ${
-                    getItemGrade(selectedSubmission) === "A++"
+                  className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-md ${getItemGrade(selectedSubmission) === "A++"
                       ? "bg-gradient-to-br from-emerald-500 to-green-700 shadow-emerald-500/30"
                       : getItemGrade(selectedSubmission) === "A+"
-                      ? "bg-gradient-to-br from-blue-600 to-indigo-700 shadow-blue-500/30"
-                      : "bg-gradient-to-br from-amber-500 to-red-600 shadow-amber-500/30"
-                  }`}
+                        ? "bg-gradient-to-br from-blue-600 to-indigo-700 shadow-blue-500/30"
+                        : "bg-gradient-to-br from-amber-500 to-red-600 shadow-amber-500/30"
+                    }`}
                 >
                   {getItemGrade(selectedSubmission)}
                 </div>
