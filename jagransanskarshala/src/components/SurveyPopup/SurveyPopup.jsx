@@ -86,7 +86,7 @@ export default function SurveyPopup() {
       <div className="fixed right-0 top-[70%] sm:top-1/2 -translate-y-1/2 z-30">
         <button
           onClick={openSurveyModal}
-          className="bg-[var(--primary)] text-white py-2.5 px-2 sm:py-4 sm:px-3 rounded-l-xl flex flex-col items-center justify-center shadow-lg hover:bg-red-800 transition-colors group cursor-pointer"
+          className="bg-[#00ACC1] hover:bg-[#0097a7] text-white py-2.5 px-2 sm:py-4 sm:px-3 rounded-l-xl flex flex-col items-center justify-center shadow-lg transition-colors group cursor-pointer shadow-cyan-500/20"
           aria-label={survey.title}
         >
           <FiArrowUp className="w-3.5 h-3.5 sm:w-5 sm:h-5 mb-1.5 sm:mb-3 group-hover:-translate-y-1 transition-transform" />
