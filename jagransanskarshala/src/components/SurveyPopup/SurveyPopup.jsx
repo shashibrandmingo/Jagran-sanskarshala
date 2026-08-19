@@ -86,17 +86,17 @@ export default function SurveyPopup() {
       <div className="fixed right-0 top-[70%] sm:top-1/2 -translate-y-1/2 z-30">
         <button
           onClick={openSurveyModal}
-          className="bg-[#00ACC1] hover:bg-[#0097a7] text-white py-2.5 px-2 sm:py-4 sm:px-3 rounded-l-xl flex flex-col items-center justify-center shadow-lg transition-colors group cursor-pointer shadow-cyan-500/20"
+          className="bg-[#00ACC1] hover:bg-[#008ba0] text-white py-3 px-2.5 sm:py-4.5 sm:px-3.5 rounded-l-2xl flex flex-col items-center justify-center shadow-xl hover:shadow-cyan-500/40 transition-all duration-300 group cursor-pointer border-l border-t border-b border-white/20 select-none"
           aria-label={survey.title}
         >
-          <FiArrowUp className="w-3.5 h-3.5 sm:w-5 sm:h-5 mb-1.5 sm:mb-3 group-hover:-translate-y-1 transition-transform" />
+          <FiArrowUp className="w-4 h-4 sm:w-5 sm:h-5 mb-2 sm:mb-3.5 group-hover:-translate-y-1 transition-transform duration-300 stroke-[2.5]" />
           <span 
-            className="font-bold tracking-wider whitespace-nowrap text-xs sm:text-base"
+            className="font-extrabold tracking-wider whitespace-nowrap text-[13px] sm:text-[15px] md:text-[16px] uppercase"
             style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
           >
             {survey.buttonText}
           </span>
-          <FiFileText className="w-3.5 h-3.5 sm:w-5 sm:h-5 mt-2 sm:mt-4" />
+          <FiFileText className="w-4 h-4 sm:w-5 sm:h-5 mt-2.5 sm:mt-4 group-hover:scale-110 transition-transform duration-300 stroke-[2.5]" />
         </button>
       </div>
 
