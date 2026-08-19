@@ -1,10 +1,17 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { IoLanguage } from "react-icons/io5";
 import { useLanguage } from "@/context/LanguageContext";
 
 export default function LanguageSwitcher() {
+  const pathname = usePathname();
   const { toggleLanguage, t, isHindi } = useLanguage();
+
+  // Hide language switcher on admin pages
+  if (pathname && pathname.startsWith("/admin")) {
+    return null;
+  }
 
   return (
     <button
