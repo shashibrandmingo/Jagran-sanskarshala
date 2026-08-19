@@ -108,6 +108,13 @@ export const storiesData = DEFAULT_CAMPAIGN_WEEKS;
 export function resolveStoryPublishStatus(story) {
   if (!story) return false;
   if (story.scheduledDate) {
+    try {
+      const timeStr = story.scheduledTime || "00:00";
+      const targetDate = new Date(`${story.scheduledDate}T${timeStr}:00`);
+      if (!isNaN(targetDate.getTime())) {
+        return targetDate <= new Date();
+      }
+    } catch (e) {}
     const todayStr = new Date().toISOString().split("T")[0];
     return story.scheduledDate <= todayStr;
   }

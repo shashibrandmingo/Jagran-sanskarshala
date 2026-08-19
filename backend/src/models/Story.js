@@ -50,6 +50,10 @@ const storySchema = new mongoose.Schema(
       type: String, // Format: YYYY-MM-DD
       required: true,
     },
+    scheduledTime: {
+      type: String, // Format: HH:mm (e.g. "12:00" or "15:30")
+      default: "00:00",
+    },
     publishDateEn: {
       type: String,
       required: true,

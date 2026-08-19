@@ -6,16 +6,28 @@ import { uploadOnCloudinary, deleteFromCloudinary } from "../utils/cloudinary.js
 import fs from "fs";
 
 /**
- * Helper function: Evaluate and resolve auto-publishing based on scheduled date
+ * Helper function: Evaluate and resolve auto-publishing based on scheduled date & time
  */
-const resolveStoryAutoPublish = async (stories) => {
-  const todayStr = new Date().toISOString().split("T")[0];
+const isDateTimeReached = (scheduledDate, scheduledTime = "00:00") => {
+  if (!scheduledDate) return false;
+  try {
+    const timeStr = scheduledTime || "00:00";
+    const targetDate = new Date(`${scheduledDate}T${timeStr}:00`);
+    if (!isNaN(targetDate.getTime())) {
+      return targetDate <= new Date();
+    }
+  } catch (e) {}
 
+  const todayStr = new Date().toISOString().split("T")[0];
+  return scheduledDate <= todayStr;
+};
+
+const resolveStoryAutoPublish = async (stories) => {
   const updatedStories = await Promise.all(
     stories.map(async (story) => {
       let isPublished = false;
       if (story.scheduledDate) {
-        isPublished = story.scheduledDate <= todayStr;
+        isPublished = isDateTimeReached(story.scheduledDate, story.scheduledTime);
       } else {
         isPublished = Boolean(story.isPublished);
       }
@@ -64,9 +76,8 @@ export const getStoryById = asyncHandler(async (req, res) => {
     throw ApiError.notFound(`Story with ID ${id} not found`);
   }
 
-  const todayStr = new Date().toISOString().split("T")[0];
   let isPublished = story.isPublished;
-  if (story.scheduledDate && story.scheduledDate <= todayStr) {
+  if (story.scheduledDate && isDateTimeReached(story.scheduledDate, story.scheduledTime)) {
     if (!story.isPublished) {
       story.isPublished = true;
       await story.save();
@@ -97,6 +108,7 @@ export const createOrUpdateStory = asyncHandler(async (req, res) => {
     descEn,
     descHi,
     scheduledDate,
+    scheduledTime,
     publishDateEn,
     publishDateHi,
     isPublished,
@@ -133,8 +145,8 @@ export const createOrUpdateStory = asyncHandler(async (req, res) => {
     }
   }
 
-  const todayStr = new Date().toISOString().split("T")[0];
-  const autoPublished = isPublished === "true" || isPublished === true || scheduledDate <= todayStr;
+  const targetTime = scheduledTime || "00:00";
+  const autoPublished = isPublished === "true" || isPublished === true || isDateTimeReached(scheduledDate, targetTime);
 
   const storyData = {
     storyId: numStoryId,
@@ -145,6 +157,7 @@ export const createOrUpdateStory = asyncHandler(async (req, res) => {
     descEn,
     descHi: descHi || descEn,
     scheduledDate,
+    scheduledTime: targetTime,
     publishDateEn: publishDateEn || scheduledDate,
     publishDateHi: publishDateHi || publishDateEn || scheduledDate,
     isPublished: autoPublished,

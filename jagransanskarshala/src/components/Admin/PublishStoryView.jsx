@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import {
   FaNewspaper,
@@ -54,6 +54,241 @@ function formatDateToEnglish(dateString) {
   };
 
   return `${getOrdinal(day)} ${monthName} ${year}`;
+}
+
+function formatTime12Hour(time24) {
+  if (!time24) return "12:00 AM";
+  const parts = time24.split(":");
+  if (parts.length < 2) return time24;
+  let hours = parseInt(parts[0], 10);
+  const minutes = parts[1];
+  if (isNaN(hours)) return time24;
+  const ampm = hours >= 12 ? "PM" : "AM";
+  hours = hours % 12;
+  hours = hours ? hours : 12;
+  return `${hours}:${minutes} ${ampm}`;
+}
+
+function parse24HourTime(time24) {
+  if (!time24) return { hour12: "12", minute: "00", ampm: "AM" };
+  const parts = time24.split(":");
+  let h = parseInt(parts[0] || "0", 10);
+  let m = parseInt(parts[1] || "0", 10);
+  if (isNaN(h)) h = 0;
+  if (isNaN(m)) m = 0;
+  const ampm = h >= 12 ? "PM" : "AM";
+  h = h % 12;
+  if (h === 0) h = 12;
+  const hour12 = String(h).padStart(2, "0");
+  const minute = String(m).padStart(2, "0");
+  return { hour12, minute, ampm };
+}
+
+function formatTo24HourTime({ hour12, minute, ampm }) {
+  let h = parseInt(hour12, 10);
+  if (isNaN(h)) h = 12;
+  if (ampm === "PM" && h < 12) h += 12;
+  if (ampm === "AM" && h === 12) h = 0;
+  const hStr = String(h).padStart(2, "0");
+  const mStr = String(minute).padStart(2, "0");
+  return `${hStr}:${mStr}`;
+}
+
+function CustomTimePicker({ value, onChange }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef(null);
+
+  const parsed = parse24HourTime(value || "00:00");
+  const [selectedHour, setSelectedHour] = useState(parsed.hour12);
+  const [selectedMinute, setSelectedMinute] = useState(parsed.minute);
+  const [selectedAmPm, setSelectedAmPm] = useState(parsed.ampm);
+
+  useEffect(() => {
+    const p = parse24HourTime(value || "00:00");
+    setSelectedHour(p.hour12);
+    setSelectedMinute(p.minute);
+    setSelectedAmPm(p.ampm);
+  }, [value]);
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleApplyTime = (h, m, ap) => {
+    const time24 = formatTo24HourTime({ hour12: h, minute: m, ampm: ap });
+    onChange(time24);
+    setIsOpen(false); // Auto close dropdown on selection!
+  };
+
+  const presets = [
+    { label: "12:00 AM (Midnight)", value: "00:00" },
+    { label: "09:00 AM", value: "09:00" },
+    { label: "12:00 PM (Noon)", value: "12:00" },
+    { label: "03:00 PM", value: "15:00" },
+    { label: "06:00 PM", value: "18:00" },
+    { label: "09:00 PM", value: "21:00" },
+  ];
+
+  const hours = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"];
+  const minutes = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0"));
+
+  return (
+    <div className="relative" ref={containerRef}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between px-4 py-2.5 rounded-full border border-gray-300 text-xs font-bold bg-white text-gray-800 hover:border-[var(--primary)] transition-all cursor-pointer shadow-2xs group"
+      >
+        <span className="flex items-center gap-2">
+          <FaClock className="text-[var(--primary)] text-xs group-hover:scale-110 transition-transform" />
+          <span>{formatTime12Hour(value || "00:00")}</span>
+          {(!value || value === "00:00") && (
+            <span className="text-[10px] text-gray-400 font-medium">(Default 12:00 AM)</span>
+          )}
+        </span>
+        <span className="text-[10px] bg-red-50 text-[var(--primary)] font-extrabold px-2 py-0.5 rounded-full border border-red-100">
+          Select Time
+        </span>
+      </button>
+
+      {isOpen && (
+        <div className="absolute top-[110%] right-0 z-[100] w-72 sm:w-80 max-w-[calc(100vw-3rem)] bg-white rounded-2xl p-3.5 shadow-2xl border border-gray-200 space-y-3 text-xs animate-in fade-in zoom-in-95 duration-150">
+          {/* Quick Presets */}
+          <div>
+            <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider block mb-1.5">
+              ⚡ Quick Presets (Auto Closes)
+            </span>
+            <div className="grid grid-cols-2 gap-1.5">
+              {presets.map((preset) => (
+                <button
+                  key={preset.value}
+                  type="button"
+                  onClick={() => {
+                    const p = parse24HourTime(preset.value);
+                    handleApplyTime(p.hour12, p.minute, p.ampm);
+                  }}
+                  className={`px-2.5 py-1.5 rounded-xl font-bold text-[11px] text-left transition-colors cursor-pointer border ${
+                    value === preset.value
+                      ? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-2xs"
+                      : "bg-gray-50 hover:bg-red-50 text-gray-700 border-gray-200/80 hover:border-red-200"
+                  }`}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="border-t border-gray-100 pt-2.5">
+            <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider block mb-1.5">
+              🕒 Custom Time Selection
+            </span>
+
+            {/* AM / PM Segmented Control */}
+            <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-xl mb-2.5">
+              <button
+                type="button"
+                onClick={() => setSelectedAmPm("AM")}
+                className={`flex-1 py-1 rounded-lg font-black text-[11px] transition-all cursor-pointer ${
+                  selectedAmPm === "AM"
+                    ? "bg-[var(--primary)] text-white shadow-2xs"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                AM (Morning)
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedAmPm("PM")}
+                className={`flex-1 py-1 rounded-lg font-black text-[11px] transition-all cursor-pointer ${
+                  selectedAmPm === "PM"
+                    ? "bg-[var(--primary)] text-white shadow-2xs"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                PM (Afternoon/Night)
+              </button>
+            </div>
+
+            {/* Hour & Minute Grid Pickers */}
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-[10px] font-extrabold text-gray-500 mb-1">Hour</label>
+                <div className="grid grid-cols-4 gap-1 max-h-24 overflow-y-auto pr-1 no-scrollbar border border-gray-100 rounded-xl p-1 bg-gray-50">
+                  {hours.map((h) => (
+                    <button
+                      key={h}
+                      type="button"
+                      onClick={() => setSelectedHour(h)}
+                      className={`py-1 rounded-lg text-[11px] font-bold cursor-pointer transition-colors ${
+                        selectedHour === h
+                          ? "bg-[var(--primary)] text-white"
+                          : "text-gray-700 hover:bg-gray-200"
+                      }`}
+                    >
+                      {h}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-[10px] font-extrabold text-gray-500">Minute (0-59)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="59"
+                    value={parseInt(selectedMinute, 10)}
+                    onChange={(e) => {
+                      let val = parseInt(e.target.value, 10);
+                      if (isNaN(val)) val = 0;
+                      if (val < 0) val = 0;
+                      if (val > 59) val = 59;
+                      setSelectedMinute(String(val).padStart(2, "0"));
+                    }}
+                    className="w-10 text-center text-[10px] font-black bg-white border border-gray-300 rounded-md py-0.5 focus:border-[var(--primary)] focus:outline-none"
+                  />
+                </div>
+                <div className="grid grid-cols-3 gap-1 max-h-24 overflow-y-auto pr-1 no-scrollbar border border-gray-100 rounded-xl p-1 bg-gray-50">
+                  {minutes.map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setSelectedMinute(m)}
+                      className={`py-1 rounded-lg text-[11px] font-bold cursor-pointer transition-colors ${
+                        selectedMinute === m
+                          ? "bg-[var(--primary)] text-white"
+                          : "text-gray-700 hover:bg-gray-200"
+                      }`}
+                    >
+                      {m}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Apply & Auto-Close Button */}
+            <button
+              type="button"
+              onClick={() => handleApplyTime(selectedHour, selectedMinute, selectedAmPm)}
+              className="w-full mt-3 bg-[var(--primary)] hover:bg-red-800 text-white font-bold py-2 rounded-xl text-xs transition-colors cursor-pointer shadow-md flex items-center justify-center gap-1.5"
+            >
+              <FaCheck className="text-xs" />
+              Set Time ({selectedHour}:{selectedMinute} {selectedAmPm}) & Close
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function PublishStoryView() {
@@ -138,6 +373,7 @@ export default function PublishStoryView() {
       weekHi: `सप्ताह ${newWeekNum}`,
       isPublished: false,
       scheduledDate: todayStr,
+      scheduledTime: "12:00",
       publishDateEn: "",
       publishDateHi: "",
       titleEn: "",
@@ -183,6 +419,7 @@ export default function PublishStoryView() {
       formData.append("descEn", editingStory.descEn || "");
       formData.append("descHi", editingStory.descHi || editingStory.descEn || "");
       formData.append("scheduledDate", editingStory.scheduledDate || "");
+      formData.append("scheduledTime", editingStory.scheduledTime || "00:00");
       formData.append("publishDateEn", editingStory.publishDateEn || "");
       formData.append("publishDateHi", editingStory.publishDateHi || editingStory.publishDateEn || "");
       formData.append("isPublished", editingStory.isPublished || false);
@@ -426,15 +663,23 @@ export default function PublishStoryView() {
                       </div>
                     )}
 
-                    {/* Scheduled Date */}
-                    <div className="text-xs font-bold text-gray-500 mt-4 flex items-center gap-2 pt-3 border-t border-gray-100">
-                      <FaCalendarDays className="text-[var(--primary)] text-xs" />
-                      <span>
-                        Publish Date:{" "}
-                        <strong className="text-gray-900">
-                          {story.publishDateEn || story.publishDateHi}
-                        </strong>
-                      </span>
+                    {/* Scheduled Date & Time */}
+                    <div className="text-xs font-bold text-gray-500 mt-4 flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-gray-100">
+                      <div className="flex items-center gap-1.5">
+                        <FaCalendarDays className="text-[var(--primary)] text-xs" />
+                        <span>
+                          Publish Date:{" "}
+                          <strong className="text-gray-900">
+                            {story.publishDateEn || story.publishDateHi}
+                          </strong>
+                        </span>
+                      </div>
+                      {story.scheduledTime && (
+                        <span className="text-[11px] font-extrabold text-amber-700 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-md flex items-center gap-1">
+                          <FaClock className="text-[10px]" />
+                          {formatTime12Hour(story.scheduledTime)}
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -477,18 +722,20 @@ export default function PublishStoryView() {
 
       {/* ── EDIT STORY MODAL (BILINGUAL EDITING & ROUNDED PILL DESIGN) ── */}
       {editingStory && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-3 sm:p-4 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="bg-white rounded-3xl max-w-xl w-full p-5 sm:p-7 shadow-2xl space-y-4 border border-gray-100 max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-2 sm:p-4 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl flex flex-col max-h-[92vh] border border-gray-100 overflow-hidden">
+            {/* Sticky Header */}
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 bg-white shrink-0">
               <div>
-                <span className="text-[10px] font-black text-[var(--primary)] uppercase tracking-wider bg-red-50 px-3 py-1 rounded-full border border-red-100">
+                <span className="text-[10px] font-black text-[var(--primary)] uppercase tracking-wider bg-red-50 px-3 py-0.5 rounded-full border border-red-100">
                   {editingStory.weekEn || editingStory.weekHi}
                 </span>
-                <h3 className="text-xl font-black text-gray-900 mt-1">
+                <h3 className="text-lg sm:text-xl font-black text-gray-900 mt-0.5">
                   Manage Story Details
                 </h3>
               </div>
               <button
+                type="button"
                 onClick={() => {
                   setEditingStory(null);
                   setImageFile(null);
@@ -500,183 +747,218 @@ export default function PublishStoryView() {
               </button>
             </div>
 
-            <form onSubmit={handleSaveEdit} className="space-y-3.5">
-              {/* Heading Title (English & Hindi) */}
-              <div className="grid sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">
-                    Heading Title (English)
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={editingStory.titleEn || ""}
-                    onChange={(e) =>
-                      setEditingStory({
-                        ...editingStory,
-                        titleEn: e.target.value,
-                      })
-                    }
-                    placeholder="e.g. Attention"
-                    className="w-full px-4 py-2.5 rounded-full border border-gray-200 text-xs font-bold focus:outline-none focus:border-[var(--primary)] bg-gray-50/50"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">
-                    Heading Title (Hindi)
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={editingStory.titleHi || ""}
-                    onChange={(e) =>
-                      setEditingStory({
-                        ...editingStory,
-                        titleHi: e.target.value,
-                      })
-                    }
-                    placeholder="जैसे: ध्यान"
-                    className="w-full px-4 py-2.5 rounded-full border border-gray-200 text-xs font-bold focus:outline-none focus:border-[var(--primary)] bg-gray-50/50"
-                  />
-                </div>
-              </div>
-
-              {/* Subheading (English & Hindi) */}
-              <div className="grid sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">
-                    Sub Heading (English)
-                  </label>
-                  <textarea
-                    rows={2}
-                    required
-                    value={editingStory.descEn || ""}
-                    onChange={(e) =>
-                      setEditingStory({
-                        ...editingStory,
-                        descEn: e.target.value,
-                      })
-                    }
-                    placeholder="Enter short subheading..."
-                    className="w-full px-4 py-2.5 rounded-2xl border border-gray-200 text-xs font-bold focus:outline-none focus:border-[var(--primary)] bg-gray-50/50 resize-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">
-                    Sub Heading (Hindi)
-                  </label>
-                  <textarea
-                    rows={2}
-                    required
-                    value={editingStory.descHi || ""}
-                    onChange={(e) =>
-                      setEditingStory({
-                        ...editingStory,
-                        descHi: e.target.value,
-                      })
-                    }
-                    placeholder="संक्षिप्त विवरण दर्ज करें..."
-                    className="w-full px-4 py-2.5 rounded-2xl border border-gray-200 text-xs font-bold focus:outline-none focus:border-[var(--primary)] bg-gray-50/50 resize-none"
-                  />
-                </div>
-              </div>
-
-              {/* Scheduled Date */}
-              <div className="grid sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">
-                    Scheduled Date (YYYY-MM-DD)
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    value={editingStory.scheduledDate || ""}
-                    onChange={(e) => {
-                      const newDateVal = e.target.value;
-                      const formatted = formatDateToEnglish(newDateVal);
-                      setEditingStory({
-                        ...editingStory,
-                        scheduledDate: newDateVal,
-                        publishDateEn: formatted || editingStory.publishDateEn,
-                        publishDateHi: formatted || editingStory.publishDateHi,
-                      });
-                    }}
-                    className="w-full px-4 py-2.5 rounded-full border border-gray-200 text-xs font-bold focus:outline-none focus:border-[var(--primary)] bg-gray-50/50"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">
-                    Display Date Text (English)
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={
-                      editingStory.publishDateEn ||
-                      editingStory.publishDateHi ||
-                      ""
-                    }
-                    onChange={(e) =>
-                      setEditingStory({
-                        ...editingStory,
-                        publishDateEn: e.target.value,
-                        publishDateHi: e.target.value,
-                      })
-                    }
-                    placeholder="e.g. 11th August 2026"
-                    className="w-full px-4 py-2.5 rounded-full border border-gray-200 text-xs font-bold focus:outline-none focus:border-[var(--primary)] bg-gray-50/50"
-                  />
-                </div>
-              </div>
-
-              {/* Image Upload for Newspaper Feature */}
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">
-                  Upload Newspaper Story Image (Cloudinary)
-                </label>
-                <div className="border-2 border-dashed border-gray-200 hover:border-[var(--primary)] rounded-2xl p-3.5 text-center transition-colors bg-gray-50/50 cursor-pointer relative">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageChange}
-                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
-                  />
-                  <div className="flex flex-col items-center justify-center space-y-1 text-gray-500">
-                    <FaCloudArrowUp className="text-xl text-[var(--primary)]" />
-                    <p className="text-xs font-extrabold text-gray-800">
-                      Click to upload story newspaper image
-                    </p>
-                    <p className="text-[10px] text-gray-400">
-                      Uploads directly to Cloudinary (PNG, JPG, WEBP)
-                    </p>
-                  </div>
-                </div>
-
-                {/* Preview */}
-                {imagePreview && (
-                  <div className="mt-2.5 relative rounded-2xl overflow-hidden border border-gray-200 max-h-36 bg-gray-100">
-                    <img
-                      src={imagePreview}
-                      alt="Preview"
-                      className="w-full h-36 object-cover"
+            {/* Scrollable Form Body */}
+            <form onSubmit={handleSaveEdit} className="flex flex-col flex-1 overflow-y-auto no-scrollbar">
+              <div className="p-4 space-y-3 flex-1">
+                {/* Heading Title (English & Hindi) */}
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1">
+                      Heading Title (English)
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={editingStory.titleEn || ""}
+                      onChange={(e) =>
+                        setEditingStory({
+                          ...editingStory,
+                          titleEn: e.target.value,
+                        })
+                      }
+                      placeholder="e.g. Attention"
+                      className="w-full px-3.5 py-2 rounded-full border border-gray-200 text-xs font-bold focus:outline-none focus:border-[var(--primary)] bg-gray-50/50"
                     />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setImageFile(null);
-                        setImagePreview(null);
-                        setEditingStory((prev) => ({ ...prev, image: null }));
-                      }}
-                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 text-xs shadow-md cursor-pointer"
-                    >
-                      <FaXmark />
-                    </button>
                   </div>
-                )}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1">
+                      Heading Title (Hindi)
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={editingStory.titleHi || ""}
+                      onChange={(e) =>
+                        setEditingStory({
+                          ...editingStory,
+                          titleHi: e.target.value,
+                        })
+                      }
+                      placeholder="जैसे: ध्यान"
+                      className="w-full px-3.5 py-2 rounded-full border border-gray-200 text-xs font-bold focus:outline-none focus:border-[var(--primary)] bg-gray-50/50"
+                    />
+                  </div>
+                </div>
+
+                {/* Subheading (English & Hindi) */}
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1">
+                      Sub Heading (English)
+                    </label>
+                    <textarea
+                      rows={3}
+                      required
+                      value={editingStory.descEn || ""}
+                      onChange={(e) =>
+                        setEditingStory({
+                          ...editingStory,
+                          descEn: e.target.value,
+                        })
+                      }
+                      placeholder="Enter short subheading..."
+                      className="w-full px-3.5 py-2 rounded-2xl border border-gray-200 text-xs font-bold focus:outline-none focus:border-[var(--primary)] bg-gray-50/50 resize-none min-h-[70px] no-scrollbar"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1">
+                      Sub Heading (Hindi)
+                    </label>
+                    <textarea
+                      rows={3}
+                      required
+                      value={editingStory.descHi || ""}
+                      onChange={(e) =>
+                        setEditingStory({
+                          ...editingStory,
+                          descHi: e.target.value,
+                        })
+                      }
+                      placeholder="संक्षिप्त विवरण दर्ज करें..."
+                      className="w-full px-3.5 py-2 rounded-2xl border border-gray-200 text-xs font-bold focus:outline-none focus:border-[var(--primary)] bg-gray-50/50 resize-none min-h-[70px] no-scrollbar"
+                    />
+                  </div>
+                </div>
+
+                {/* ── AUTO-PUBLISH SCHEDULE & TIME CARD (IST) ── */}
+                <div className="bg-amber-50/60 border border-amber-200/80 rounded-2xl p-3.5 space-y-2.5 shadow-2xs">
+                  <div className="flex items-center justify-between border-b border-amber-200/50 pb-1.5">
+                    <span className="text-xs font-black text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
+                      <FaClock className="text-amber-600 text-xs" /> Auto-Publish Schedule (IST)
+                    </span>
+                    {editingStory.scheduledTime && (
+                      <span className="text-[11px] font-black text-amber-900 bg-white px-2.5 py-0.5 rounded-full border border-amber-300 shadow-2xs">
+                        Live at: {formatTime12Hour(editingStory.scheduledTime)}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    {/* Scheduled Date */}
+                    <div>
+                      <label className="block text-xs font-extrabold text-gray-700 mb-1">
+                        Scheduled Date
+                      </label>
+                      <input
+                        type="date"
+                        required
+                        value={editingStory.scheduledDate || ""}
+                        onChange={(e) => {
+                          const newDateVal = e.target.value;
+                          const formatted = formatDateToEnglish(newDateVal);
+                          setEditingStory({
+                            ...editingStory,
+                            scheduledDate: newDateVal,
+                            publishDateEn: formatted || editingStory.publishDateEn,
+                            publishDateHi: formatted || editingStory.publishDateHi,
+                          });
+                        }}
+                        className="w-full px-3.5 py-2 rounded-full border border-gray-300 text-xs font-bold focus:outline-none focus:border-[var(--primary)] bg-white"
+                      />
+                    </div>
+
+                    {/* Scheduled Time (Brand Styled + Auto Close) */}
+                    <div>
+                      <label className="block text-xs font-extrabold text-gray-700 mb-1">
+                        Scheduled Time
+                      </label>
+                      <CustomTimePicker
+                        value={editingStory.scheduledTime || "00:00"}
+                        onChange={(newTime) =>
+                          setEditingStory({
+                            ...editingStory,
+                            scheduledTime: newTime,
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  {/* Display Date Text */}
+                  <div>
+                    <label className="block text-xs font-extrabold text-gray-700 mb-1">
+                      Display Date Label (Shown on Story Card)
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={
+                        editingStory.publishDateEn ||
+                        editingStory.publishDateHi ||
+                        ""
+                      }
+                      onChange={(e) =>
+                        setEditingStory({
+                          ...editingStory,
+                          publishDateEn: e.target.value,
+                          publishDateHi: e.target.value,
+                        })
+                      }
+                      placeholder="e.g. 20th August 2026"
+                      className="w-full px-3.5 py-2 rounded-full border border-gray-300 text-xs font-bold focus:outline-none focus:border-[var(--primary)] bg-white"
+                    />
+                  </div>
+                </div>
+
+                {/* Image Upload for Newspaper Feature */}
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">
+                    Upload Newspaper Story Image (Cloudinary)
+                  </label>
+                  <div className="border-2 border-dashed border-gray-200 hover:border-[var(--primary)] rounded-2xl p-2.5 text-center transition-colors bg-gray-50/50 cursor-pointer relative">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+                    />
+                    <div className="flex items-center justify-center gap-2 text-gray-500">
+                      <FaCloudArrowUp className="text-lg text-[var(--primary)] shrink-0" />
+                      <p className="text-xs font-extrabold text-gray-800">
+                        Click to upload story newspaper image
+                      </p>
+                      <span className="text-[10px] text-gray-400">
+                        (PNG, JPG, WEBP)
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Preview */}
+                  {imagePreview && (
+                    <div className="mt-2 relative rounded-2xl overflow-hidden border border-gray-200 max-h-28 bg-gray-100">
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="w-full h-28 object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setImageFile(null);
+                          setImagePreview(null);
+                          setEditingStory((prev) => ({ ...prev, image: null }));
+                        }}
+                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 text-xs shadow-md cursor-pointer"
+                      >
+                        <FaXmark />
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
 
-              {/* Modal Buttons */}
-              <div className="pt-3 border-t border-gray-100 flex items-center justify-end gap-3">
+              {/* Sticky Footer Action Buttons */}
+              <div className="px-5 py-3 border-t border-gray-100 bg-white shrink-0 flex items-center justify-end gap-3">
                 <button
                   type="button"
                   disabled={saving}
@@ -685,17 +967,17 @@ export default function PublishStoryView() {
                     setImageFile(null);
                     setImagePreview(null);
                   }}
-                  className="px-6 py-2.5 rounded-full border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50 cursor-pointer disabled:opacity-50"
+                  className="px-5 py-2 rounded-full border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50 cursor-pointer disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="px-7 py-2.5 rounded-full bg-[var(--primary)] text-white text-xs font-extrabold shadow-md hover:opacity-90 cursor-pointer active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50"
+                  className="px-6 py-2 rounded-full bg-[var(--primary)] text-white text-xs font-extrabold shadow-md hover:opacity-90 cursor-pointer active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50"
                 >
                   {saving && <FaSpinner className="animate-spin text-xs" />}
-                  <span>{saving ? "Saving to Cloudinary..." : "Save Story Changes"}</span>
+                  <span>{saving ? "Saving..." : "Save Story Changes"}</span>
                 </button>
               </div>
             </form>
