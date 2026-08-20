@@ -69,10 +69,10 @@ function formatTime12Hour(time24) {
   return `${hours}:${minutes} ${ampm}`;
 }
 
-function compressImageFile(file, maxWidth = 2400, quality = 0.92) {
+function compressImageFile(file, maxWidth = 2000, quality = 0.90) {
   return new Promise((resolve) => {
-    // If not image or smaller than 1.5MB, leave 100% original untouched!
-    if (!file || !file.type || !file.type.startsWith("image/") || file.size <= 1.5 * 1024 * 1024) {
+    // If file is already smaller than 500KB, send original! Otherwise compress under 1MB Nginx limit!
+    if (!file || !file.type || !file.type.startsWith("image/") || file.size <= 500 * 1024) {
       resolve(file);
       return;
     }
