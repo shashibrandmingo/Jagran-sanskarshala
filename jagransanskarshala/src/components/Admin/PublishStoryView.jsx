@@ -426,7 +426,7 @@ export default function PublishStoryView() {
 
       if (imageFile) {
         formData.append("image", imageFile);
-      } else if (editingStory.image) {
+      } else if (editingStory.image && typeof editingStory.image === "string" && !editingStory.image.startsWith("data:")) {
         formData.append("existingImage", editingStory.image);
       }
 
@@ -435,7 +435,17 @@ export default function PublishStoryView() {
         body: formData,
       });
 
-      const data = await res.json();
+      const contentType = res.headers.get("content-type");
+      let data = null;
+      if (contentType && contentType.includes("application/json")) {
+        data = await res.json();
+      } else {
+        const errorText = await res.text();
+        console.error("Server returned non-JSON error response:", res.status, errorText);
+        alert(`Server error (${res.status}). Please check image size and try again.`);
+        return;
+      }
+
       if (data?.success) {
         await fetchStories();
         setEditingStory(null);
@@ -446,7 +456,7 @@ export default function PublishStoryView() {
       }
     } catch (err) {
       console.error("Save story error", err);
-      alert("Error saving story to database");
+      alert("Error saving story to database: " + (err.message || "Unknown error"));
     } finally {
       setSaving(false);
     }
