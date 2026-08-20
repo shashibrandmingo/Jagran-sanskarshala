@@ -69,6 +69,58 @@ function formatTime12Hour(time24) {
   return `${hours}:${minutes} ${ampm}`;
 }
 
+function compressImageFile(file, maxWidth = 2400, quality = 0.92) {
+  return new Promise((resolve) => {
+    // If not image or smaller than 1.5MB, leave 100% original untouched!
+    if (!file || !file.type || !file.type.startsWith("image/") || file.size <= 1.5 * 1024 * 1024) {
+      resolve(file);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              const compressedFile = new File([blob], file.name.replace(/\.[^/.]+$/, ".jpg"), {
+                type: "image/jpeg",
+                lastModified: Date.now(),
+              });
+              resolve(compressedFile);
+            } else {
+              resolve(file);
+            }
+          },
+          "image/jpeg",
+          quality
+        );
+      };
+      img.onerror = () => resolve(file);
+    };
+    reader.onerror = () => resolve(file);
+  });
+}
+
 function parse24HourTime(time24) {
   if (!time24) return { hour12: "12", minute: "00", ampm: "AM" };
   const parts = time24.split(":");
@@ -391,15 +443,16 @@ export default function PublishStoryView() {
     setImagePreview(null);
   };
 
-  const handleImageChange = (e) => {
+  const handleImageChange = async (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      setImageFile(file);
+      const compressed = await compressImageFile(file);
+      setImageFile(compressed);
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result);
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(compressed);
     }
   };
 
