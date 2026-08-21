@@ -122,8 +122,9 @@ function SearchableSelect({
   // Sync custom text when value changes
   useEffect(() => {
     if (!value) {
-      setCustomText("");
-      setIsTypingCustom(false);
+      if (!isTypingCustom) {
+        setCustomText("");
+      }
     } else {
       const isKnown = options.some(
         (o) => (typeof o === "object" ? o.value : o) === value,
@@ -185,18 +186,10 @@ function SearchableSelect({
 
   const handleOptionClick = (val) => {
     if (allowCustom && (val === "Other / अन्य" || val === "Other")) {
-      if (isTypingCustom && customText.trim()) {
-        onChange({
-          target: { name, value: customText.trim() },
-        });
-        setIsOpen(false);
-      } else {
-        setIsTypingCustom(true);
-        onChange({
-          target: { name, value: "Other / अन्य" },
-        });
-        setTimeout(() => customInputRef.current?.focus(), 80);
-      }
+      const initialText = query.trim() || (customText && customText !== "Other / अन्य" ? customText : "");
+      setIsTypingCustom(true);
+      setCustomText(initialText);
+      setTimeout(() => customInputRef.current?.focus(), 80);
     } else {
       setIsTypingCustom(false);
       setCustomText("");
@@ -210,13 +203,18 @@ function SearchableSelect({
     setCustomText(e.target.value);
   };
 
-  const handleConfirmCustom = () => {
+  const handleConfirmCustom = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     const trimmed = customText.trim();
-    if (!trimmed) return;
-    onChange({
-      target: { name, value: trimmed },
-    });
+    if (trimmed && trimmed !== "Other / अन्य") {
+      setIsTypingCustom(true);
+      onChange({ target: { name, value: trimmed } });
+    }
     setIsOpen(false);
+    setQuery("");
   };
 
   return (
@@ -232,15 +230,14 @@ function SearchableSelect({
         type="button"
         disabled={disabled}
         onClick={handleToggle}
-        className={`w-full min-w-0 px-3.5 py-3 text-xs sm:text-sm rounded-xl border text-left flex items-center justify-between gap-2 transition-all bg-white cursor-pointer ${
-          error
+        className={`w-full min-w-0 px-3.5 py-3 text-xs sm:text-sm rounded-xl border text-left flex items-center justify-between gap-2 transition-all bg-white cursor-pointer ${error
             ? "border-red-500 bg-red-50/20 ring-1 ring-red-200"
             : isOpen
               ? "border-[var(--primary)] ring-2 ring-red-100"
               : value
                 ? "border-emerald-500/80 bg-emerald-50/5"
                 : "border-gray-300 hover:border-gray-400"
-        } ${disabled ? "bg-gray-100 cursor-not-allowed opacity-60" : ""}`}
+          } ${disabled ? "bg-gray-100 cursor-not-allowed opacity-60" : ""}`}
       >
         <span
           className={`flex-1 min-w-0 truncate ${!value ? "text-gray-400 font-normal" : "text-gray-900 font-semibold"}`}
@@ -293,13 +290,12 @@ function SearchableSelect({
                     <div key={`${val}-${idx}`}>
                       <div
                         onClick={() => handleOptionClick(val)}
-                        className={`px-3.5 py-2.5 rounded-xl text-xs sm:text-sm cursor-pointer transition-colors flex items-center justify-between font-semibold ${
-                          isSelected || (isOther && isTypingCustom)
+                        className={`px-3.5 py-2.5 rounded-xl text-xs sm:text-sm cursor-pointer transition-colors flex items-center justify-between font-semibold ${isSelected || (isOther && isTypingCustom)
                             ? "bg-red-50 text-[var(--primary)] font-bold"
                             : isOther
                               ? "text-[var(--primary)] hover:bg-red-50/50 italic font-bold"
                               : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
-                        }`}
+                          }`}
                       >
                         <span className="truncate">{lbl}</span>
                         {isSelected && !isTypingCustom && (
@@ -733,11 +729,10 @@ export default function ParentSurveyPage() {
                   value={form.firstName}
                   onChange={handleChange}
                   placeholder="Enter first name"
-                  className={`w-full min-w-0 pl-3.5 pr-10 py-3 text-xs sm:text-sm rounded-xl border ${
-                    errors.firstName
+                  className={`w-full min-w-0 pl-3.5 pr-10 py-3 text-xs sm:text-sm rounded-xl border ${errors.firstName
                       ? "border-red-500 bg-red-50/20"
                       : "border-gray-300"
-                  } focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] outline-none transition bg-white`}
+                    } focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] outline-none transition bg-white`}
                 />
                 <FiUser className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               </div>
@@ -759,11 +754,10 @@ export default function ParentSurveyPage() {
                   value={form.lastName}
                   onChange={handleChange}
                   placeholder="Enter last name"
-                  className={`w-full min-w-0 pl-3.5 pr-10 py-3 text-xs sm:text-sm rounded-xl border ${
-                    errors.lastName
+                  className={`w-full min-w-0 pl-3.5 pr-10 py-3 text-xs sm:text-sm rounded-xl border ${errors.lastName
                       ? "border-red-500 bg-red-50/20"
                       : "border-gray-300"
-                  } focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] outline-none transition bg-white`}
+                    } focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] outline-none transition bg-white`}
                 />
                 <FiUser className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               </div>
@@ -786,11 +780,10 @@ export default function ParentSurveyPage() {
                   value={form.email}
                   onChange={handleChange}
                   placeholder="Enter your email address"
-                  className={`w-full min-w-0 pl-3.5 pr-10 py-3 text-xs sm:text-sm rounded-xl border ${
-                    errors.email
+                  className={`w-full min-w-0 pl-3.5 pr-10 py-3 text-xs sm:text-sm rounded-xl border ${errors.email
                       ? "border-red-500 bg-red-50/20"
                       : "border-gray-300"
-                  } focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] outline-none transition bg-white`}
+                    } focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] outline-none transition bg-white`}
                 />
                 <FiMail className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               </div>
@@ -819,11 +812,10 @@ export default function ParentSurveyPage() {
                     });
                   }}
                   placeholder="10-digit mobile number"
-                  className={`w-full pl-3.5 pr-10 py-3 text-xs sm:text-sm rounded-xl border ${
-                    errors.mobile
+                  className={`w-full pl-3.5 pr-10 py-3 text-xs sm:text-sm rounded-xl border ${errors.mobile
                       ? "border-red-500 bg-red-50/20"
                       : "border-gray-300"
-                  } focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] outline-none transition bg-white`}
+                    } focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] outline-none transition bg-white`}
                 />
                 <FiPhone className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               </div>
@@ -852,12 +844,11 @@ export default function ParentSurveyPage() {
                   className={`w-full px-3.5 py-3 text-xs sm:text-sm rounded-xl border font-semibold text-gray-900 cursor-pointer transition-all outline-none bg-white
                     [&::-webkit-calendar-picker-indicator]:cursor-pointer
                     [&::-webkit-calendar-picker-indicator]:opacity-80
-                    [&::-webkit-calendar-picker-indicator]:hover:opacity-100 ${
-                      errors.dob
-                        ? "border-red-500 ring-1 ring-red-200 bg-red-50/10"
-                        : form.dob && !errors.dob
-                          ? "border-emerald-500/80 ring-1 ring-emerald-100 bg-emerald-50/10"
-                          : "border-gray-300 hover:border-gray-400 focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]"
+                    [&::-webkit-calendar-picker-indicator]:hover:opacity-100 ${errors.dob
+                      ? "border-red-500 ring-1 ring-red-200 bg-red-50/10"
+                      : form.dob && !errors.dob
+                        ? "border-emerald-500/80 ring-1 ring-emerald-100 bg-emerald-50/10"
+                        : "border-gray-300 hover:border-gray-400 focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]"
                     }`}
                 />
               </div>
@@ -984,11 +975,10 @@ export default function ParentSurveyPage() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className={`bg-white rounded-3xl p-5 sm:p-7 shadow-xl border border-gray-100 transition-all ${
-              !isFormValid
+            className={`bg-white rounded-3xl p-5 sm:p-7 shadow-xl border border-gray-100 transition-all ${!isFormValid
                 ? "opacity-40 pointer-events-none filter blur-[1px]"
                 : ""
-            }`}
+              }`}
           >
             <div className="flex items-center justify-between mb-5 border-b border-gray-100 pb-3.5">
               <div className="flex items-center gap-3">
@@ -1032,7 +1022,7 @@ export default function ParentSurveyPage() {
                           q.type === "single"
                             ? currentAns === opt
                             : Array.isArray(currentAns) &&
-                              currentAns.includes(opt);
+                            currentAns.includes(opt);
 
                         return (
                           <button
@@ -1041,18 +1031,16 @@ export default function ParentSurveyPage() {
                             onClick={() =>
                               handleSelectOption(q.id, opt, q.type)
                             }
-                            className={`py-1.5 px-3.5 sm:py-2 sm:px-4 rounded-xl font-semibold text-xs sm:text-sm transition-all duration-200 flex items-center gap-1.5 cursor-pointer border ${
-                              isSelected
+                            className={`py-1.5 px-3.5 sm:py-2 sm:px-4 rounded-xl font-semibold text-xs sm:text-sm transition-all duration-200 flex items-center gap-1.5 cursor-pointer border ${isSelected
                                 ? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-sm shadow-red-500/20 scale-[1.01]"
                                 : "bg-white text-gray-700 border-gray-200 hover:border-red-200 hover:bg-red-50/30"
-                            }`}
+                              }`}
                           >
                             <span
-                              className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center text-[9px] ${
-                                isSelected
+                              className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center text-[9px] ${isSelected
                                   ? "border-white bg-white text-[var(--primary)] font-black"
                                   : "border-gray-400"
-                              }`}
+                                }`}
                             >
                               {isSelected ? "✓" : ""}
                             </span>

@@ -106,6 +106,9 @@ function compressImageFile(file, maxWidth = 1400, quality = 0.80) {
                 type: "image/jpeg",
                 lastModified: Date.now(),
               });
+              console.log(
+                `📷 Image Compressed: Original = ${(file.size / (1024 * 1024)).toFixed(2)} MB -> Compressed = ${(compressedFile.size / 1024).toFixed(0)} KB`
+              );
               resolve(compressedFile);
             } else {
               resolve(file);
