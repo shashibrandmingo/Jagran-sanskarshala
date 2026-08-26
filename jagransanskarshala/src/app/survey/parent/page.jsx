@@ -1009,42 +1009,65 @@ export default function ParentSurveyPage() {
                     id={`question-${q.id}`}
                     className="p-3.5 sm:p-4 rounded-2xl bg-gray-50/70 hover:bg-gray-50 transition-colors border border-gray-100/80"
                   >
-                    <h3 className="text-sm sm:text-base font-bold text-gray-900 mb-3 flex items-start gap-2 leading-snug">
+                    <h3 className="text-sm sm:text-base font-bold text-gray-900 mb-3 flex items-start gap-2.5 leading-snug">
                       <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-red-100 text-[var(--primary)] text-[11px] font-black shrink-0 mt-0.5">
                         {idx + 1}
                       </span>
-                      <span>{q.question}</span>
+                      <div className="flex flex-col text-left">
+                        <span className="font-bold text-gray-900 text-sm sm:text-base">
+                          {q.questionEn || q.question}
+                        </span>
+                        {q.questionHi && (
+                          <span className="font-medium text-gray-600 text-xs sm:text-sm mt-0.5">
+                            {q.questionHi}
+                          </span>
+                        )}
+                      </div>
                     </h3>
 
                     <div className="flex flex-wrap gap-2 sm:gap-2.5">
                       {q.options.map((opt) => {
+                        const optVal = typeof opt === "string" ? opt : opt.value;
+                        const optEn = typeof opt === "string" ? opt : opt.en;
+                        const optHi = typeof opt === "string" ? "" : opt.hi;
+
                         const isSelected =
                           q.type === "single"
-                            ? currentAns === opt
+                            ? currentAns === optVal || currentAns === optEn
                             : Array.isArray(currentAns) &&
-                            currentAns.includes(opt);
+                            (currentAns.includes(optVal) || currentAns.includes(optEn));
 
                         return (
                           <button
-                            key={opt}
+                            key={optVal}
                             type="button"
                             onClick={() =>
-                              handleSelectOption(q.id, opt, q.type)
+                              handleSelectOption(q.id, optVal, q.type)
                             }
-                            className={`py-1.5 px-3.5 sm:py-2 sm:px-4 rounded-xl font-semibold text-xs sm:text-sm transition-all duration-200 flex items-center gap-1.5 cursor-pointer border ${isSelected
+                            className={`py-2 px-3.5 sm:py-2.5 sm:px-4 rounded-xl font-semibold text-xs sm:text-sm transition-all duration-200 flex items-center gap-2 cursor-pointer border ${isSelected
                                 ? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-sm shadow-red-500/20 scale-[1.01]"
                                 : "bg-white text-gray-700 border-gray-200 hover:border-red-200 hover:bg-red-50/30"
                               }`}
                           >
                             <span
-                              className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center text-[9px] ${isSelected
+                              className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center text-[9px] shrink-0 ${isSelected
                                   ? "border-white bg-white text-[var(--primary)] font-black"
                                   : "border-gray-400"
                                 }`}
                             >
                               {isSelected ? "✓" : ""}
                             </span>
-                            <span>{opt}</span>
+                            <span className="flex flex-col text-left leading-tight">
+                              <span className="font-semibold">{optEn}</span>
+                              {optHi && (
+                                <span
+                                  className={`text-[11px] font-normal mt-0.5 ${isSelected ? "text-red-100" : "text-gray-500"
+                                    }`}
+                                >
+                                  {optHi}
+                                </span>
+                              )}
+                            </span>
                           </button>
                         );
                       })}

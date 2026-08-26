@@ -76,7 +76,7 @@ const getCalendarDays = (year, month) => {
   return days;
 };
 
-export default function AnalyticsView({ liveSurveys = [] }) {
+export default function AnalyticsView({ liveSurveys = [], isLoading = false }) {
   // Comparison Mode: "week" (Week vs Week) | "month" (Month vs Month) | "custom" (Custom Range A vs B)
   const [comparisonMode, setComparisonMode] = useState("month");
   const [viewBy, setViewBy] = useState("State"); // State | City | Category

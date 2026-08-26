@@ -131,6 +131,7 @@ function AdminDashboardContent() {
 
   const [admin, setAdmin] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isInitialDataLoading, setIsInitialDataLoading] = useState(true);
 
   // Live MongoDB Submissions State
   const [liveSurveys, setLiveSurveys] = useState([]);
@@ -285,6 +286,8 @@ function AdminDashboardContent() {
       }
     } catch (err) {
       console.error("Error fetching live surveys:", err);
+    } finally {
+      setIsInitialDataLoading(false);
     }
   };
 
@@ -729,13 +732,13 @@ function AdminDashboardContent() {
       {/* Content Container */}
       <div className="px-4 sm:px-8 pb-8 space-y-6">
         {currentTab === "survey-grades" ? (
-          <SurveyGradesView liveSurveys={liveSurveys} />
+          <SurveyGradesView liveSurveys={liveSurveys} isLoading={isInitialDataLoading} />
         ) : currentTab === "story-publish" ? (
           <PublishStoryView />
         ) : currentTab === "analytics" ? (
-          <AnalyticsView liveSurveys={liveSurveys} />
+          <AnalyticsView liveSurveys={liveSurveys} isLoading={isInitialDataLoading} />
         ) : currentTab === "leads" ? (
-          <ContactLeadsView liveSurveys={liveSurveys} />
+          <ContactLeadsView liveSurveys={liveSurveys} isLoading={isInitialDataLoading} />
         ) : currentTab === "notifications" ? (
           <PushNotificationView />
         ) : (
@@ -785,61 +788,75 @@ function AdminDashboardContent() {
 
               {/* 4 Summary Stats Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
-                {/* Card 1: Total Submissions */}
-                <div className="p-5 rounded-2xl bg-[#fdf8f4] border border-[#f5e6d6] flex items-center gap-4 hover:shadow-md transition-shadow">
-                  <div className="w-13 h-13 rounded-2xl bg-red-100/70 text-[var(--primary)] flex items-center justify-center shrink-0">
-                    <FaTableCells className="text-xl" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-gray-500">Total Submissions</p>
-                    <h3 className="text-2xl font-black text-gray-900 mt-0.5 tracking-tight">
-                      {currentDataset.length.toLocaleString()}
-                    </h3>
-                  </div>
-                </div>
+                {isInitialDataLoading ? (
+                  [...Array(4)].map((_, i) => (
+                    <div key={i} className="p-5 rounded-2xl bg-[#fdf8f4] border border-[#f5e6d6] flex items-center gap-4 animate-pulse">
+                      <div className="w-13 h-13 rounded-2xl bg-gray-200/90 shrink-0" />
+                      <div className="space-y-2 flex-1">
+                        <div className="h-3 bg-gray-200 rounded-md w-24" />
+                        <div className="h-7 bg-gray-300 rounded-lg w-16" />
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <>
+                    {/* Card 1: Total Submissions */}
+                    <div className="p-5 rounded-2xl bg-[#fdf8f4] border border-[#f5e6d6] flex items-center gap-4 hover:shadow-md transition-shadow">
+                      <div className="w-13 h-13 rounded-2xl bg-red-100/70 text-[var(--primary)] flex items-center justify-center shrink-0">
+                        <FaTableCells className="text-xl" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-gray-500">Total Submissions</p>
+                        <h3 className="text-2xl font-black text-gray-900 mt-0.5 tracking-tight">
+                          {currentDataset.length.toLocaleString()}
+                        </h3>
+                      </div>
+                    </div>
 
-                {/* Card 2: Parent Submissions */}
-                <div className="p-5 rounded-2xl bg-[#fdf8f4] border border-[#f5e6d6] flex items-center gap-4 hover:shadow-md transition-shadow">
-                  <div className="w-13 h-13 rounded-2xl bg-orange-100/70 text-orange-600 flex items-center justify-center shrink-0">
-                    <FaUserGroup className="text-xl" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-gray-500">Parent Submissions</p>
-                    <h3 className="text-2xl font-black text-gray-900 mt-0.5 tracking-tight">
-                      {currentDataset.filter((item) => item.type.toLowerCase() === "parent").length.toLocaleString()}
-                    </h3>
-                  </div>
-                </div>
+                    {/* Card 2: Parent Submissions */}
+                    <div className="p-5 rounded-2xl bg-[#fdf8f4] border border-[#f5e6d6] flex items-center gap-4 hover:shadow-md transition-shadow">
+                      <div className="w-13 h-13 rounded-2xl bg-orange-100/70 text-orange-600 flex items-center justify-center shrink-0">
+                        <FaUserGroup className="text-xl" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-gray-500">Parent Submissions</p>
+                        <h3 className="text-2xl font-black text-gray-900 mt-0.5 tracking-tight">
+                          {currentDataset.filter((item) => item.type.toLowerCase() === "parent").length.toLocaleString()}
+                        </h3>
+                      </div>
+                    </div>
 
-                {/* Card 3: Student Submissions */}
-                <div className="p-5 rounded-2xl bg-[#fdf8f4] border border-[#f5e6d6] flex items-center gap-4 hover:shadow-md transition-shadow">
-                  <div className="w-13 h-13 rounded-2xl bg-emerald-100/70 text-emerald-600 flex items-center justify-center shrink-0">
-                    <FaGraduationCap className="text-xl" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-gray-500">Student Submissions</p>
-                    <h3 className="text-2xl font-black text-gray-900 mt-0.5 tracking-tight">
-                      {currentDataset.filter((item) => item.type.toLowerCase() === "student").length.toLocaleString()}
-                    </h3>
-                  </div>
-                </div>
+                    {/* Card 3: Student Submissions */}
+                    <div className="p-5 rounded-2xl bg-[#fdf8f4] border border-[#f5e6d6] flex items-center gap-4 hover:shadow-md transition-shadow">
+                      <div className="w-13 h-13 rounded-2xl bg-emerald-100/70 text-emerald-600 flex items-center justify-center shrink-0">
+                        <FaGraduationCap className="text-xl" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-gray-500">Student Submissions</p>
+                        <h3 className="text-2xl font-black text-gray-900 mt-0.5 tracking-tight">
+                          {currentDataset.filter((item) => item.type.toLowerCase() === "student").length.toLocaleString()}
+                        </h3>
+                      </div>
+                    </div>
 
-                {/* Card 4: Today's Submissions */}
-                <div className="p-5 rounded-2xl bg-[#fdf8f4] border border-[#f5e6d6] flex items-center gap-4 hover:shadow-md transition-shadow">
-                  <div className="w-13 h-13 rounded-2xl bg-purple-100/70 text-purple-600 flex items-center justify-center shrink-0">
-                    <FaCalendarCheck className="text-xl" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-gray-500">Today's Submissions</p>
-                    <h3 className="text-2xl font-black text-gray-900 mt-0.5 tracking-tight">
-                      {currentDataset.filter((item) => {
-                        if (!item.submittedOn) return false;
-                        const itemDate = new Date(item.submittedOn.replace(",", ""));
-                        return !isNaN(itemDate.getTime()) && itemDate.toDateString() === new Date().toDateString();
-                      }).length.toLocaleString()}
-                    </h3>
-                  </div>
-                </div>
+                    {/* Card 4: Today's Submissions */}
+                    <div className="p-5 rounded-2xl bg-[#fdf8f4] border border-[#f5e6d6] flex items-center gap-4 hover:shadow-md transition-shadow">
+                      <div className="w-13 h-13 rounded-2xl bg-purple-100/70 text-purple-600 flex items-center justify-center shrink-0">
+                        <FaCalendarCheck className="text-xl" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-gray-500">Today's Submissions</p>
+                        <h3 className="text-2xl font-black text-gray-900 mt-0.5 tracking-tight">
+                          {currentDataset.filter((item) => {
+                            if (!item.submittedOn) return false;
+                            const itemDate = new Date(item.submittedOn.replace(",", ""));
+                            return !isNaN(itemDate.getTime()) && itemDate.toDateString() === new Date().toDateString();
+                          }).length.toLocaleString()}
+                        </h3>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
@@ -1153,7 +1170,28 @@ function AdminDashboardContent() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 text-[11px] font-semibold text-gray-700">
-                    {paginatedData.length === 0 ? (
+                    {isInitialDataLoading ? (
+                      [...Array(6)].map((_, i) => (
+                        <tr key={i} className="animate-pulse border-b border-gray-100/80">
+                          <td className="py-3.5 pl-3 pr-1 text-center"><div className="w-4 h-4 bg-gray-200 rounded mx-auto" /></td>
+                          <td className="py-3.5 px-2"><div className="h-3.5 bg-gray-200 rounded w-14" /></td>
+                          <td className="py-3.5 px-2"><div className="h-3.5 bg-gray-300 rounded w-24" /></td>
+                          <td className="py-3.5 px-2"><div className="h-3.5 bg-gray-200 rounded w-20" /></td>
+                          <td className="py-3.5 px-2"><div className="h-3.5 bg-gray-200 rounded w-32" /></td>
+                          <td className="py-3.5 px-2"><div className="h-3.5 bg-gray-200 rounded w-24" /></td>
+                          <td className="py-3.5 px-2"><div className="h-3.5 bg-gray-200 rounded w-16" /></td>
+                          <td className="py-3.5 px-2"><div className="h-3.5 bg-gray-200 rounded w-12" /></td>
+                          <td className="py-3.5 px-2"><div className="h-5 bg-gray-200 rounded-full w-16" /></td>
+                          <td className="py-3.5 px-2"><div className="h-3.5 bg-gray-200 rounded w-20" /></td>
+                          <td className="py-3.5 px-2"><div className="h-3.5 bg-gray-200 rounded w-8" /></td>
+                          <td className="py-3.5 px-2"><div className="h-3.5 bg-gray-200 rounded w-24" /></td>
+                          <td className="py-3.5 px-2"><div className="h-3.5 bg-gray-200 rounded w-20" /></td>
+                          <td className="py-3.5 px-2"><div className="h-3.5 bg-gray-200 rounded w-28" /></td>
+                          <td className="py-3.5 px-2"><div className="h-3.5 bg-gray-200 rounded w-24" /></td>
+                          <td className="py-3.5 pr-3 pl-1 text-center"><div className="w-6 h-6 bg-gray-200 rounded-md mx-auto" /></td>
+                        </tr>
+                      ))
+                    ) : paginatedData.length === 0 ? (
                       <tr>
                         <td colSpan={16} className="py-8 text-center text-gray-400">
                           No submissions match the active filter criteria.

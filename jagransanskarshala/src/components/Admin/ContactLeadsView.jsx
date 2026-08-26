@@ -640,7 +640,19 @@ export default function ContactLeadsView() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 bg-white">
-              {paginatedLeads.length === 0 ? (
+              {isLoading ? (
+                [...Array(6)].map((_, i) => (
+                  <tr key={i} className="animate-pulse">
+                    <td className="p-3.5"><div className="h-5 bg-gray-200 rounded-lg w-16" /></td>
+                    <td className="p-3.5"><div className="h-4 bg-gray-300 rounded-md w-28" /></td>
+                    <td className="p-3.5"><div className="h-4 bg-gray-200 rounded-md w-36" /></td>
+                    <td className="p-3.5"><div className="h-4 bg-gray-200 rounded-md w-24" /></td>
+                    <td className="p-3.5"><div className="h-4 bg-gray-200 rounded-md w-28" /></td>
+                    <td className="p-3.5"><div className="h-4 bg-gray-200 rounded-md w-24" /></td>
+                    <td className="p-3.5 text-center"><div className="w-6 h-6 bg-gray-200 rounded-md mx-auto" /></td>
+                  </tr>
+                ))
+              ) : paginatedLeads.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="p-12 text-center text-gray-400 font-bold">
                     <div className="max-w-xs mx-auto space-y-3">

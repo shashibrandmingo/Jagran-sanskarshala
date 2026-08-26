@@ -57,7 +57,7 @@ const datePresets = [
   { id: "all", label: "All Time" },
 ];
 
-export default function SurveyGradesView({ liveSurveys = [] }) {
+export default function SurveyGradesView({ liveSurveys = [], isLoading = false }) {
   // Tab Filter: 'all' | 'parent' | 'student'
   const [tabFilter, setTabFilter] = useState("all");
 
@@ -429,57 +429,71 @@ export default function SurveyGradesView({ liveSurveys = [] }) {
 
         {/* 4 Summary Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-          {/* Card 1: Total Submissions */}
-          <div className="p-4 sm:p-5 rounded-2xl bg-[#fdf8f4] border border-[#f5e6d6] flex items-center gap-4 hover:shadow-md transition-shadow">
-            <div className="w-12 h-12 rounded-2xl bg-red-100/80 text-[var(--primary)] flex items-center justify-center shrink-0">
-              <FaTableCells className="text-xl" />
-            </div>
-            <div>
-              <p className="text-xs font-bold text-gray-500">Total Submissions</p>
-              <h3 className="text-2xl font-black text-gray-900 mt-0.5 tracking-tight">
-                {gradeCounts.total.toLocaleString()}
-              </h3>
-            </div>
-          </div>
+          {isLoading ? (
+            [...Array(4)].map((_, i) => (
+              <div key={i} className="p-4 sm:p-5 rounded-2xl bg-[#fdf8f4] border border-[#f5e6d6] flex items-center gap-4 animate-pulse">
+                <div className="w-12 h-12 rounded-2xl bg-gray-200/90 shrink-0" />
+                <div className="space-y-2 flex-1">
+                  <div className="h-3 bg-gray-200 rounded-md w-28" />
+                  <div className="h-7 bg-gray-300 rounded-lg w-16" />
+                </div>
+              </div>
+            ))
+          ) : (
+            <>
+              {/* Card 1: Total Submissions */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-[#fdf8f4] border border-[#f5e6d6] flex items-center gap-4 hover:shadow-md transition-shadow">
+                <div className="w-12 h-12 rounded-2xl bg-red-100/80 text-[var(--primary)] flex items-center justify-center shrink-0">
+                  <FaTableCells className="text-xl" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-gray-500">Total Submissions</p>
+                  <h3 className="text-2xl font-black text-gray-900 mt-0.5 tracking-tight">
+                    {gradeCounts.total.toLocaleString()}
+                  </h3>
+                </div>
+              </div>
 
-          {/* Card 2: Grade A++ Submissions */}
-          <div className="p-4 sm:p-5 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 flex items-center gap-4 hover:shadow-md transition-shadow">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-md shadow-emerald-500/20 font-black text-lg">
-              A++
-            </div>
-            <div>
-              <p className="text-xs font-bold text-emerald-800">Grade A++ (Top Conduct)</p>
-              <h3 className="text-2xl font-black text-gray-900 mt-0.5 tracking-tight">
-                {gradeCounts.countA2.toLocaleString()}
-              </h3>
-            </div>
-          </div>
+              {/* Card 2: Grade A++ Submissions */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 flex items-center gap-4 hover:shadow-md transition-shadow">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-md shadow-emerald-500/20 font-black text-lg">
+                  A++
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-emerald-800">Grade A++ (Top Conduct)</p>
+                  <h3 className="text-2xl font-black text-gray-900 mt-0.5 tracking-tight">
+                    {gradeCounts.countA2.toLocaleString()}
+                  </h3>
+                </div>
+              </div>
 
-          {/* Card 3: Grade A+ Submissions */}
-          <div className="p-4 sm:p-5 rounded-2xl bg-blue-50/70 border border-blue-200/80 flex items-center gap-4 hover:shadow-md transition-shadow">
-            <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-blue-500/20 font-black text-lg">
-              A+
-            </div>
-            <div>
-              <p className="text-xs font-bold text-blue-800">Grade A+ (High Conduct)</p>
-              <h3 className="text-2xl font-black text-gray-900 mt-0.5 tracking-tight">
-                {gradeCounts.countA1.toLocaleString()}
-              </h3>
-            </div>
-          </div>
+              {/* Card 3: Grade A+ Submissions */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-blue-50/70 border border-blue-200/80 flex items-center gap-4 hover:shadow-md transition-shadow">
+                <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-blue-500/20 font-black text-lg">
+                  A+
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-blue-800">Grade A+ (High Conduct)</p>
+                  <h3 className="text-2xl font-black text-gray-900 mt-0.5 tracking-tight">
+                    {gradeCounts.countA1.toLocaleString()}
+                  </h3>
+                </div>
+              </div>
 
-          {/* Card 4: Grade A Submissions */}
-          <div className="p-4 sm:p-5 rounded-2xl bg-amber-50/70 border border-amber-200/80 flex items-center gap-4 hover:shadow-md transition-shadow">
-            <div className="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-md shadow-amber-500/20 font-black text-lg">
-              A
-            </div>
-            <div>
-              <p className="text-xs font-bold text-amber-800">Grade A (Good Conduct)</p>
-              <h3 className="text-2xl font-black text-gray-900 mt-0.5 tracking-tight">
-                {gradeCounts.countA0.toLocaleString()}
-              </h3>
-            </div>
-          </div>
+              {/* Card 4: Grade A Submissions */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-amber-50/70 border border-amber-200/80 flex items-center gap-4 hover:shadow-md transition-shadow">
+                <div className="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-md shadow-amber-500/20 font-black text-lg">
+                  A
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-amber-800">Grade A (Good Conduct)</p>
+                  <h3 className="text-2xl font-black text-gray-900 mt-0.5 tracking-tight">
+                    {gradeCounts.countA0.toLocaleString()}
+                  </h3>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Filter Bar Controls */}
@@ -774,7 +788,24 @@ export default function SurveyGradesView({ liveSurveys = [] }) {
             </thead>
 
             <tbody className="divide-y divide-gray-100 font-semibold text-gray-800">
-              {paginatedData.length === 0 ? (
+              {isLoading ? (
+                [...Array(6)].map((_, i) => (
+                  <tr key={i} className="animate-pulse border-b border-gray-100">
+                    <td className="py-3.5 px-4 text-center"><div className="w-4 h-4 bg-gray-200 rounded mx-auto" /></td>
+                    <td className="py-3.5 px-4"><div className="h-3.5 bg-gray-200 rounded w-16" /></td>
+                    <td className="py-3.5 px-4"><div className="h-3.5 bg-gray-300 rounded w-24" /></td>
+                    <td className="py-3.5 px-4"><div className="h-3.5 bg-gray-200 rounded w-20" /></td>
+                    <td className="py-3.5 px-4"><div className="h-3.5 bg-gray-200 rounded w-32" /></td>
+                    <td className="py-3.5 px-4"><div className="h-3.5 bg-gray-200 rounded w-20" /></td>
+                    <td className="py-3.5 px-4"><div className="h-3.5 bg-gray-200 rounded w-16" /></td>
+                    <td className="py-3.5 px-4 text-center"><div className="h-6 bg-gray-200 rounded-full w-14 mx-auto" /></td>
+                    <td className="py-3.5 px-4"><div className="h-3.5 bg-gray-200 rounded w-24" /></td>
+                    <td className="py-3.5 px-4"><div className="h-3.5 bg-gray-200 rounded w-24" /></td>
+                    <td className="py-3.5 px-4"><div className="h-3.5 bg-gray-200 rounded w-24" /></td>
+                    <td className="py-3.5 px-4 text-center"><div className="w-6 h-6 bg-gray-200 rounded-md mx-auto" /></td>
+                  </tr>
+                ))
+              ) : paginatedData.length === 0 ? (
                 <tr>
                   <td
                     colSpan={12}
