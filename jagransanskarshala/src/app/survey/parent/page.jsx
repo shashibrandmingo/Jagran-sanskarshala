@@ -34,6 +34,7 @@ const SUPPORTED_STATES = [
   "Uttarakhand",
   "Punjab",
   "Jammu & Kashmir",
+  "West Bengal",
   "Other / अन्य",
 ];
 

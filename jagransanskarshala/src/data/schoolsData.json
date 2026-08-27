@@ -758,7 +758,10 @@
       "JMS World School",
       "Other / अन्य"
     ],
-    "Jewar": ["Pargyan Public School", "Other / अन्य"]
+    "Jewar": [
+      "Pargyan Public School",
+      "Other / अन्य"
+    ]
   },
   "Uttar Pradesh": {
     "Varanasi": [
@@ -858,7 +861,10 @@
       "Devo Mahesh Polytechnic College (Sukrit)",
       "Other / अन्य"
     ],
-    "Bijpur": ["Hans Vahini Public School (Bijpur)", "Other / अन्य"],
+    "Bijpur": [
+      "Hans Vahini Public School (Bijpur)",
+      "Other / अन्य"
+    ],
     "Duddhi": [
       "Shivam Inter College (Duddhi)",
       "Pm Shri Government Girls Inter College (Duddhi)",
@@ -2325,7 +2331,10 @@
       "Saint Mira Academy (Kanshiram Nagar)",
       "Other / अन्य"
     ],
-    "Rampur": ["White Hall Public School (Rampur Civil Line)", "Other / अन्य"]
+    "Rampur": [
+      "White Hall Public School (Rampur Civil Line)",
+      "Other / अन्य"
+    ]
   },
   "Bihar": {
     "Patna": [
@@ -2387,21 +2396,66 @@
       "RPS School (Biharsarif)",
       "Other / अन्य"
     ],
-    "Jehanabad": ["DAV Public School (Jehanabad)", "Other / अन्य"],
-    "Nawada": ["RPS Convent Public School (Nawada)", "Other / अन्य"],
-    "Arwal": ["Kendriya Vidyalaya (Arwal)", "Other / अन्य"],
-    "Aurangabad": ["Kendriya Vidyalaya (Aurangabad)", "Other / अन्य"],
-    "Begusarai": ["Kendriya Vidyalaya (Begusarai)", "Other / अन्य"],
-    "Bhojpur": ["Kendriya Vidyalaya (Bhojpur)", "Other / अन्य"],
-    "Buxar": ["Kendriya Vidyalaya (Buxar)", "Other / अन्य"],
-    "Gaya": ["Kendriya Vidyalaya (Gaya)", "Other / अन्य"],
-    "Gopalganj": ["Kendriya Vidyalaya (Gopalganj)", "Other / अन्य"],
-    "Kaimur Bhabua": ["Kendriya Vidyalaya (Kaimur Bhabua)", "Other / अन्य"],
-    "Nalanda": ["Kendriya Vidyalaya (Nalanda)", "Other / अन्य"],
-    "Rohtas": ["Kendriya Vidyalaya (Rohtas)", "Other / अन्य"],
-    "Saran": ["Kendriya Vidyalaya (Saran)", "Other / अन्य"],
-    "Sheikhpura": ["Kendriya Vidyalaya (Sheikhpura)", "Other / अन्य"],
-    "Siwan": ["Kendriya Vidyalaya (Siwan)", "Other / अन्य"],
+    "Jehanabad": [
+      "DAV Public School (Jehanabad)",
+      "Other / अन्य"
+    ],
+    "Nawada": [
+      "RPS Convent Public School (Nawada)",
+      "Other / अन्य"
+    ],
+    "Arwal": [
+      "Kendriya Vidyalaya (Arwal)",
+      "Other / अन्य"
+    ],
+    "Aurangabad": [
+      "Kendriya Vidyalaya (Aurangabad)",
+      "Other / अन्य"
+    ],
+    "Begusarai": [
+      "Kendriya Vidyalaya (Begusarai)",
+      "Other / अन्य"
+    ],
+    "Bhojpur": [
+      "Kendriya Vidyalaya (Bhojpur)",
+      "Other / अन्य"
+    ],
+    "Buxar": [
+      "Kendriya Vidyalaya (Buxar)",
+      "Other / अन्य"
+    ],
+    "Gaya": [
+      "Kendriya Vidyalaya (Gaya)",
+      "Other / अन्य"
+    ],
+    "Gopalganj": [
+      "Kendriya Vidyalaya (Gopalganj)",
+      "Other / अन्य"
+    ],
+    "Kaimur Bhabua": [
+      "Kendriya Vidyalaya (Kaimur Bhabua)",
+      "Other / अन्य"
+    ],
+    "Nalanda": [
+      "Kendriya Vidyalaya (Nalanda)",
+      "Other / अन्य"
+    ],
+    "Rohtas": [
+      "Kendriya Vidyalaya (Rohtas)",
+      "Other / अन्य"
+    ],
+    "Saran": [
+      "Kendriya Vidyalaya (Saran)",
+      "Other / अन्य"
+    ],
+    "Sheikhpura": [
+      "Kendriya Vidyalaya (Sheikhpura)",
+      "Other / अन्य"
+    ],
+    "Siwan": [
+      "Kendriya Vidyalaya (Siwan)",
+      "Other / अन्य"
+    ],
     "Bhagalpur": [
       "Diksha International School (Chhoti Dhankar Sabour)",
       "Happy Valley School (Mandroza Chowk)",
@@ -2836,10 +2890,15 @@
       "Anand Niketan Public Senior Secondary School",
       "Other / अन्य"
     ],
-    "Barwala": ["Holi Homes Public School", "Other / अन्य"],
-    "Hisar Cantt.": ["CANTT PUBLIC SCHOOL", "Other / अन्य"]
+    "Barwala": [
+      "Holi Homes Public School",
+      "Other / अन्य"
+    ],
+    "Hisar Cantt.": [
+      "CANTT PUBLIC SCHOOL",
+      "Other / अन्य"
+    ]
   },
-
   "Uttarakhand": {
     "Dehradun": [
       "Balawala Inter College",
@@ -2949,7 +3008,10 @@
       "Sri Guru Ram Rai Public School (Rudraprayag)",
       "Other / अन्य"
     ],
-    "Srinagar": ["Sri Guru Ram Rai Public School (Srinagar)", "Other / अन्य"],
+    "Srinagar": [
+      "Sri Guru Ram Rai Public School (Srinagar)",
+      "Other / अन्य"
+    ],
     "Vikasnagar": [
       "Times World School (Kalyanpur, Vikasnagar)",
       "Bright Angels School (Jeevangarh, Vikasnagar)",
@@ -2988,7 +3050,10 @@
       "The Masters Sr. Sec. School (Haldwani)",
       "Other / अन्य"
     ],
-    "Jelolikot": ["Naincy Convent (Jelolikot)", "Other / अन्य"],
+    "Jelolikot": [
+      "Naincy Convent (Jelolikot)",
+      "Other / अन्य"
+    ],
     "Ramnagar": [
       "Baba Gurukul Academy (Ramnagar)",
       "DAV Nandraj Public School (Ramnagar)",
@@ -3216,14 +3281,20 @@
       "Sairas Hr. Sec. School (Bishnah)",
       "Other / अन्य"
     ],
-    "RS Pura": ["Aaryan Public School (RS Pura)", "Other / अन्य"],
+    "RS Pura": [
+      "Aaryan Public School (RS Pura)",
+      "Other / अन्य"
+    ],
     "Samba": [
       "Bharghav Public School (Vijaypur)",
       "Arvindo Ghosh (Vijapur)",
       "Mv International (Samba)",
       "Other / अन्य"
     ],
-    "Mira Sahib": ["Sunshine Public Shcool (Mira Sahib)", "Other / अन्य"],
+    "Mira Sahib": [
+      "Sunshine Public Shcool (Mira Sahib)",
+      "Other / अन्य"
+    ],
     "Akhnoor": [
       "Model Institue Of Education (Akhnoor)",
       "New Oriental Hr. Sec. School (Akhnoor)",
@@ -3248,6 +3319,26 @@
       "Parshant Public School (Udhampur)",
       "Other / अन्य"
     ],
-    "Pauni": ["Vikas Memorial School (Pauni)", "Other / अन्य"]
+    "Pauni": [
+      "Vikas Memorial School (Pauni)",
+      "Other / अन्य"
+    ]
+  },
+  "West Bengal": {
+    "Siliguri": [
+      "Birla Divya Jyoti School (Uttorayan)",
+      "Narayana School (Salugara)",
+      "Delhi Public School (Dagapur)",
+      "Techno India Group of School (Sukna)",
+      "H B Vidyapith (S P Mukherjee Road)",
+      "Little Angel Sec. Secondary School (Milan More)",
+      "Delhi Public School (Fulbari)",
+      "Modi Public School (Pathargata Road Matigara)",
+      "G D Goenka Public School (Dagapur)",
+      "St. Micheal School for Girls (Sevoke Road)",
+      "Lime Light High School (Bagdogra)",
+      "Shri Kkrishna Pranami Vidya Niketan (Haiderpara)",
+      "Other / अन्य"
+    ]
   }
 }
