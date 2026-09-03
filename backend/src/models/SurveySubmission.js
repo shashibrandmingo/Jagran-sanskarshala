@@ -71,17 +71,10 @@ const surveySubmissionSchema = new mongoose.Schema(
   }
 );
 
-// Compound Index: 1 mobile number can only submit 1 Student survey and 1 Parent survey (when valid mobile is provided)
-// Note: MongoDB partialFilterExpression only supports $exists, $gt, $gte, $lt, $lte, $type, $eq
-// Using $gte: "0" excludes "-" and "" since both are lexicographically less than "0" in ASCII
-surveySubmissionSchema.index(
-  { mobile: 1, type: 1 },
-  { 
-    unique: true, 
-    partialFilterExpression: { mobile: { $gte: "0" } } 
-  }
-);
+// Duplicate mobile check is handled in surveyController.js via findOne() before create()
+// No database-level unique index needed — avoids MongoDB index conflicts on blank mobile submissions
 
 const SurveySubmission = mongoose.model("SurveySubmission", surveySubmissionSchema);
 
 export default SurveySubmission;
+

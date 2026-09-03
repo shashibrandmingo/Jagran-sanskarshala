@@ -96,21 +96,6 @@ export const submitSurvey = async (req, res) => {
       data: newSubmission,
     });
   } catch (error) {
-    // Handle MongoDB duplicate key error (code 11000) safety net
-    if (error.code === 11000) {
-      const type = req.body?.type || "Survey";
-      const typeLabelHindi = type === "Student" ? "छात्र" : "अभिभावक";
-      const submittedMobile = req.body?.mobile ? String(req.body.mobile).trim() : "";
-
-      if (submittedMobile && /^[0-9]{10}$/.test(submittedMobile)) {
-        return res.status(400).json({
-          success: false,
-          code: "DUPLICATE_MOBILE",
-          message: `You have already submitted a ${type} survey using this mobile number (${submittedMobile}). / आप इस मोबाइल नंबर (${submittedMobile}) से पहले ही ${typeLabelHindi} सर्वेक्षण भर चुके हैं।`,
-        });
-      }
-    }
-
     console.error("Survey submission error:", error);
     return res.status(500).json({
       success: false,
