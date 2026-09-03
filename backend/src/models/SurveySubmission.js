@@ -71,7 +71,7 @@ const surveySubmissionSchema = new mongoose.Schema(
   }
 );
 
-// Compound Index: 1 mobile number can only submit 1 Student survey and 1 Parent survey (when mobile is provided)
+// Compound Index: 1 mobile number can only submit 1 Student survey and 1 Parent survey (when valid mobile is provided)
 surveySubmissionSchema.index(
   { mobile: 1, type: 1 },
   { 

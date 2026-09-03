@@ -633,15 +633,22 @@ export default function StudentSurveyPage() {
         const data = await res.json();
         if (!res.ok) {
           if (data.code === "DUPLICATE_MOBILE") {
-            setErrors((prev) => ({
-              ...prev,
-              mobile:
-                "इस मोबाइल नंबर से पहले ही छात्र फॉर्म जमा किया जा चुका है।",
-            }));
-            showToast(
-              "पहले ही जमा किया जा चुका है (Already Submitted)",
-              `मोबाइल नंबर (${form.mobile.trim()}) से छात्र सर्वेक्षण पहले ही जमा किया जा चुका है। एक मोबाइल नंबर से केवल 1 छात्र सर्वेक्षण जमा किया जा सकता है।`,
-            );
+            if (form.mobile.trim()) {
+              setErrors((prev) => ({
+                ...prev,
+                mobile:
+                  "इस मोबाइल नंबर से पहले ही छात्र फॉर्म जमा किया जा चुका है।",
+              }));
+              showToast(
+                "पहले ही जमा किया जा चुका है (Already Submitted)",
+                `मोबाइल नंबर (${form.mobile.trim()}) से छात्र सर्वेक्षण पहले ही जमा किया जा चुका है। एक मोबाइल नंबर से केवल 1 छात्र सर्वेक्षण जमा किया जा सकता है।`,
+              );
+            } else {
+              showToast(
+                "त्रुटि (Error)",
+                data.message || "सबमिशन में समस्या आई।",
+              );
+            }
             window.scrollTo({ top: 250, behavior: "smooth" });
           } else {
             showToast(
