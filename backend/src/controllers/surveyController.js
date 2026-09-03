@@ -32,35 +32,44 @@ export const submitSurvey = async (req, res) => {
       });
     }
 
-    if (!firstName || !lastName || !email || !mobile || !state || !city) {
+    if (!firstName || !lastName || !email || !state || !city) {
       return res.status(400).json({
         success: false,
         message: "All mandatory profile fields must be provided.",
       });
     }
 
-    const cleanMobile = String(mobile).trim();
+    const cleanMobile = mobile ? String(mobile).trim() : "";
 
-    if (!/^[0-9]{10}$/.test(cleanMobile)) {
+    if (type === "Parent" && !cleanMobile) {
+      return res.status(400).json({
+        success: false,
+        message: "Mobile number is required for Parent survey.",
+      });
+    }
+
+    if (cleanMobile && !/^[0-9]{10}$/.test(cleanMobile)) {
       return res.status(400).json({
         success: false,
         message: "Please enter a valid 10-digit mobile number.",
       });
     }
 
-    // CHECK DUPLICATE MOBILE PER FORM TYPE
-    const existingSubmission = await SurveySubmission.findOne({
-      mobile: cleanMobile,
-      type: type,
-    });
-
-    if (existingSubmission) {
-      const typeLabelHindi = type === "Student" ? "छात्र" : "अभिभावक";
-      return res.status(400).json({
-        success: false,
-        code: "DUPLICATE_MOBILE",
-        message: `You have already submitted a ${type} survey using this mobile number (${cleanMobile}). / आप इस मोबाइल नंबर (${cleanMobile}) से पहले ही ${typeLabelHindi} सर्वेक्षण भर चुके हैं।`,
+    // CHECK DUPLICATE MOBILE PER FORM TYPE (ONLY IF MOBILE IS PROVIDED)
+    if (cleanMobile) {
+      const existingSubmission = await SurveySubmission.findOne({
+        mobile: cleanMobile,
+        type: type,
       });
+
+      if (existingSubmission) {
+        const typeLabelHindi = type === "Student" ? "छात्र" : "अभिभावक";
+        return res.status(400).json({
+          success: false,
+          code: "DUPLICATE_MOBILE",
+          message: `You have already submitted a ${type} survey using this mobile number (${cleanMobile}). / आप इस मोबाइल नंबर (${cleanMobile}) से पहले ही ${typeLabelHindi} सर्वेक्षण भर चुके हैं।`,
+        });
+      }
     }
 
     // Create Survey Submission Document
@@ -69,7 +78,7 @@ export const submitSurvey = async (req, res) => {
       firstName: firstName.trim(),
       lastName: lastName.trim(),
       email: email.trim().toLowerCase(),
-      mobile: cleanMobile,
+      mobile: cleanMobile || "-",
       dob: dob || "-",
       gender: gender || "-",
       occupation: occupation || "-",

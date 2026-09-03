@@ -465,7 +465,7 @@ export default function StudentSurveyPage() {
       !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())
     )
       newErrors.email = "Enter a valid email address";
-    if (!form.mobile.trim() || !/^[6-9]\d{9}$/.test(form.mobile.trim()))
+    if (form.mobile.trim() && !/^[6-9]\d{9}$/.test(form.mobile.trim()))
       newErrors.mobile = "Enter a valid 10-digit mobile number";
 
     if (!form.dob) {
@@ -509,7 +509,7 @@ export default function StudentSurveyPage() {
       !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())
     )
       return false;
-    if (!form.mobile.trim() || !/^[6-9]\d{9}$/.test(form.mobile.trim()))
+    if (form.mobile.trim() && !/^[6-9]\d{9}$/.test(form.mobile.trim()))
       return false;
     if (!form.dob) return false;
 
@@ -814,8 +814,7 @@ export default function StudentSurveyPage() {
 
             <div className="w-full min-w-0">
               <label className="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5">
-                Mobile Number / मोबाइल नंबर{" "}
-                <span className="text-red-500">*</span>
+                Mobile Number / मोबाइल नंबर
               </label>
               <div className="relative">
                 <input

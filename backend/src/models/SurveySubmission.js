@@ -25,9 +25,8 @@ const surveySubmissionSchema = new mongoose.Schema(
     },
     mobile: {
       type: String,
-      required: [true, "Mobile number is required"],
+      default: "-",
       trim: true,
-      match: [/^[0-9]{10}$/, "Mobile number must be a valid 10-digit number"],
     },
     dob: {
       type: String,
@@ -72,8 +71,14 @@ const surveySubmissionSchema = new mongoose.Schema(
   }
 );
 
-// Compound Index: 1 mobile number can only submit 1 Student survey and 1 Parent survey
-surveySubmissionSchema.index({ mobile: 1, type: 1 }, { unique: true });
+// Compound Index: 1 mobile number can only submit 1 Student survey and 1 Parent survey (when mobile is provided)
+surveySubmissionSchema.index(
+  { mobile: 1, type: 1 },
+  { 
+    unique: true, 
+    partialFilterExpression: { mobile: { $regex: "^[0-9]{10}$" } } 
+  }
+);
 
 const SurveySubmission = mongoose.model("SurveySubmission", surveySubmissionSchema);
 
