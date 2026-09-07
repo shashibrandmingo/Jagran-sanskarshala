@@ -24,14 +24,23 @@ export const metadata = {
   description:
     "Jagran Sanskarshala — talking about our digital conduct. Understanding the small habits, behaviours, and experiences of our digital lives, together.",
   icons: {
-    icon: "/favicon.svg",
+    icon: [
+      { url: "/icon.png" },
+      { url: "/favicon.png", type: "image/png" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+    shortcut: ["/icon.png"],
+    apple: [{ url: "/apple-icon.png" }],
+  },
+  other: {
+    google: "notranslate",
   },
 };
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${anekDevanagari.variable} ${inter.variable} font-semibold antialiased`}>
+    <html lang="hi" translate="no" className="notranslate" suppressHydrationWarning>
+      <body className={`${anekDevanagari.variable} ${inter.variable} font-semibold antialiased notranslate`}>
         <LanguageProvider>
           <SurveyModalProvider>
             {children}

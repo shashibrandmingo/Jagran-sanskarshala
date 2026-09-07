@@ -49,6 +49,7 @@ export function LanguageProvider({ children }) {
     // and so globals.css can target Hindi (line-height fix) automatically.
     document.documentElement.lang = lang;
     document.documentElement.setAttribute("data-lang", lang);
+    document.documentElement.setAttribute("translate", "no");
   }, [lang, hydrated]);
 
   const changeLanguage = useCallback((next) => {
