@@ -266,7 +266,7 @@ export default function ContactUs() {
           </h2>
           <p className="paragraph mt-4">
             {c.subheading ||
-              "Have questions or want to partner with Jagran Sanskarshala? Send us a message."}
+              "Have questions or want to partner with Jagran Sanskarshaala? Send us a message."}
           </p>
         </motion.div>
 

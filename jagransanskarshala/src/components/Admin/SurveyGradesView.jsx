@@ -368,7 +368,7 @@ export default function SurveyGradesView({ liveSurveys = [], isLoading = false }
     XLSX.utils.book_append_sheet(workbook, worksheet, "Survey Responses & Grades");
 
     const dateStr = new Date().toISOString().split("T")[0];
-    XLSX.writeFile(workbook, `Jagran_Sanskarshala_Grades_Report_${dateStr}.xlsx`);
+    XLSX.writeFile(workbook, `Jagran_Sanskarshaala_Grades_Report_${dateStr}.xlsx`);
   };
 
   const resetFilters = () => {

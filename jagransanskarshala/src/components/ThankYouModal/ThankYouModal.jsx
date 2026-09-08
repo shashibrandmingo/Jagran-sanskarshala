@@ -126,7 +126,7 @@ export default function ThankYouModal({
 
       const link = document.createElement("a");
       link.href = blobUrl;
-      link.download = `Sanskarshala_Certificate_${(
+      link.download = `Sanskarshaala_Certificate_${(
         participantName || "Student"
       ).replace(/\s+/g, "_")}.pdf`;
       document.body.appendChild(link);

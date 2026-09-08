@@ -92,7 +92,7 @@ export async function POST(req) {
       .replace(/\s+/g, "")
       .trim();
     const from =
-      process.env.SMTP_FROM || `"Dainik Jagran Sanskarshala" <${user}>`;
+      process.env.SMTP_FROM || `"Dainik Jagran Sanskarshaala" <${user}>`;
 
     console.log(
       `[SMTP CONFIG] host=${host} port=${port} user=${user} passLength=${pass.length}`,
@@ -107,7 +107,7 @@ export async function POST(req) {
     <html>
     <head>
       <meta charset="utf-8">
-      <title>Thank You for Participating in Jagran Sanskarshala Survey 2026</title>
+      <title>Thank You for Participating in Jagran Sanskarshaala Survey 2026</title>
       <style>
         body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 20px; color: #1e293b; }
         .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; }
@@ -128,17 +128,17 @@ export async function POST(req) {
       <div class="container">
         <div class="header">
           <div style="background: rgba(255,255,255,0.95); display: inline-block; padding: 10px 22px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">
-            <img src="cid:jagranlogo" alt="Dainik Jagran Sanskarshala" style="max-height: 55px; width: auto; display: block;" />
+            <img src="cid:jagranlogo" alt="Dainik Jagran Sanskarshaala" style="max-height: 55px; width: auto; display: block;" />
           </div>
           <div class="badge" style="display: block; margin: 0 auto 10px auto; width: fit-content;">National Digital Conduct Survey 2026</div>
-          <h1 style="margin-top: 5px;">Jagran Sanskarshala</h1>
+          <h1 style="margin-top: 5px;">Jagran Sanskarshaala</h1>
           <p>Building Digital Consciousness & Values</p>
         </div>
 
         <div class="content">
           <div class="salutation">Dear ${name},</div>
 
-          <p>Thank you for participating in <strong>India's Largest Student Digital Conduct Survey 2026</strong> organized by <strong>Dainik Jagran Sanskarshala</strong>.</p>
+          <p>Thank you for participating in <strong>India's Largest Student Digital Conduct Survey 2026</strong> organized by <strong>Dainik Jagran Sanskarshaala</strong>.</p>
 
           <p>Your honest responses contribute directly to shaping national digital habit awareness programs across schools in India.</p>
 
@@ -157,11 +157,11 @@ export async function POST(req) {
 
           <p style="margin-top: 30px;">Warm Regards,<br>
           <strong style="color: #a01013; font-size: 16px;">Team Dainik Jagran</strong><br>
-          <span style="font-size: 13px; color: #64748b;">Jagran Sanskarshala Initiative</span></p>
+          <span style="font-size: 13px; color: #64748b;">Jagran Sanskarshaala Initiative</span></p>
         </div>
 
         <div class="footer">
-          &copy; 2026 Dainik Jagran Sanskarshala. All rights reserved.<br>
+          &copy; 2026 Dainik Jagran Sanskarshaala. All rights reserved.<br>
           This is an automated confirmation email sent to ${email}.
         </div>
       </div>
@@ -182,7 +182,7 @@ export async function POST(req) {
 
     if (pdfBuffer) {
       attachments.push({
-        filename: `Sanskarshala_Certificate_${name.replace(/\s+/g, "_")}.pdf`,
+        filename: `Sanskarshaala_Certificate_${name.replace(/\s+/g, "_")}.pdf`,
         content: pdfBuffer,
         contentType: "application/pdf",
       });
@@ -250,7 +250,7 @@ export async function POST(req) {
         const info = await transporter.sendMail({
           from,
           to: email,
-          subject: `🎓 Grade ${gradeText} - Official Certificate - Dainik Jagran Sanskarshala 2026`,
+          subject: `🎓 Grade ${gradeText} - Official Certificate - Dainik Jagran Sanskarshaala 2026`,
           html: htmlContent,
           attachments,
         });

@@ -79,7 +79,7 @@ export default function GallerySection({ initialYear = "All" }) {
                   id: y._id || y.id || y.year,
                   year: String(y.year),
                   title: y.title || {
-                    en: `Sanskarshala ${y.year}`,
+                    en: `Sanskarshaala ${y.year}`,
                     hi: `संस्कारशाला ${y.year}`,
                   },
                   subtitle: y.subtitle || {
@@ -460,7 +460,7 @@ export default function GallerySection({ initialYear = "All" }) {
                 <span>
                   {lang === "hi"
                     ? `संस्कारशाला ${dynamicTabs[1]?.year || "2025"} (Latest) देखें`
-                    : `View Sanskarshala ${dynamicTabs[1]?.year || "2025"} (Latest)`}
+                    : `View Sanskarshaala ${dynamicTabs[1]?.year || "2025"} (Latest)`}
                 </span>
               </button>
             </div>

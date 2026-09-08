@@ -60,7 +60,7 @@ export async function POST(request) {
 
     const newImage = {
       id: `img-${year}-${Date.now()}`,
-      title: title || `Sanskarshala ${year}`,
+      title: title || `Sanskarshaala ${year}`,
       url: url,
       year: String(year),
       tabId: String(year),

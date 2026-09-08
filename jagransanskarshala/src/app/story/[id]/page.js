@@ -153,7 +153,7 @@ export default function StoryDetailPage() {
               <span className="text-xs text-gray-400 font-extrabold tracking-widest uppercase">
                 {isHindi
                   ? "दैनिक जागरण • संस्कारशाला"
-                  : "Dainik Jagran • Sanskarshala"}
+                  : "Dainik Jagran • Sanskarshaala"}
               </span>
             </div>
           </motion.article>

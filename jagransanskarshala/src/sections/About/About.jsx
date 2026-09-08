@@ -29,7 +29,7 @@ export default function About() {
         >
           <Image
             src={AboutBannerDesktop}
-            alt="About Jagran Sanskarshala Banner"
+            alt="About Jagran Sanskarshaala Banner"
             fill
             className="object-cover object-left lg:object-[2%_center] xl:object-left"
             priority
@@ -51,7 +51,7 @@ export default function About() {
       >
         <Image
           src={AboutBannerMobile}
-          alt="About Jagran Sanskarshala"
+          alt="About Jagran Sanskarshaala"
           fill
           className="object-contain object-center"
           sizes="100vw"

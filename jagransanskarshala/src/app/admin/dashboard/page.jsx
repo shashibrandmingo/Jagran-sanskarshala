@@ -556,8 +556,8 @@ function AdminDashboardContent() {
     const dateStr = new Date().toISOString().split("T")[0];
     const isSelectedMode = selectedRows && selectedRows.length > 0;
     const fileName = isSelectedMode
-      ? `Jagran_Sanskarshala_${selectedRows.length}_Selected_Surveys_${dateStr}.xlsx`
-      : `Jagran_Sanskarshala_Survey_Data_${dateStr}.xlsx`;
+      ? `Jagran_Sanskarshaala_${selectedRows.length}_Selected_Surveys_${dateStr}.xlsx`
+      : `Jagran_Sanskarshaala_Survey_Data_${dateStr}.xlsx`;
 
     XLSX.writeFile(workbook, fileName);
   };

@@ -81,7 +81,7 @@ export async function GET(req) {
 
     const pdfBuffer = Buffer.from(pdfBytes);
 
-    const sanitizedFilename = `Sanskarshala_Certificate_${name
+    const sanitizedFilename = `Sanskarshaala_Certificate_${name
       .replace(/[^a-zA-Z0-9_\- ]/g, "")
       .replace(/\s+/g, "_")}.pdf`;
 

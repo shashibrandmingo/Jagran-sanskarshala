@@ -65,7 +65,7 @@ export default function SurveySelectionModal() {
               <div className="flex justify-center mb-2">
                 <Image
                   src={logoSrc}
-                  alt="Dainik Jagran Sanskarshala"
+                  alt="Dainik Jagran Sanskarshaala"
                   width={180}
                   height={50}
                   priority

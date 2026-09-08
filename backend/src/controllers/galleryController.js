@@ -47,7 +47,7 @@ export const addGalleryYear = asyncHandler(async (req, res) => {
   const newYearObj = await GalleryYear.create({
     year: year.trim(),
     title: {
-      en: title?.en || title?.hi || `Sanskarshala ${year.trim()}`,
+      en: title?.en || title?.hi || `Sanskarshaala ${year.trim()}`,
       hi: title?.hi || title?.en || `संस्कारशाला ${year.trim()}`,
     },
     subtitle: {

@@ -95,7 +95,7 @@ export default function AdminLoginPage() {
           <div className="mb-4">
             <Image
               src={Logo}
-              alt="Jagran Sanskarshala Logo"
+              alt="Jagran Sanskarshaala Logo"
               width={180}
               height={60}
               className="h-14 w-auto object-contain"
@@ -112,7 +112,7 @@ export default function AdminLoginPage() {
             Admin Sign In
           </h1>
           <p className="text-xs text-gray-500 font-medium mt-1">
-            Access Jagran Sanskarshala Control Center
+            Access Jagran Sanskarshaala Control Center
           </p>
         </div>
 
@@ -221,7 +221,7 @@ export default function AdminLoginPage() {
 
         {/* Footer Note */}
         <div className="mt-8 text-center text-xs text-gray-400 font-medium">
-          Protected Area • Jagran Sanskarshala Admin System
+          Protected Area • Jagran Sanskarshaala Admin System
         </div>
       </div>
     </div>

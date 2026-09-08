@@ -359,7 +359,7 @@ export default function AdminGalleryPage() {
       if (selectedFiles.length > 0) {
         newImagesToAdd = selectedFiles.map((file, idx) => ({
           id: `img-${Date.now()}-${idx}`,
-          title: "Sanskarshala Moment",
+          title: "Sanskarshaala Moment",
           url: URL.createObjectURL(file),
           caption: "",
         }));
@@ -367,7 +367,7 @@ export default function AdminGalleryPage() {
         newImagesToAdd = [
           {
             id: `img-${Date.now()}`,
-            title: "Sanskarshala Moment",
+            title: "Sanskarshaala Moment",
             url: imgFormUrl.trim(),
             caption: "",
           },
@@ -749,7 +749,7 @@ export default function AdminGalleryPage() {
             <p className="text-xs text-gray-500 mb-5">
               {editingYear
                 ? "Update the English & Hindi titles for this edition tab."
-                : "Add a new year tab (e.g., 2026, 2027) to organize Sanskarshala gallery images."}
+                : "Add a new year tab (e.g., 2026, 2027) to organize Sanskarshaala gallery images."}
             </p>
 
             <form onSubmit={handleSaveYear} className="space-y-4 text-xs font-semibold">
@@ -773,7 +773,7 @@ export default function AdminGalleryPage() {
                 <input
                   type="text"
                   required
-                  placeholder="Sanskarshala 2026"
+                  placeholder="Sanskarshaala 2026"
                   value={newYearTitleInput}
                   onChange={(e) => setNewYearTitleInput(e.target.value)}
                   className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[var(--primary)] text-slate-800"

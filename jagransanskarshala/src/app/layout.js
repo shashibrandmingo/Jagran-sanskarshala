@@ -20,9 +20,9 @@ const inter = Inter({
 });
 
 export const metadata = {
-  title: "Jagran Sanskarshala | बातें हमारे डिजिटल आचरण की",
+  title: "Jagran Sanskarshaala | बातें हमारे डिजिटल आचरण की",
   description:
-    "Jagran Sanskarshala — talking about our digital conduct. Understanding the small habits, behaviours, and experiences of our digital lives, together.",
+    "Jagran Sanskarshaala — talking about our digital conduct. Understanding the small habits, behaviours, and experiences of our digital lives, together.",
   icons: {
     icon: [
       { url: "/icon.png" },

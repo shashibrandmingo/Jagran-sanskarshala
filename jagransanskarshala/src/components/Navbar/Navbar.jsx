@@ -46,11 +46,11 @@ export default function Navbar() {
           <Link
             href="/"
             className="flex items-center"
-            aria-label="Jagran Sanskarshala home"
+            aria-label="Jagran Sanskarshaala home"
           >
             <Image
               src={currentLogo}
-              alt="Jagran Sanskarshala"
+              alt="Jagran Sanskarshaala"
               priority
               className="h-[50px] sm:h-[60px] md:h-[68px] w-auto object-contain"
             />
@@ -239,7 +239,7 @@ export default function Navbar() {
             <Link href="/" onClick={handleLinkClick}>
               <Image
                 src={currentLogo}
-                alt="Jagran Sanskarshala"
+                alt="Jagran Sanskarshaala"
                 className="h-9 w-auto object-contain"
               />
             </Link>

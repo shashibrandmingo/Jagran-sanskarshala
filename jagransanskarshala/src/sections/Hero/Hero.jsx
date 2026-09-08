@@ -63,7 +63,7 @@ export default function Hero() {
         <div className="relative w-full mb-6">
           <Image
             src={mobileBanner}
-            alt="Sanskarshala"
+            alt="Sanskarshaala"
             className="w-full h-auto object-cover"
             priority
           />

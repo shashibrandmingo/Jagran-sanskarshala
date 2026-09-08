@@ -92,7 +92,7 @@ export default function WelcomePopup() {
             <div className="mx-auto mb-5 flex justify-center">
               <Image
                 src={currentLogo}
-                alt="Jagran Sanskarshala"
+                alt="Jagran Sanskarshaala"
                 className="h-14 sm:h-16 w-auto object-contain"
                 priority
               />

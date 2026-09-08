@@ -3,9 +3,9 @@ import Footer from "@/components/Footer/Footer";
 import GallerySection from "@/sections/Gallery/Gallery";
 
 export const metadata = {
-  title: "Gallery | Jagran Sanskarshala",
+  title: "Gallery | Jagran Sanskarshaala",
   description:
-    "Explore photo gallery and glimpses from Jagran Sanskarshala sessions, events, and activities across the years.",
+    "Explore photo gallery and glimpses from Jagran Sanskarshaala sessions, events, and activities across the years.",
 };
 
 export default async function GalleryPage({ searchParams }) {
