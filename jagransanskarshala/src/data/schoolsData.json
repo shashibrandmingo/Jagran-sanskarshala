@@ -328,7 +328,6 @@
       "Modern School (Barakhamba Road)",
       "Modern School (Vasant Vihar)",
       "Mount Carmel School (Anand Niketan)",
-      "Other / अन्य",
       "Sanskriti School (Chanakyapuri)",
       "Sardar Patel Vidyalaya (Lodi Estate)",
       "Springdales School (Dhaula Kuan)",
@@ -336,7 +335,8 @@
       "St. Columba's School (Ashok Place)",
       "Tagore International School (Vasant Vihar)",
       "The Mother's International School (Sri Aurobindo Marg)",
-      "Venkateshwar International School (Dwarka)"
+      "Venkateshwar International School (Dwarka)",
+      "Other / अन्य"
     ],
     "Ghaziabad": [
       "Mahraja Agrasen Inter College",
@@ -1281,6 +1281,7 @@
       "Lucknow Model Public Inter College (lmpic) (Harihar Nagar Campus)",
       "Lucknow Model Public Inter College (lmpic) (Amrapali Yojana (cbse))",
       "Maharana Pratap Public Inter College (Main Campus)",
+      "Vardaan International Academy",
       "Other / अन्य"
     ],
     "Malihabad": [
@@ -2327,6 +2328,7 @@
       "Holy Mission Senior Secondary School",
       "Zila School Muzaffarpur",
       "Mukherjee Seminary Middle School",
+      "Delhi Public School",
       "Other / अन्य"
     ],
     "Sitamarhi": [
