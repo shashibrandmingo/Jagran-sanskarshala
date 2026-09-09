@@ -32,6 +32,9 @@ export const metadata = {
     shortcut: ["/icon.png"],
     apple: [{ url: "/apple-icon.png" }],
   },
+  verification: {
+    google: "BN9uzyDMceD1DQziTRRE8B_fEVgnFY2ukX7dnruHsMQ",
+  },
   other: {
     google: "notranslate",
   },
