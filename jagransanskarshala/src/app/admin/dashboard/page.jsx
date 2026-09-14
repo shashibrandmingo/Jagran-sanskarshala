@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo, Suspense } from "react";
+import { useEffect, useState, useMemo, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -32,6 +32,7 @@ import {
   FaUpload,
   FaFolderPlus,
   FaCalendarPlus,
+  FaArrowsRotate,
 } from "react-icons/fa6";
 import Logo from "@/assets/images/Logo-english.png";
 import * as XLSX from "xlsx";
@@ -107,6 +108,7 @@ const getCalendarDays = (year, month) => {
 
 // Date Presets & Options
 const datePresets = [
+  { id: "all", label: "All Time (सभी)" },
   { id: "today", label: "Today" },
   { id: "yesterday", label: "Yesterday" },
   { id: "7days", label: "Last 7 days" },
@@ -131,10 +133,22 @@ function AdminDashboardContent() {
 
   const [admin, setAdmin] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [isInitialDataLoading, setIsInitialDataLoading] = useState(true);
+  const [isTableLoading, setIsTableLoading] = useState(true);
+  const [isStatsLoading, setIsStatsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Live MongoDB Submissions State
+  // Live Stats State
+  const [stats, setStats] = useState({
+    total: 0,
+    studentCount: 0,
+    parentCount: 0,
+    todayCount: 0,
+  });
+
+  // Paginated Survey Submissions for Table
   const [liveSurveys, setLiveSurveys] = useState([]);
+  const [totalSubmissions, setTotalSubmissions] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
   // Weekly Stories State
   const [stories, setStories] = useState(initialStories);
@@ -147,46 +161,28 @@ function AdminDashboardContent() {
 
   // Search & Secondary Filters
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [stateFilter, setStateFilter] = useState("all");
   const [cityFilter, setCityFilter] = useState("all");
   const [schoolFilter, setSchoolFilter] = useState("all");
 
-  // Custom Dropdown Open State: 'none' | 'date' | 'state' | 'city' | 'school'
+  // Custom Dropdown Open State: 'none' | 'date' | 'state' | 'city' | 'school' | 'entries'
   const [openDropdown, setOpenDropdown] = useState("none");
 
-  // Dynamic State Options derived from schoolsData.json & live submissions
+  // Dynamic State Options derived from schoolsData.json
   const stateOptions = useMemo(() => {
     const knownStates = Object.keys(schoolsData || {}).sort();
-    const customStates = new Set();
-    liveSurveys.forEach((s) => {
-      if (s.state && !schoolsData[s.state] && s.state !== "Other") {
-        customStates.add(s.state);
-      }
-    });
-
     return [
       { value: "all", label: "All States" },
       ...knownStates.map((st) => ({ value: st, label: st })),
       { value: "Other", label: "Other / अन्य (Custom)" },
-      ...Array.from(customStates).sort().map((st) => ({ value: st, label: st })),
     ];
-  }, [liveSurveys]);
+  }, []);
 
   // Dynamic City Options based on selected stateFilter
   const cityOptions = useMemo(() => {
-    if (!stateFilter || stateFilter === "all") {
-      return [{ value: "all", label: "Select State First" }];
-    }
-    if (stateFilter === "Other") {
-      const customCities = new Set();
-      liveSurveys.forEach((s) => {
-        if (s.city) customCities.add(s.city);
-      });
-      return [
-        { value: "all", label: "All Cities" },
-        { value: "Other", label: "Other / अन्य (Custom)" },
-        ...Array.from(customCities).sort().map((c) => ({ value: c, label: c })),
-      ];
+    if (!stateFilter || stateFilter === "all" || stateFilter === "Other") {
+      return [{ value: "all", label: "All Cities" }, { value: "Other", label: "Other / अन्य (Custom)" }];
     }
     const stateObj = schoolsData[stateFilter];
     const cities = stateObj ? Object.keys(stateObj).sort() : [];
@@ -195,26 +191,12 @@ function AdminDashboardContent() {
       ...cities.map((c) => ({ value: c, label: c })),
       { value: "Other", label: "Other / अन्य (Custom)" },
     ];
-  }, [stateFilter, liveSurveys]);
+  }, [stateFilter]);
 
   // Dynamic School Options based on selected stateFilter & cityFilter
   const schoolOptions = useMemo(() => {
-    if (!stateFilter || stateFilter === "all") {
-      return [{ value: "all", label: "Select State & City First" }];
-    }
-    if (!cityFilter || cityFilter === "all") {
-      return [{ value: "all", label: "Select City First" }];
-    }
-    if (stateFilter === "Other" || cityFilter === "Other") {
-      const customSchools = new Set();
-      liveSurveys.forEach((s) => {
-        if (s.school) customSchools.add(s.school);
-      });
-      return [
-        { value: "all", label: "All Schools" },
-        { value: "Other", label: "Other / अन्य (Custom)" },
-        ...Array.from(customSchools).sort().map((sch) => ({ value: sch, label: sch })),
-      ];
+    if (!stateFilter || stateFilter === "all" || !cityFilter || cityFilter === "all" || stateFilter === "Other" || cityFilter === "Other") {
+      return [{ value: "all", label: "All Schools" }, { value: "Other", label: "Other / अन्य (Custom)" }];
     }
     const schools = schoolsData[stateFilter]?.[cityFilter] || [];
     return [
@@ -222,20 +204,29 @@ function AdminDashboardContent() {
       ...schools.map((sch) => ({ value: sch, label: sch })),
       { value: "Other", label: "Other / अन्य (Custom)" },
     ];
-  }, [stateFilter, cityFilter, liveSurveys]);
+  }, [stateFilter, cityFilter]);
 
-  // Date Filter Preset & Custom Picker States
-  const [datePreset, setDatePreset] = useState("30days");
-  const [dateRangeLabel, setDateRangeLabel] = useState("Last 30 days");
+  // Date Filter Preset & Custom Picker States (Default to "all")
+  const [datePreset, setDatePreset] = useState("all");
+  const [dateRangeLabel, setDateRangeLabel] = useState("All Time (सभी)");
   const [showCustomDateModal, setShowCustomDateModal] = useState(false);
-  const [calendarBaseDate, setCalendarBaseDate] = useState(new Date(2026, 6, 1)); // July 2026
-  const [tempStartDate, setTempStartDate] = useState(new Date(2026, 6, 2)); // 07/02/2026
-  const [tempEndDate, setTempEndDate] = useState(new Date(2026, 7, 1)); // 08/01/2026
-  const [appliedStartDate, setAppliedStartDate] = useState(new Date(2026, 6, 2));
-  const [appliedEndDate, setAppliedEndDate] = useState(new Date(2026, 7, 1));
+  const [calendarBaseDate, setCalendarBaseDate] = useState(new Date());
+  const [tempStartDate, setTempStartDate] = useState(null);
+  const [tempEndDate, setTempEndDate] = useState(null);
+  const [appliedStartDate, setAppliedStartDate] = useState(null);
+  const [appliedEndDate, setAppliedEndDate] = useState(null);
+
+  // Selected Row Checkbox State
+  const [selectedRows, setSelectedRows] = useState([]);
 
   // Detail Modal State
   const [selectedSubmission, setSelectedSubmission] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+
+  // Pagination State
+  const [itemsPerPage, setItemsPerPage] = useState(25);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Close dropdowns on outside click
   useEffect(() => {
@@ -248,6 +239,15 @@ function AdminDashboardContent() {
     return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Auth check
   useEffect(() => {
     const token = localStorage.getItem("adminToken");
     const adminData = localStorage.getItem("adminData");
@@ -269,46 +269,200 @@ function AdminDashboardContent() {
     router.push("/admin-login");
   };
 
-  // Fetch Live Survey Submissions from Backend API
-  const fetchLiveSurveys = async () => {
+  // Helper to compute date range for API
+  const getDateRangeParams = () => {
+    if (datePreset === "custom" && appliedStartDate && appliedEndDate) {
+      return {
+        startDate: appliedStartDate.toISOString(),
+        endDate: appliedEndDate.toISOString(),
+      };
+    }
+    if (datePreset === "today") {
+      const start = new Date();
+      start.setHours(0, 0, 0, 0);
+      return { startDate: start.toISOString() };
+    }
+    if (datePreset === "yesterday") {
+      const start = new Date();
+      start.setDate(start.getDate() - 1);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date();
+      end.setDate(end.getDate() - 1);
+      end.setHours(23, 59, 59, 999);
+      return { startDate: start.toISOString(), endDate: end.toISOString() };
+    }
+    if (datePreset === "7days") {
+      const start = new Date();
+      start.setDate(start.getDate() - 7);
+      start.setHours(0, 0, 0, 0);
+      return { startDate: start.toISOString() };
+    }
+    if (datePreset === "30days") {
+      const start = new Date();
+      start.setDate(start.getDate() - 30);
+      start.setHours(0, 0, 0, 0);
+      return { startDate: start.toISOString() };
+    }
+    return {};
+  };
+
+  // 1. Fetch Lightweight Stats Counter
+  const isFetchingStatsRef = useRef(false);
+  const fetchStats = async () => {
     const token = localStorage.getItem("adminToken");
-    if (!token) return;
+    if (!token || isFetchingStatsRef.current) return;
+    isFetchingStatsRef.current = true;
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
-      const res = await fetch(`${backendUrl}/api/v1/survey/all`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const res = await fetch(`${backendUrl}/api/v1/survey/stats`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
+
+      if (res.status === 401) {
+        localStorage.removeItem("adminToken");
+        localStorage.removeItem("adminData");
+        router.push("/admin-login");
+        return;
+      }
+
       const data = await res.json();
-      if (res.ok && Array.isArray(data.data)) {
-        setLiveSurveys(data.data);
+      if (res.ok && data.success && data.stats) {
+        setStats(data.stats);
       }
     } catch (err) {
-      console.error("Error fetching live surveys:", err);
+      console.error("Error fetching stats:", err);
     } finally {
-      setIsInitialDataLoading(false);
+      setIsStatsLoading(false);
+      isFetchingStatsRef.current = false;
     }
   };
 
+  // 2. Fetch Server-side Paginated Surveys for Table
+  const isFetchingSurveysRef = useRef(false);
+  const fetchSurveys = async () => {
+    const token = localStorage.getItem("adminToken");
+    if (!token || isFetchingSurveysRef.current) return;
+    isFetchingSurveysRef.current = true;
+    setIsTableLoading(true);
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+      const params = new URLSearchParams({
+        page: String(currentPage),
+        limit: String(itemsPerPage),
+      });
+
+      if (tabFilter !== "all") params.append("tab", tabFilter);
+      if (stateFilter !== "all") params.append("state", stateFilter);
+      if (cityFilter !== "all") params.append("city", cityFilter);
+      if (schoolFilter !== "all") params.append("school", schoolFilter);
+      if (debouncedSearch.trim() !== "") params.append("search", debouncedSearch.trim());
+
+      const dateParams = getDateRangeParams();
+      if (dateParams.startDate) params.append("startDate", dateParams.startDate);
+      if (dateParams.endDate) params.append("endDate", dateParams.endDate);
+
+      const res = await fetch(`${backendUrl}/api/v1/survey/all?${params.toString()}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.status === 401) {
+        localStorage.removeItem("adminToken");
+        localStorage.removeItem("adminData");
+        router.push("/admin-login");
+        return;
+      }
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setLiveSurveys(data.data || []);
+        setTotalSubmissions(data.total || 0);
+        setTotalPages(data.totalPages || 1);
+      }
+    } catch (err) {
+      console.error("Error fetching surveys:", err);
+    } finally {
+      setIsTableLoading(false);
+      isFetchingSurveysRef.current = false;
+    }
+  };
+
+  // Initial Load & Smart 30-Second Lightweight Stats Polling (Industry Best Practice)
   useEffect(() => {
-    fetchLiveSurveys();
-    // Auto-poll every 4 seconds for real-time live submission updates
-    const interval = setInterval(fetchLiveSurveys, 4000);
-    return () => clearInterval(interval);
+    fetchStats();
+
+    // Auto-update counter cards every 30 seconds ONLY when tab is actively viewed
+    const interval = setInterval(() => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        fetchStats();
+      }
+    }, 30000);
+
+    // Refresh immediately when admin tabs back into the dashboard
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        fetchStats();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, []);
 
-  // Selected Row Checkbox State
-  const [selectedRows, setSelectedRows] = useState([]);
+  // Fetch paginated surveys whenever page or filters change
+  useEffect(() => {
+    fetchSurveys();
+  }, [
+    currentPage,
+    itemsPerPage,
+    tabFilter,
+    debouncedSearch,
+    stateFilter,
+    cityFilter,
+    schoolFilter,
+    datePreset,
+    appliedStartDate,
+    appliedEndDate,
+  ]);
 
-  // Pagination State
-  const [itemsPerPage, setItemsPerPage] = useState(25);
-  const [currentPage, setCurrentPage] = useState(1);
+  // Manual Refresh Handler
+  const handleRefreshData = async () => {
+    setIsRefreshing(true);
+    await Promise.all([fetchStats(), fetchSurveys()]);
+    setIsRefreshing(false);
+  };
 
-  // Reset pagination to Page 1 whenever filters change
+  // Reset page to 1 on filter changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, tabFilter, stateFilter, cityFilter, schoolFilter, datePreset, appliedStartDate, appliedEndDate, itemsPerPage]);
+    setSelectedRows([]);
+  }, [tabFilter, debouncedSearch, stateFilter, cityFilter, schoolFilter, datePreset, appliedStartDate, appliedEndDate, itemsPerPage]);
+
+  // Open single submission detail modal
+  const handleViewDetail = async (item) => {
+    setSelectedSubmission(item);
+    if (item._id) {
+      const token = localStorage.getItem("adminToken");
+      if (!token) return;
+      setDetailLoading(true);
+      try {
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+        const res = await fetch(`${backendUrl}/api/v1/survey/detail/${item._id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        if (res.ok && data.data) {
+          setSelectedSubmission(data.data);
+        }
+      } catch (err) {
+        console.error("Error loading detail:", err);
+      } finally {
+        setDetailLoading(false);
+      }
+    }
+  };
 
   // Preset Selection Handler
   const handleSelectDatePreset = (preset) => {
@@ -346,151 +500,94 @@ function AdminDashboardContent() {
     }
   };
 
-  // Use ONLY Live MongoDB Submissions from Backend
-  const currentDataset = liveSurveys;
+  // High-Speed Streaming Export
+  const handleExportData = async () => {
+    const token = localStorage.getItem("adminToken");
+    if (!token) return;
 
-  const filteredData = currentDataset.filter((item) => {
-    if (!item) return false;
+    // If specific rows selected on current page, export those locally
+    if (selectedRows && selectedRows.length > 0) {
+      const selectedData = liveSurveys.filter((row) => selectedRows.includes(row._id || row.id));
+      if (selectedData.length > 0) {
+        const excelRows = selectedData.map((item, idx) => ({
+          "S.No": idx + 1,
+          "ID": item.id || "-",
+          "Survey Type": item.type || "-",
+          "First Name": item.firstName || "-",
+          "Last Name": item.lastName || "-",
+          "Email Address": item.email || "-",
+          "Mobile Number": item.mobile || "-",
+          "Date of Birth": item.dob || "-",
+          "Gender": item.gender || "-",
+          "Occupation": item.occupation || "-",
+          "Class": item.studentClass || "-",
+          "State": item.state || "-",
+          "City": item.city || "-",
+          "School": item.school || "-",
+          "Grade": item.grade || "A",
+          "Submitted On": item.submittedOn || "-",
+        }));
 
-    // Tab filter (Null-safe)
-    const itemType = String(item.type || "").toLowerCase();
-    if (tabFilter === "parent" && itemType !== "parent") return false;
-    if (tabFilter === "student" && itemType !== "student") return false;
-
-    // Global Search Query across ALL fields of lead
-    if (searchQuery && searchQuery.trim() !== "") {
-      const q = searchQuery.trim().toLowerCase();
-      const fieldsToSearch = [
-        item._id,
-        item.id,
-        item.firstName,
-        item.lastName,
-        `${item.firstName || ""} ${item.lastName || ""}`,
-        item.email,
-        item.mobile,
-        item.dob,
-        item.gender,
-        item.type,
-        item.occupation,
-        item.studentClass,
-        item.state,
-        item.city,
-        item.school,
-        item.submittedOn,
-        item.createdAt,
-      ];
-      const matchesAnyField = fieldsToSearch.some(
-        (val) => val && String(val).toLowerCase().includes(q)
-      );
-      if (!matchesAnyField) return false;
-    }
-
-    // Known standard states from schoolsData
-    const knownStates = Object.keys(schoolsData || {});
-    const itemState = String(item.state || "");
-    const itemCity = String(item.city || "");
-    const itemSchool = String(item.school || "");
-
-    // State filter (Handles "Other / अन्य" and custom state entries)
-    if (stateFilter !== "all") {
-      if (stateFilter === "Other") {
-        const isStandard = knownStates.includes(itemState);
-        const isOther = !itemState || itemState.toLowerCase().includes("other") || !isStandard;
-        if (!isOther) return false;
-      } else {
-        if (itemState !== stateFilter) return false;
+        const worksheet = XLSX.utils.json_to_sheet(excelRows);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Selected Surveys");
+        XLSX.writeFile(workbook, `Jagran_Selected_${selectedRows.length}_Surveys_${new Date().toISOString().slice(0, 10)}.xlsx`);
+        return;
       }
     }
 
-    // City filter (Handles "Other / अन्य" and custom city entries)
-    if (cityFilter !== "all") {
-      if (cityFilter === "Other") {
-        const knownCities = stateFilter && schoolsData[stateFilter] ? Object.keys(schoolsData[stateFilter]) : [];
-        const isStandard = knownCities.includes(itemCity);
-        const isOther = !itemCity || itemCity.toLowerCase().includes("other") || !isStandard;
-        if (!isOther) return false;
-      } else {
-        if (itemCity !== cityFilter) return false;
-      }
+    // Otherwise, trigger fast streaming backend CSV export
+    try {
+      setIsExporting(true);
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+      const params = new URLSearchParams();
+
+      if (tabFilter !== "all") params.append("tab", tabFilter);
+      if (stateFilter !== "all") params.append("state", stateFilter);
+      if (cityFilter !== "all") params.append("city", cityFilter);
+      if (schoolFilter !== "all") params.append("school", schoolFilter);
+      if (debouncedSearch.trim() !== "") params.append("search", debouncedSearch.trim());
+
+      const dateParams = getDateRangeParams();
+      if (dateParams.startDate) params.append("startDate", dateParams.startDate);
+      if (dateParams.endDate) params.append("endDate", dateParams.endDate);
+
+      const res = await fetch(`${backendUrl}/api/v1/survey/export?${params.toString()}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) throw new Error("Export failed");
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Jagran_Surveys_Export_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Export error:", err);
+      alert("Export error occurred. Please try again.");
+    } finally {
+      setIsExporting(false);
     }
+  };
 
-    // School filter (Handles "Other / अन्य" and custom school entries)
-    if (schoolFilter !== "all") {
-      if (schoolFilter === "Other") {
-        const knownSchools = stateFilter && cityFilter && schoolsData[stateFilter]?.[cityFilter] ? schoolsData[stateFilter][cityFilter] : [];
-        const isStandard = knownSchools.includes(itemSchool);
-        const isOther = !itemSchool || itemSchool.toLowerCase().includes("other") || !isStandard;
-        if (!isOther) return false;
-      } else {
-        if (itemSchool !== schoolFilter) return false;
-      }
-    }
+  // Row selection logic
+  const getRowId = (row) => row._id || row.id;
 
-    // Date Range Filter
-    const rawDate = item.submittedOn || item.createdAt;
-    if (rawDate) {
-      const dateStr = typeof rawDate === "string" ? rawDate.replace(",", "") : rawDate;
-      const itemDate = new Date(dateStr);
-      if (!isNaN(itemDate.getTime())) {
-        if (datePreset === "custom" && appliedStartDate && appliedEndDate) {
-          const start = new Date(appliedStartDate);
-          start.setHours(0, 0, 0, 0);
-          const end = new Date(appliedEndDate);
-          end.setHours(23, 59, 59, 999);
-          if (itemDate < start || itemDate > end) return false;
-        } else if (datePreset === "today") {
-          const now = new Date();
-          if (!isSameDay(itemDate, now)) return false;
-        } else if (datePreset === "yesterday") {
-          const yesterday = new Date();
-          yesterday.setDate(yesterday.getDate() - 1);
-          if (!isSameDay(itemDate, yesterday)) return false;
-        } else if (datePreset === "7days") {
-          const start = new Date();
-          start.setDate(start.getDate() - 7);
-          start.setHours(0, 0, 0, 0);
-          const end = new Date();
-          end.setHours(23, 59, 59, 999);
-          if (itemDate < start || itemDate > end) return false;
-        } else if (datePreset === "30days") {
-          const start = new Date();
-          start.setDate(start.getDate() - 30);
-          start.setHours(0, 0, 0, 0);
-          const end = new Date();
-          end.setHours(23, 59, 59, 999);
-          if (itemDate < start || itemDate > end) return false;
-        }
-      }
-    }
-
-    return true;
-  });
-
-  // Pagination Calculations
-  const totalItems = filteredData.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
-  const validPage = Math.min(currentPage, totalPages);
-
-  const startIndex = totalItems === 0 ? 0 : (validPage - 1) * itemsPerPage;
-  const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
-  const paginatedData = filteredData.slice(startIndex, endIndex);
-
-  const startItemDisplay = totalItems === 0 ? 0 : startIndex + 1;
-  const endItemDisplay = endIndex;
-
-  const getRowId = (row) => row._id || row.id || row.submissionId;
-
-  // Select All & Row Selection logic
   const isAllSelected =
-    paginatedData.length > 0 &&
-    paginatedData.every((row) => selectedRows.includes(getRowId(row)));
+    liveSurveys.length > 0 &&
+    liveSurveys.every((row) => selectedRows.includes(getRowId(row)));
 
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      const pageIds = paginatedData.map((row) => getRowId(row));
+      const pageIds = liveSurveys.map((row) => getRowId(row));
       setSelectedRows((prev) => Array.from(new Set([...prev, ...pageIds])));
     } else {
-      const pageIds = new Set(paginatedData.map((row) => getRowId(row)));
+      const pageIds = new Set(liveSurveys.map((row) => getRowId(row)));
       setSelectedRows((prev) => prev.filter((id) => !pageIds.has(id)));
     }
   };
@@ -501,66 +598,8 @@ function AdminDashboardContent() {
     );
   };
 
-  // Export Data to Excel (.xlsx) File
-  const handleExportData = () => {
-    let dataToExport = [];
-    if (selectedRows && selectedRows.length > 0) {
-      // Export ONLY selected rows if checkboxes are checked
-      dataToExport = filteredData.filter((row) => selectedRows.includes(getRowId(row)));
-      if (dataToExport.length === 0) {
-        dataToExport = currentDataset.filter((row) => selectedRows.includes(getRowId(row)));
-      }
-    } else {
-      // Export all entries matching current active filters & date range
-      dataToExport = filteredData;
-    }
-
-    if (!dataToExport || dataToExport.length === 0) {
-      alert("No survey data available to export / एक्सपोर्ट करने के लिए कोई डेटा नहीं है।");
-      return;
-    }
-
-    const excelRows = dataToExport.map((item, idx) => ({
-      "S.No": idx + 1,
-      "ID": item.id || "-",
-      "Survey Type": item.type || "-",
-      "First Name": item.firstName || "-",
-      "Last Name": item.lastName || "-",
-      "Email Address": item.email || "-",
-      "Mobile Number": item.mobile || "-",
-      "Date of Birth": item.dob || "-",
-      "Gender": item.gender || "-",
-      "Occupation": item.occupation || "-",
-      "Class": item.studentClass || "-",
-      "State": item.state || "-",
-      "City": item.city || "-",
-      "School": item.school || "-",
-      "Submitted On": item.submittedOn || "-",
-    }));
-
-    const worksheet = XLSX.utils.json_to_sheet(excelRows);
-
-    // Auto-fit column widths
-    const max_widths = Object.keys(excelRows[0] || {}).map((key) => {
-      const maxLen = Math.max(
-        key.length,
-        ...excelRows.map((r) => String(r[key] || "").length)
-      );
-      return { wch: Math.min(Math.max(maxLen + 3, 10), 40) };
-    });
-    worksheet["!cols"] = max_widths;
-
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Survey Submissions");
-
-    const dateStr = new Date().toISOString().split("T")[0];
-    const isSelectedMode = selectedRows && selectedRows.length > 0;
-    const fileName = isSelectedMode
-      ? `Jagran_Sanskarshaala_${selectedRows.length}_Selected_Surveys_${dateStr}.xlsx`
-      : `Jagran_Sanskarshaala_Survey_Data_${dateStr}.xlsx`;
-
-    XLSX.writeFile(workbook, fileName);
-  };
+  const startItemDisplay = totalSubmissions === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
+  const endItemDisplay = Math.min(currentPage * itemsPerPage, totalSubmissions);
 
   const renderPaginationButtons = () => {
     if (totalPages <= 1) {
@@ -575,7 +614,7 @@ function AdminDashboardContent() {
     }
 
     const buttons = [];
-    let startPage = Math.max(1, validPage - 2);
+    let startPage = Math.max(1, currentPage - 2);
     let endPage = Math.min(totalPages, startPage + 4);
 
     if (endPage - startPage < 4) {
@@ -599,7 +638,7 @@ function AdminDashboardContent() {
     }
 
     for (let p = startPage; p <= endPage; p++) {
-      const isCurrent = p === validPage;
+      const isCurrent = p === currentPage;
       buttons.push(
         <button
           key={p}
@@ -708,10 +747,21 @@ function AdminDashboardContent() {
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            onClick={handleRefreshData}
+            disabled={isRefreshing || isTableLoading}
+            className="bg-white border border-gray-200 hover:border-gray-300 px-4 py-2.5 rounded-2xl text-xs font-bold text-gray-700 shadow-2xs hover:bg-gray-50 transition-all flex items-center gap-2 cursor-pointer active:scale-95 disabled:opacity-50"
+            title="Refresh latest data"
+          >
+            <FaArrowsRotate className={`text-[var(--primary)] text-sm ${isRefreshing ? "animate-spin" : ""}`} />
+            <span>{isRefreshing ? "Refreshing..." : "Refresh Data"}</span>
+          </button>
+
           {(currentTab === "survey-data" || currentTab === "survey-grades") && (
             <button
               onClick={handleExportData}
-              className="bg-white border border-gray-200 hover:border-gray-300 px-4 py-2.5 rounded-2xl text-xs font-bold text-gray-700 shadow-2xs hover:bg-gray-50 transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+              disabled={isExporting}
+              className="bg-white border border-gray-200 hover:border-gray-300 px-4 py-2.5 rounded-2xl text-xs font-bold text-gray-700 shadow-2xs hover:bg-gray-50 transition-all flex items-center gap-2 cursor-pointer active:scale-95 disabled:opacity-50"
               title={
                 selectedRows.length > 0
                   ? `Export ${selectedRows.length} selected entries`
@@ -720,9 +770,11 @@ function AdminDashboardContent() {
             >
               <FaFileExport className="text-[var(--primary)] text-sm" />
               <span>
-                {selectedRows.length > 0
+                {isExporting
+                  ? "Exporting..."
+                  : selectedRows.length > 0
                   ? `Export Selected (${selectedRows.length})`
-                  : "Export to Excel"}
+                  : "Export to CSV/Excel"}
               </span>
             </button>
           )}
@@ -732,13 +784,13 @@ function AdminDashboardContent() {
       {/* Content Container */}
       <div className="px-4 sm:px-8 pb-8 space-y-6">
         {currentTab === "survey-grades" ? (
-          <SurveyGradesView liveSurveys={liveSurveys} isLoading={isInitialDataLoading} />
+          <SurveyGradesView liveSurveys={liveSurveys} isLoading={isTableLoading} />
         ) : currentTab === "story-publish" ? (
           <PublishStoryView />
         ) : currentTab === "analytics" ? (
-          <AnalyticsView liveSurveys={liveSurveys} isLoading={isInitialDataLoading} />
+          <AnalyticsView liveSurveys={liveSurveys} isLoading={isTableLoading} />
         ) : currentTab === "leads" ? (
-          <ContactLeadsView liveSurveys={liveSurveys} isLoading={isInitialDataLoading} />
+          <ContactLeadsView liveSurveys={liveSurveys} isLoading={isTableLoading} />
         ) : currentTab === "notifications" ? (
           <PushNotificationView />
         ) : (
@@ -788,7 +840,7 @@ function AdminDashboardContent() {
 
               {/* 4 Summary Stats Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
-                {isInitialDataLoading ? (
+                {isStatsLoading ? (
                   [...Array(4)].map((_, i) => (
                     <div key={i} className="p-5 rounded-2xl bg-[#fdf8f4] border border-[#f5e6d6] flex items-center gap-4 animate-pulse">
                       <div className="w-13 h-13 rounded-2xl bg-gray-200/90 shrink-0" />
@@ -808,7 +860,7 @@ function AdminDashboardContent() {
                       <div>
                         <p className="text-xs font-bold text-gray-500">Total Submissions</p>
                         <h3 className="text-2xl font-black text-gray-900 mt-0.5 tracking-tight">
-                          {currentDataset.length.toLocaleString()}
+                          {stats.total.toLocaleString()}
                         </h3>
                       </div>
                     </div>
@@ -821,7 +873,7 @@ function AdminDashboardContent() {
                       <div>
                         <p className="text-xs font-bold text-gray-500">Parent Submissions</p>
                         <h3 className="text-2xl font-black text-gray-900 mt-0.5 tracking-tight">
-                          {currentDataset.filter((item) => item.type.toLowerCase() === "parent").length.toLocaleString()}
+                          {stats.parentCount.toLocaleString()}
                         </h3>
                       </div>
                     </div>
@@ -834,7 +886,7 @@ function AdminDashboardContent() {
                       <div>
                         <p className="text-xs font-bold text-gray-500">Student Submissions</p>
                         <h3 className="text-2xl font-black text-gray-900 mt-0.5 tracking-tight">
-                          {currentDataset.filter((item) => item.type.toLowerCase() === "student").length.toLocaleString()}
+                          {stats.studentCount.toLocaleString()}
                         </h3>
                       </div>
                     </div>
@@ -847,11 +899,7 @@ function AdminDashboardContent() {
                       <div>
                         <p className="text-xs font-bold text-gray-500">Today's Submissions</p>
                         <h3 className="text-2xl font-black text-gray-900 mt-0.5 tracking-tight">
-                          {currentDataset.filter((item) => {
-                            if (!item.submittedOn) return false;
-                            const itemDate = new Date(item.submittedOn.replace(",", ""));
-                            return !isNaN(itemDate.getTime()) && itemDate.toDateString() === new Date().toDateString();
-                          }).length.toLocaleString()}
+                          {stats.todayCount.toLocaleString()}
                         </h3>
                       </div>
                     </div>
@@ -1057,16 +1105,13 @@ function AdminDashboardContent() {
                   )}
                 </div>
 
-                {/* Reset & Apply Buttons */}
+                {/* Reset Button */}
                 <div className="flex items-center gap-2 shrink-0">
                   <button
                     onClick={resetFilters}
                     className="px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-xs font-bold text-gray-700 transition-all cursor-pointer"
                   >
-                    Reset
-                  </button>
-                  <button className="px-5 py-2 rounded-xl bg-[var(--primary)] hover:bg-red-700 text-white text-xs font-extrabold transition-all shadow-md cursor-pointer whitespace-nowrap">
-                    Apply Filter
+                    Reset Filters
                   </button>
                 </div>
               </div>
@@ -1085,7 +1130,7 @@ function AdminDashboardContent() {
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Global Search (ID, Name, Mobile, Email, State, City, School, Type, Gender...)"
+                    placeholder="Search by Mobile, Name, Email, School..."
                     className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-2xl text-xs font-semibold text-gray-800 focus:outline-none focus:border-[var(--primary)] focus:bg-white transition-all shadow-xs"
                   />
                 </div>
@@ -1152,33 +1197,33 @@ function AdminDashboardContent() {
                           className="rounded text-[var(--primary)] accent-[var(--primary)] cursor-pointer"
                         />
                       </th>
-                      <th className="py-2.5 px-2 whitespace-nowrap">ID<br /><span className="text-[7.5px] text-gray-400 font-normal normal-case">आईडी</span></th>
-                      <th className="py-2.5 px-2 whitespace-nowrap">First Name<br /><span className="text-[7.5px] text-gray-400 font-normal normal-case">पहला नाम</span></th>
-                      <th className="py-2.5 px-2 whitespace-nowrap">Last Name<br /><span className="text-[7.5px] text-gray-400 font-normal normal-case">अंतिम नाम</span></th>
-                      <th className="py-2.5 px-2 whitespace-nowrap">Email<br /><span className="text-[7.5px] text-gray-400 font-normal normal-case">ईमेल</span></th>
-                      <th className="py-2.5 px-2 whitespace-nowrap">Mobile<br /><span className="text-[7.5px] text-gray-400 font-normal normal-case">मोबाइल</span></th>
-                      <th className="py-2.5 px-2 whitespace-nowrap">DOB<br /><span className="text-[7.5px] text-gray-400 font-normal normal-case">जन्म तिथि</span></th>
-                      <th className="py-2.5 px-2 whitespace-nowrap">Gender<br /><span className="text-[7.5px] text-gray-400 font-normal normal-case">लिंग</span></th>
-                      <th className="py-2.5 px-2 whitespace-nowrap">Type<br /><span className="text-[7.5px] text-gray-400 font-normal normal-case">प्रकार</span></th>
-                      <th className="py-2.5 px-2 whitespace-nowrap">Occupation<br /><span className="text-[7.5px] text-gray-400 font-normal normal-case">व्यवसाय</span></th>
-                      <th className="py-2.5 px-2 whitespace-nowrap">Class<br /><span className="text-[7.5px] text-gray-400 font-normal normal-case">कक्षा</span></th>
-                      <th className="py-2.5 px-2 whitespace-nowrap">State<br /><span className="text-[7.5px] text-gray-400 font-normal normal-case">राज्य</span></th>
-                      <th className="py-2.5 px-2 whitespace-nowrap">City<br /><span className="text-[7.5px] text-gray-400 font-normal normal-case">शहर</span></th>
-                      <th className="py-2.5 px-2 whitespace-nowrap">School<br /><span className="text-[7.5px] text-gray-400 font-normal normal-case">विद्यालय</span></th>
-                      <th className="py-2.5 px-2 whitespace-nowrap">Submitted On<br /><span className="text-[7.5px] text-gray-400 font-normal normal-case">जमा दिनांक</span></th>
-                      <th className="py-2.5 pr-3 pl-1 text-center w-[42px] whitespace-nowrap">Action<br /><span className="text-[7.5px] text-gray-400 font-normal normal-case">कार्रवाई</span></th>
+                      <th className="py-2.5 px-2">ID</th>
+                      <th className="py-2.5 px-2">First Name</th>
+                      <th className="py-2.5 px-2">Last Name</th>
+                      <th className="py-2.5 px-2">Email</th>
+                      <th className="py-2.5 px-2">Mobile</th>
+                      <th className="py-2.5 px-2">DOB</th>
+                      <th className="py-2.5 px-2">Gender</th>
+                      <th className="py-2.5 px-2">Type</th>
+                      <th className="py-2.5 px-2">Occupation</th>
+                      <th className="py-2.5 px-2">Class</th>
+                      <th className="py-2.5 px-2">State</th>
+                      <th className="py-2.5 px-2">City</th>
+                      <th className="py-2.5 px-2">School</th>
+                      <th className="py-2.5 px-2">Submitted On</th>
+                      <th className="py-2.5 pr-3 pl-1 text-center">Action</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100 text-[11px] font-semibold text-gray-700">
-                    {isInitialDataLoading ? (
-                      [...Array(6)].map((_, i) => (
-                        <tr key={i} className="animate-pulse border-b border-gray-100/80">
+                  <tbody className="divide-y divide-gray-100">
+                    {isTableLoading ? (
+                      [...Array(10)].map((_, idx) => (
+                        <tr key={idx} className="animate-pulse">
                           <td className="py-3.5 pl-3 pr-1 text-center"><div className="w-4 h-4 bg-gray-200 rounded mx-auto" /></td>
-                          <td className="py-3.5 px-2"><div className="h-3.5 bg-gray-200 rounded w-14" /></td>
-                          <td className="py-3.5 px-2"><div className="h-3.5 bg-gray-300 rounded w-24" /></td>
+                          <td className="py-3.5 px-2"><div className="h-3.5 bg-gray-200 rounded w-16" /></td>
                           <td className="py-3.5 px-2"><div className="h-3.5 bg-gray-200 rounded w-20" /></td>
-                          <td className="py-3.5 px-2"><div className="h-3.5 bg-gray-200 rounded w-32" /></td>
-                          <td className="py-3.5 px-2"><div className="h-3.5 bg-gray-200 rounded w-24" /></td>
+                          <td className="py-3.5 px-2"><div className="h-3.5 bg-gray-200 rounded w-20" /></td>
+                          <td className="py-3.5 px-2"><div className="h-3.5 bg-gray-200 rounded w-28" /></td>
+                          <td className="py-3.5 px-2"><div className="h-3.5 bg-gray-200 rounded w-20" /></td>
                           <td className="py-3.5 px-2"><div className="h-3.5 bg-gray-200 rounded w-16" /></td>
                           <td className="py-3.5 px-2"><div className="h-3.5 bg-gray-200 rounded w-12" /></td>
                           <td className="py-3.5 px-2"><div className="h-5 bg-gray-200 rounded-full w-16" /></td>
@@ -1191,15 +1236,15 @@ function AdminDashboardContent() {
                           <td className="py-3.5 pr-3 pl-1 text-center"><div className="w-6 h-6 bg-gray-200 rounded-md mx-auto" /></td>
                         </tr>
                       ))
-                    ) : paginatedData.length === 0 ? (
+                    ) : liveSurveys.length === 0 ? (
                       <tr>
-                        <td colSpan={16} className="py-8 text-center text-gray-400">
+                        <td colSpan={16} className="py-8 text-center text-gray-400 font-bold">
                           No submissions match the active filter criteria.
                         </td>
                       </tr>
                     ) : (
-                      paginatedData.map((row, rowIdx) => {
-                        const rowId = row._id || row.id || row.submissionId || `sub-${rowIdx}`;
+                      liveSurveys.map((row, rowIdx) => {
+                        const rowId = row._id || row.id || `sub-${rowIdx}`;
                         const isRowSelected = selectedRows.includes(rowId);
                         return (
                           <tr
@@ -1215,7 +1260,7 @@ function AdminDashboardContent() {
                                 className="rounded text-[var(--primary)] accent-[var(--primary)] cursor-pointer"
                               />
                             </td>
-                            <td className="py-2.5 px-2 font-mono text-gray-500 text-[10.5px] whitespace-nowrap">{rowId}</td>
+                            <td className="py-2.5 px-2 font-mono text-gray-500 text-[10.5px] whitespace-nowrap">{row.id || String(row._id).substring(18, 24).toUpperCase()}</td>
                             <td className="py-2.5 px-2 font-bold text-gray-900 whitespace-nowrap">{row.firstName}</td>
                             <td className="py-2.5 px-2 whitespace-nowrap">{row.lastName}</td>
                             <td className="py-2.5 px-2 text-gray-600 text-[10.5px] whitespace-nowrap">{row.email}</td>
@@ -1238,7 +1283,7 @@ function AdminDashboardContent() {
                             <td className="py-2.5 px-2 text-gray-500 text-[10px] whitespace-nowrap">{row.submittedOn}</td>
                             <td className="py-2.5 pr-3 pl-1 text-center">
                               <button
-                                onClick={() => setSelectedSubmission(row)}
+                                onClick={() => handleViewDetail(row)}
                                 className="p-1 text-red-500 hover:bg-red-50 rounded-md transition-colors cursor-pointer"
                                 title="View Details"
                               >
@@ -1256,13 +1301,13 @@ function AdminDashboardContent() {
               {/* Pagination Controls */}
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-3 text-xs text-gray-500 font-semibold">
                 <div>
-                  Showing {startItemDisplay} to {endItemDisplay} of {totalItems.toLocaleString()} entries
+                  Showing {startItemDisplay} to {endItemDisplay} of {totalSubmissions.toLocaleString()} entries
                 </div>
                 <div className="flex items-center gap-1">
                   <button
                     type="button"
                     onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    disabled={validPage === 1}
+                    disabled={currentPage === 1}
                     className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-600 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                   >
                     <FaChevronLeft className="text-xs" />
@@ -1273,7 +1318,7 @@ function AdminDashboardContent() {
                   <button
                     type="button"
                     onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={validPage === totalPages}
+                    disabled={currentPage === totalPages}
                     className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-600 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                   >
                     <FaChevronRight className="text-xs" />

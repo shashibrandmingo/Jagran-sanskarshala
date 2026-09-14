@@ -13,27 +13,32 @@ const PORT = process.env.PORT || 5000;
  * Drops any legacy mobile_1_type_1 unique index that causes conflicts.
  * Duplicate mobile check is now handled in surveyController.js via findOne().
  */
-const cleanupOldIndexes = async () => {
+const setupIndexes = async () => {
   try {
     const { default: SurveySubmission } = await import("./src/models/SurveySubmission.js");
     const collection = SurveySubmission.collection;
     const indexes = await collection.indexes();
-    const oldIndex = indexes.find((idx) => idx.name === "mobile_1_type_1");
+    const oldIndex = indexes.find((idx) => idx.name === "mobile_1_type_1" && idx.unique);
 
     if (oldIndex) {
       console.log("🗑️  Dropping old unique index: mobile_1_type_1");
       await collection.dropIndex("mobile_1_type_1");
-      console.log("✅ Old index dropped — duplicate check now handled in controller");
+      console.log("✅ Old unique index dropped.");
     }
+
+    // Build compound performance indexes (non-blocking in background)
+    console.log("⚡ Ensuring database performance indexes...");
+    await SurveySubmission.createIndexes();
+    console.log("✅ Database indexes verified & active.");
   } catch (error) {
-    // Silently ignore — index might not exist
+    console.error("⚠️ Index setup notice:", error.message);
   }
 };
 
 connectDB()
   .then(async () => {
     await seedAdminUser();
-    await cleanupOldIndexes();
+    await setupIndexes();
     app.listen(PORT, () => {
       console.log(`🚀 Server running on http://localhost:${PORT}`);
     });

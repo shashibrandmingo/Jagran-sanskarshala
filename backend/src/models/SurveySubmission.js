@@ -71,8 +71,11 @@ const surveySubmissionSchema = new mongoose.Schema(
   }
 );
 
-// Duplicate mobile check is handled in surveyController.js via findOne() before create()
-// No database-level unique index needed — avoids MongoDB index conflicts on blank mobile submissions
+// High-Performance Non-Unique Indexes for 128k+ fast querying & sorting
+surveySubmissionSchema.index({ createdAt: -1 });
+surveySubmissionSchema.index({ type: 1, createdAt: -1 });
+surveySubmissionSchema.index({ state: 1, city: 1, school: 1, createdAt: -1 });
+surveySubmissionSchema.index({ mobile: 1, type: 1 });
 
 const SurveySubmission = mongoose.model("SurveySubmission", surveySubmissionSchema);
 

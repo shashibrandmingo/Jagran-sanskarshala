@@ -8,7 +8,13 @@ const connectDB = async () => {
   try {
     const connectionInstance = await mongoose.connect(
       `${process.env.MONGODB_URI}/${DB_NAME}`,
-      { autoIndex: false },
+      {
+        autoIndex: false, // Index creation is managed explicitly in server.js
+        maxPoolSize: 50,  // Handle high concurrency
+        minPoolSize: 10,
+        serverSelectionTimeoutMS: 5000,
+        socketTimeoutMS: 45000,
+      },
     );
 
     console.log(

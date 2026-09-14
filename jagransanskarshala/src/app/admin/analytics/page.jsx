@@ -16,9 +16,15 @@ export default function AnalyticsPage() {
   const fetchSurveys = async (token) => {
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
-      const res = await fetch(`${backendUrl}/api/v1/survey/all`, {
+      const res = await fetch(`${backendUrl}/api/v1/survey/all?limit=100`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      if (res.status === 401) {
+        localStorage.removeItem("adminToken");
+        localStorage.removeItem("adminData");
+        window.location.href = "/admin-login";
+        return;
+      }
       const data = await res.json();
       if (res.ok && Array.isArray(data.data)) setLiveSurveys(data.data);
     } catch (err) {
