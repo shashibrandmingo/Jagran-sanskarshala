@@ -107,6 +107,7 @@ export const storiesData = DEFAULT_CAMPAIGN_WEEKS;
 
 export function resolveStoryPublishStatus(story) {
   if (!story) return false;
+  if (Boolean(story.isPublished)) return true;
   if (story.scheduledDate) {
     try {
       const timeStr = story.scheduledTime || "00:00";
@@ -118,7 +119,7 @@ export function resolveStoryPublishStatus(story) {
     const todayStr = new Date().toISOString().split("T")[0];
     return story.scheduledDate <= todayStr;
   }
-  return Boolean(story.isPublished);
+  return false;
 }
 
 export function mergeWithDefaultWeeks(dbStories) {

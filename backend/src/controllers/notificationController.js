@@ -47,7 +47,7 @@ export const createNotification = async (req, res, next) => {
 // @access  Admin / Public
 export const getAllNotifications = async (req, res, next) => {
   try {
-    const notifications = await Notification.find({}).sort({ createdAt: -1 });
+    const notifications = await Notification.find({}).sort({ createdAt: -1 }).lean();
 
     return res.status(200).json({
       success: true,
@@ -66,7 +66,9 @@ export const getPublishedNotifications = async (req, res, next) => {
   try {
     const notifications = await Notification.find({
       status: { $in: ["Sent", "Published"] },
-    }).sort({ createdAt: -1 });
+    })
+      .sort({ createdAt: -1 })
+      .lean();
 
     return res.status(200).json({
       success: true,

@@ -26,9 +26,19 @@ const setupIndexes = async () => {
       console.log("✅ Old unique index dropped.");
     }
 
-    // Build compound performance indexes (non-blocking in background)
+    // Build compound performance indexes across all models (non-blocking in background)
     console.log("⚡ Ensuring database performance indexes...");
-    await SurveySubmission.createIndexes();
+    const { Story } = await import("./src/models/Story.js");
+    const { GalleryCategory, GalleryYear } = await import("./src/models/Gallery.js");
+    const { Notification } = await import("./src/models/Notification.js");
+
+    await Promise.allSettled([
+      SurveySubmission.createIndexes(),
+      Story.createIndexes(),
+      GalleryCategory.createIndexes(),
+      GalleryYear.createIndexes(),
+      Notification.createIndexes(),
+    ]);
     console.log("✅ Database indexes verified & active.");
   } catch (error) {
     console.error("⚠️ Index setup notice:", error.message);

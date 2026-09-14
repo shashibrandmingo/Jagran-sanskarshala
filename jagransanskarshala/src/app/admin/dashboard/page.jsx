@@ -757,7 +757,7 @@ function AdminDashboardContent() {
             <span>{isRefreshing ? "Refreshing..." : "Refresh Data"}</span>
           </button>
 
-          {(currentTab === "survey-data" || currentTab === "survey-grades") && (
+          {currentTab === "survey-data" && (
             <button
               onClick={handleExportData}
               disabled={isExporting}

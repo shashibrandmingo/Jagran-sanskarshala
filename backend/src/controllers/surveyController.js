@@ -113,6 +113,10 @@ export const submitSurvey = async (req, res) => {
   }
 };
 
+const escapeRegex = (string) => {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+};
+
 /**
  * Helper to build Mongo query filter from request params
  */
@@ -129,6 +133,7 @@ const buildSurveyQuery = (params) => {
   if (state && state !== "all") query.state = state;
   if (city && city !== "all") query.city = city;
   if (school && school !== "all") query.school = school;
+  if (params.grade && params.grade !== "all") query.grade = params.grade;
 
   if (startDate || endDate) {
     query.createdAt = {};
@@ -146,11 +151,12 @@ const buildSurveyQuery = (params) => {
 
   if (search && search.trim() !== "") {
     const trimmed = search.trim();
-    // If search looks like a 10 digit number, match mobile exactly for blazing speed
+    // If search looks like a 10 digit number, match mobile directly
     if (/^\d{10}$/.test(trimmed)) {
       query.mobile = trimmed;
     } else {
-      const searchRegex = new RegExp(trimmed, "i");
+      const safePattern = escapeRegex(trimmed);
+      const searchRegex = new RegExp(safePattern, "i");
       query.$or = [
         { firstName: searchRegex },
         { lastName: searchRegex },
@@ -277,11 +283,14 @@ export const getSurveyStats = async (req, res) => {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
-    const [total, studentCount, parentCount, todayCount] = await Promise.all([
+    const [total, studentCount, parentCount, todayCount, gradeA2, gradeA1, gradeA0] = await Promise.all([
       SurveySubmission.estimatedDocumentCount(),
       SurveySubmission.countDocuments({ type: "Student" }),
       SurveySubmission.countDocuments({ type: "Parent" }),
       SurveySubmission.countDocuments({ createdAt: { $gte: todayStart } }),
+      SurveySubmission.countDocuments({ grade: "A++" }),
+      SurveySubmission.countDocuments({ grade: "A+" }),
+      SurveySubmission.countDocuments({ grade: "A" }),
     ]);
 
     return res.status(200).json({
@@ -291,6 +300,9 @@ export const getSurveyStats = async (req, res) => {
         studentCount,
         parentCount,
         todayCount,
+        gradeA2,
+        gradeA1,
+        gradeA0,
       },
     });
   } catch (error) {
@@ -394,5 +406,101 @@ export const exportSurveysCsv = async (req, res) => {
       });
     }
     res.end();
+  }
+};
+
+/**
+ * @desc    Get High-Speed Aggregated Analytics (Period A vs Period B)
+ * @route   GET /api/v1/survey/analytics
+ * @access  Protected (Admin)
+ */
+export const getSurveyAnalytics = async (req, res) => {
+  try {
+    const { startA, endA, startB, endB, state, city, viewBy } = req.query;
+
+    const buildFilter = (start, end) => {
+      const match = {};
+      if (start || end) {
+        match.createdAt = {};
+        if (start) match.createdAt.$gte = new Date(start);
+        if (end) match.createdAt.$lte = new Date(end);
+      }
+      if (state && state !== "All" && state !== "all") match.state = state;
+      if (city && city !== "All" && city !== "all") match.city = city;
+      return match;
+    };
+
+    const matchA = buildFilter(startA, endA);
+    const matchB = buildFilter(startB, endB);
+
+    const groupField = viewBy === "City" ? "$city" : viewBy === "Category" ? "$type" : "$state";
+
+    const [statsA, statsB, breakdownA, breakdownB] = await Promise.all([
+      SurveySubmission.aggregate([
+        { $match: matchA },
+        {
+          $group: {
+            _id: null,
+            total: { $sum: 1 },
+            parentCount: { $sum: { $cond: [{ $eq: ["$type", "Parent"] }, 1, 0] } },
+            studentCount: { $sum: { $cond: [{ $eq: ["$type", "Student"] }, 1, 0] } },
+          },
+        },
+      ]),
+      SurveySubmission.aggregate([
+        { $match: matchB },
+        {
+          $group: {
+            _id: null,
+            total: { $sum: 1 },
+            parentCount: { $sum: { $cond: [{ $eq: ["$type", "Parent"] }, 1, 0] } },
+            studentCount: { $sum: { $cond: [{ $eq: ["$type", "Student"] }, 1, 0] } },
+          },
+        },
+      ]),
+      SurveySubmission.aggregate([
+        { $match: matchA },
+        {
+          $group: {
+            _id: groupField,
+            count: { $sum: 1 },
+          },
+        },
+        { $sort: { count: -1 } },
+        { $limit: 15 },
+      ]),
+      SurveySubmission.aggregate([
+        { $match: matchB },
+        {
+          $group: {
+            _id: groupField,
+            count: { $sum: 1 },
+          },
+        },
+        { $sort: { count: -1 } },
+        { $limit: 15 },
+      ]),
+    ]);
+
+    const resultA = statsA[0] || { total: 0, parentCount: 0, studentCount: 0 };
+    const resultB = statsB[0] || { total: 0, parentCount: 0, studentCount: 0 };
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        summary: {
+          periodA: resultA,
+          periodB: resultB,
+        },
+        breakdownA,
+        breakdownB,
+      },
+    });
+  } catch (error) {
+    console.error("Get survey analytics error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error fetching survey analytics.",
+    });
   }
 };

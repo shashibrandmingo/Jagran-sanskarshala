@@ -14,8 +14,10 @@ import fs from "fs";
  * @route GET /api/v1/gallery
  */
 export const getGalleryData = asyncHandler(async (req, res) => {
-  const years = await GalleryYear.find().sort({ year: -1 });
-  const categories = await GalleryCategory.find().sort({ createdAt: -1 });
+  const [years, categories] = await Promise.all([
+    GalleryYear.find().sort({ year: -1 }).lean(),
+    GalleryCategory.find().sort({ createdAt: -1 }).lean(),
+  ]);
 
   return new ApiResponse(
     200,

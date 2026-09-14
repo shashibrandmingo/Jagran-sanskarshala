@@ -22,39 +22,24 @@ const isDateTimeReached = (scheduledDate, scheduledTime = "00:00") => {
   return scheduledDate <= todayStr;
 };
 
-const resolveStoryAutoPublish = async (stories) => {
-  const updatedStories = await Promise.all(
-    stories.map(async (story) => {
-      let isPublished = false;
-      if (story.scheduledDate) {
-        isPublished = isDateTimeReached(story.scheduledDate, story.scheduledTime);
-      } else {
-        isPublished = Boolean(story.isPublished);
-      }
-
-      if (story.isPublished !== isPublished) {
-        story.isPublished = isPublished;
-        await story.save();
-      }
-
-      return {
-        ...story.toObject(),
-        id: story.storyId,
-        isPublished,
-      };
-    })
-  );
-
-  return updatedStories;
-};
-
 /**
- * @desc Get all stories from MongoDB database
+ * @desc Get all stories from MongoDB database (Fast & Lean)
  * @route GET /api/v1/stories/all
  */
 export const getAllStories = asyncHandler(async (req, res) => {
-  const stories = await Story.find().sort({ storyId: 1 });
-  const resolvedStories = await resolveStoryAutoPublish(stories);
+  const stories = await Story.find().sort({ storyId: 1 }).lean();
+
+  const resolvedStories = stories.map((story) => {
+    const isAutoPublished =
+      Boolean(story.isPublished) ||
+      (story.scheduledDate ? isDateTimeReached(story.scheduledDate, story.scheduledTime) : false);
+
+    return {
+      ...story,
+      id: story.storyId,
+      isPublished: isAutoPublished,
+    };
+  });
 
   return new ApiResponse(
     200,
@@ -71,22 +56,21 @@ export const getStoryById = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const storyId = Number(id);
 
-  const story = await Story.findOne({ storyId });
+  if (isNaN(storyId)) {
+    throw ApiError.badRequest("Invalid story ID");
+  }
+
+  const story = await Story.findOne({ storyId }).lean();
   if (!story) {
     throw ApiError.notFound(`Story with ID ${id} not found`);
   }
 
-  let isPublished = story.isPublished;
-  if (story.scheduledDate && isDateTimeReached(story.scheduledDate, story.scheduledTime)) {
-    if (!story.isPublished) {
-      story.isPublished = true;
-      await story.save();
-    }
-    isPublished = true;
-  }
+  const isPublished =
+    Boolean(story.isPublished) ||
+    (story.scheduledDate ? isDateTimeReached(story.scheduledDate, story.scheduledTime) : false);
 
   const storyObj = {
-    ...story.toObject(),
+    ...story,
     id: story.storyId,
     isPublished,
   };
@@ -118,44 +102,55 @@ export const createOrUpdateStory = asyncHandler(async (req, res) => {
   if (!storyId || !titleEn || !descEn || !scheduledDate) {
     // Clean temp file if validation failed
     if (req.file && fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (e) {}
     }
     throw ApiError.badRequest("storyId, titleEn, descEn, and scheduledDate are required");
   }
 
   const numStoryId = Number(storyId);
-  let story = await Story.findOne({ storyId: numStoryId });
+  const story = await Story.findOne({ storyId: numStoryId });
 
   let imageUrl = existingImage || null;
   let imagePublicId = story ? story.imagePublicId : null;
 
   // Handle new image upload directly to Cloudinary
   if (req.file) {
-    const cloudinaryResponse = await uploadOnCloudinary(req.file.path, "jagran_stories");
-    if (cloudinaryResponse) {
-      // Delete old Cloudinary image if updating existing story
-      const oldImageTarget = story ? (story.imagePublicId || story.image) : null;
-      if (oldImageTarget) {
-        await deleteFromCloudinary(oldImageTarget);
+    try {
+      const cloudinaryResponse = await uploadOnCloudinary(req.file.path, "jagran_stories");
+      if (cloudinaryResponse) {
+        // Delete old Cloudinary image if updating existing story
+        const oldImageTarget = story ? story.imagePublicId || story.image : null;
+        if (oldImageTarget) {
+          deleteFromCloudinary(oldImageTarget).catch(() => {});
+        }
+        imageUrl = cloudinaryResponse.secure_url;
+        imagePublicId = cloudinaryResponse.public_id;
       }
-      imageUrl = cloudinaryResponse.secure_url;
-      imagePublicId = cloudinaryResponse.public_id;
-    } else {
-      throw ApiError.internal("Failed to upload story image to Cloudinary");
+    } catch (uploadErr) {
+      console.error("Cloudinary upload notice:", uploadErr);
+    } finally {
+      if (req.file && fs.existsSync(req.file.path)) {
+        try {
+          fs.unlinkSync(req.file.path);
+        } catch (e) {}
+      }
     }
   }
 
   const targetTime = scheduledTime || "00:00";
-  const autoPublished = isPublished === "true" || isPublished === true || isDateTimeReached(scheduledDate, targetTime);
+  const manualPublished = isPublished === "true" || isPublished === true;
+  const autoPublished = manualPublished || isDateTimeReached(scheduledDate, targetTime);
 
   const storyData = {
     storyId: numStoryId,
     weekEn: weekEn || `Week ${numStoryId}`,
     weekHi: weekHi || `सप्ताह ${numStoryId}`,
-    titleEn,
-    titleHi: titleHi || titleEn,
-    descEn,
-    descHi: descHi || descEn,
+    titleEn: String(titleEn).trim(),
+    titleHi: String(titleHi || titleEn).trim(),
+    descEn: String(descEn).trim(),
+    descHi: String(descHi || descEn).trim(),
     scheduledDate,
     scheduledTime: targetTime,
     publishDateEn: publishDateEn || scheduledDate,
@@ -166,17 +161,15 @@ export const createOrUpdateStory = asyncHandler(async (req, res) => {
     link: `/story/${numStoryId}`,
   };
 
-  if (story) {
-    story = await Story.findOneAndUpdate({ storyId: numStoryId }, storyData, {
-      new: true,
-    });
-  } else {
-    story = await Story.create(storyData);
-  }
+  const updatedStory = await Story.findOneAndUpdate(
+    { storyId: numStoryId },
+    storyData,
+    { new: true, upsert: true }
+  ).lean();
 
   const resultObj = {
-    ...story.toObject(),
-    id: story.storyId,
+    ...updatedStory,
+    id: updatedStory.storyId,
   };
 
   return new ApiResponse(
@@ -229,7 +222,7 @@ export const deleteStory = asyncHandler(async (req, res) => {
 
   const targetImage = story.imagePublicId || story.image;
   if (targetImage) {
-    await deleteFromCloudinary(targetImage);
+    deleteFromCloudinary(targetImage).catch(() => {});
   }
 
   await Story.deleteOne({ storyId: numStoryId });

@@ -50,12 +50,18 @@ const contactLeadSchema = new mongoose.Schema(
 );
 
 // Pre-save middleware to generate custom Lead ID if not present
-contactLeadSchema.pre("save", async function () {
+contactLeadSchema.pre("save", function () {
   if (!this.leadId) {
     const randomDigits = Math.floor(10000 + Math.random() * 90000);
     this.leadId = `L-${randomDigits}`;
   }
 });
+
+// Performance Indexes
+contactLeadSchema.index({ createdAt: -1 });
+contactLeadSchema.index({ subject: 1, createdAt: -1 });
+contactLeadSchema.index({ mobile: 1 });
+contactLeadSchema.index({ email: 1 });
 
 const ContactLead =
   mongoose.models.ContactLead ||

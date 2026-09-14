@@ -32,12 +32,13 @@ const categorySchema = new mongoose.Schema(
       type: String,
       required: [true, "Edition year is required"],
       trim: true,
-      index: true,
     },
     images: [photoSchema],
   },
   { timestamps: true }
 );
+
+categorySchema.index({ year: 1, createdAt: -1 });
 
 // Edition / Year Tab Schema
 const galleryYearSchema = new mongoose.Schema(

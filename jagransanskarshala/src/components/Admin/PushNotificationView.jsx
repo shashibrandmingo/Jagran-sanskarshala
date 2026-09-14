@@ -67,6 +67,12 @@ export default function PushNotificationView() {
           Authorization: `Bearer ${token}`,
         },
       });
+      if (res.status === 401) {
+        localStorage.removeItem("adminToken");
+        window.location.href = "/admin-login";
+        return;
+      }
+
       const data = await res.json();
 
       if (res.ok && data.success) {

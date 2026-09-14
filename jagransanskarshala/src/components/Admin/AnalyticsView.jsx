@@ -1,20 +1,17 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import {
   FaCalendarDays,
   FaRegCalendar,
   FaSliders,
   FaChevronDown,
-  FaChevronUp,
   FaChevronLeft,
   FaChevronRight,
   FaRotateLeft,
-  FaCheck,
   FaXmark,
   FaArrowTrendUp,
   FaArrowTrendDown,
-  FaChartColumn,
   FaInbox,
 } from "react-icons/fa6";
 import schoolsData from "@/data/schoolsData.json";
@@ -76,8 +73,8 @@ const getCalendarDays = (year, month) => {
   return days;
 };
 
-export default function AnalyticsView({ liveSurveys = [], isLoading = false }) {
-  // Comparison Mode: "week" (Week vs Week) | "month" (Month vs Month) | "custom" (Custom Range A vs B)
+export default function AnalyticsView() {
+  // Comparison Mode: "week" | "month" | "custom"
   const [comparisonMode, setComparisonMode] = useState("month");
   const [viewBy, setViewBy] = useState("State"); // State | City | Category
   const [selectedStateFilter, setSelectedStateFilter] = useState("All");
@@ -100,6 +97,10 @@ export default function AnalyticsView({ liveSurveys = [], isLoading = false }) {
 
   const [tempStartDate, setTempStartDate] = useState(null);
   const [tempEndDate, setTempEndDate] = useState(null);
+
+  // Analytics Data from API
+  const [analyticsData, setAnalyticsData] = useState(null);
+  const [isAnalyticsLoading, setIsAnalyticsLoading] = useState(false);
 
   // Reset Filters Action
   const handleResetFilter = () => {
@@ -142,199 +143,161 @@ export default function AnalyticsView({ liveSurveys = [], isLoading = false }) {
     const now = new Date();
 
     if (comparisonMode === "week") {
-      // Current Week (Period A)
       const startA = new Date(now);
       const day = now.getDay();
       startA.setDate(now.getDate() - day);
       startA.setHours(0, 0, 0, 0);
       const endA = new Date(now);
 
-      // Previous Week (Period B)
       const startB = new Date(startA);
-      startB.setDate(startA.getDate() - 7);
-      startB.setHours(0, 0, 0, 0);
-
+      startB.setDate(startB.getDate() - 7);
       const endB = new Date(startA);
-      endB.setMilliseconds(-1);
+      endB.setDate(endB.getDate() - 1);
+      endB.setHours(23, 59, 59, 999);
 
       return {
-        labelA: `This Week (${formatShortDate(startA)} - ${formatShortDate(endA)})`,
-        labelB: `Previous Week (${formatShortDate(startB)} - ${formatShortDate(endB)})`,
         startA,
         endA,
         startB,
         endB,
+        labelA: "This Week (इस सप्ताह)",
+        labelB: "Last Week (पिछला सप्ताह)",
       };
     }
 
     if (comparisonMode === "month") {
-      // Current Month (Period A)
-      const startA = new Date(now.getFullYear(), now.getMonth(), 1);
+      const startA = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
       const endA = new Date(now);
 
-      // Previous Month (Period B)
-      const startB = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const startB = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0);
       const endB = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
 
       return {
-        labelA: `This Month (${formatShortDate(startA)} - ${formatShortDate(endA)})`,
-        labelB: `Previous Month (${formatShortDate(startB)} - ${formatShortDate(endB)})`,
         startA,
         endA,
         startB,
         endB,
+        labelA: "This Month (इस माह)",
+        labelB: "Last Month (पिछला माह)",
       };
     }
 
-    // Custom Range Comparison
     return {
-      labelA: `Period A (${formatShortDate(customRangeA.start)} - ${formatShortDate(customRangeA.end)})`,
-      labelB: `Period B (${formatShortDate(customRangeB.start)} - ${formatShortDate(customRangeB.end)})`,
       startA: customRangeA.start,
       endA: customRangeA.end,
       startB: customRangeB.start,
       endB: customRangeB.end,
+      labelA: `Period A: ${formatShortDate(customRangeA.start)} - ${formatShortDate(customRangeA.end)}`,
+      labelB: `Period B: ${formatShortDate(customRangeB.start)} - ${formatShortDate(customRangeB.end)}`,
     };
   }, [comparisonMode, customRangeA, customRangeB]);
 
-  // Filter Surveys for Period A & Period B
-  const surveysA = useMemo(() => {
-    if (!Array.isArray(liveSurveys)) return [];
+  // Fetch Aggregated Analytics directly from Backend API
+  const fetchAnalytics = useCallback(async () => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("adminToken") : null;
+    if (!token) return;
 
-    return liveSurveys.filter((item) => {
-      const itemDateStr = item.createdAt || item.submittedOn;
-      if (itemDateStr) {
-        const itemDate = new Date(itemDateStr);
-        if (!isNaN(itemDate.getTime())) {
-          if (itemDate < periodBounds.startA || itemDate > periodBounds.endA) return false;
-        }
+    setIsAnalyticsLoading(true);
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+      const params = new URLSearchParams({
+        startA: periodBounds.startA ? periodBounds.startA.toISOString() : "",
+        endA: periodBounds.endA ? periodBounds.endA.toISOString() : "",
+        startB: periodBounds.startB ? periodBounds.startB.toISOString() : "",
+        endB: periodBounds.endB ? periodBounds.endB.toISOString() : "",
+        viewBy,
+      });
+      if (selectedStateFilter !== "All") params.append("state", selectedStateFilter);
+      if (selectedCityFilter !== "All") params.append("city", selectedCityFilter);
+
+      const res = await fetch(`${backendUrl}/api/v1/survey/analytics?${params.toString()}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.status === 401) {
+        localStorage.removeItem("adminToken");
+        window.location.href = "/admin-login";
+        return;
       }
 
-      if (selectedStateFilter !== "All" && item.state) {
-        if (selectedStateFilter === "Others") {
-          const isStandardState = availableStates.some(
-            (st) => st.toLowerCase() === item.state.trim().toLowerCase()
-          );
-          if (isStandardState) return false;
-        } else {
-          if (item.state.trim().toLowerCase() !== selectedStateFilter.toLowerCase()) return false;
-        }
+      const data = await res.json();
+      if (res.ok && data.success && data.data) {
+        setAnalyticsData(data.data);
       }
+    } catch (err) {
+      console.error("Error fetching analytics:", err);
+    } finally {
+      setIsAnalyticsLoading(false);
+    }
+  }, [periodBounds, viewBy, selectedStateFilter, selectedCityFilter]);
 
-      if (selectedCityFilter !== "All" && item.city) {
-        if (selectedCityFilter === "Others") {
-          const isStandardCity = availableCities.some(
-            (c) => c.toLowerCase() === item.city.trim().toLowerCase()
-          );
-          if (isStandardCity) return false;
-        } else {
-          if (item.city.trim().toLowerCase() !== selectedCityFilter.toLowerCase()) return false;
-        }
-      }
-
-      return true;
-    });
-  }, [liveSurveys, periodBounds, selectedStateFilter, selectedCityFilter, availableStates, availableCities]);
-
-  const surveysB = useMemo(() => {
-    if (!Array.isArray(liveSurveys)) return [];
-
-    return liveSurveys.filter((item) => {
-      const itemDateStr = item.createdAt || item.submittedOn;
-      if (itemDateStr) {
-        const itemDate = new Date(itemDateStr);
-        if (!isNaN(itemDate.getTime())) {
-          if (itemDate < periodBounds.startB || itemDate > periodBounds.endB) return false;
-        }
-      }
-
-      if (selectedStateFilter !== "All" && item.state) {
-        if (selectedStateFilter === "Others") {
-          const isStandardState = availableStates.some(
-            (st) => st.toLowerCase() === item.state.trim().toLowerCase()
-          );
-          if (isStandardState) return false;
-        } else {
-          if (item.state.trim().toLowerCase() !== selectedStateFilter.toLowerCase()) return false;
-        }
-      }
-
-      if (selectedCityFilter !== "All" && item.city) {
-        if (selectedCityFilter === "Others") {
-          const isStandardCity = availableCities.some(
-            (c) => c.toLowerCase() === item.city.trim().toLowerCase()
-          );
-          if (isStandardCity) return false;
-        } else {
-          if (item.city.trim().toLowerCase() !== selectedCityFilter.toLowerCase()) return false;
-        }
-      }
-
-      return true;
-    });
-  }, [liveSurveys, periodBounds, selectedStateFilter, selectedCityFilter, availableStates, availableCities]);
-
-  // Aggregate Comparison Data per Location/Category for Dual Bars
-  const comparisonData = useMemo(() => {
-    const countsA = {};
-    const countsB = {};
-    const keyField = viewBy === "State" ? "state" : viewBy === "City" ? "city" : "type";
-
-    surveysA.forEach((item) => {
-      let val = item[keyField] && String(item[keyField]).trim() ? String(item[keyField]).trim() : "Other / अन्य";
-      countsA[val] = (countsA[val] || 0) + 1;
-    });
-
-    surveysB.forEach((item) => {
-      let val = item[keyField] && String(item[keyField]).trim() ? String(item[keyField]).trim() : "Other / अन्य";
-      countsB[val] = (countsB[val] || 0) + 1;
-    });
-
-    const allKeys = Array.from(new Set([...Object.keys(countsA), ...Object.keys(countsB)]));
-
-    return allKeys
-      .map((name) => {
-        const countA = countsA[name] || 0;
-        const countB = countsB[name] || 0;
-        const diff = countA - countB;
-        const growthPct = countB > 0 ? ((diff / countB) * 100).toFixed(1) : countA > 0 ? "+100" : "0";
-        return { name, countA, countB, diff, growthPct };
-      })
-      .sort((a, b) => b.countA - a.countA);
-  }, [surveysA, surveysB, viewBy]);
+  useEffect(() => {
+    fetchAnalytics();
+  }, [fetchAnalytics]);
 
   // Top Summary Metric Comparisons
   const summaryMetrics = useMemo(() => {
-    const totalA = surveysA.length;
-    const totalB = surveysB.length;
-    const totalDiff = totalA - totalB;
-    const totalGrowth = totalB > 0 ? ((totalDiff / totalB) * 100).toFixed(1) : totalA > 0 ? "+100" : "0";
-
-    const parentsA = surveysA.filter((s) => s.type === "Parent").length;
-    const parentsB = surveysB.filter((s) => s.type === "Parent").length;
-
-    const studentsA = surveysA.filter((s) => s.type === "Student").length;
-    const studentsB = surveysB.filter((s) => s.type === "Student").length;
-
+    if (analyticsData?.summary) {
+      const a = analyticsData.summary.periodA || {};
+      const b = analyticsData.summary.periodB || {};
+      const totalA = a.total || 0;
+      const totalB = b.total || 0;
+      const totalDiff = totalA - totalB;
+      const totalGrowth =
+        totalB > 0 ? ((totalDiff / totalB) * 100).toFixed(1) : totalA > 0 ? "+100" : "0";
+      return {
+        totalA,
+        totalB,
+        totalDiff,
+        totalGrowth,
+        parentsA: a.parentCount || 0,
+        parentsB: b.parentCount || 0,
+        studentsA: a.studentCount || 0,
+        studentsB: b.studentCount || 0,
+      };
+    }
     return {
-      totalA,
-      totalB,
-      totalDiff,
-      totalGrowth,
-      parentsA,
-      parentsB,
-      studentsA,
-      studentsB,
+      totalA: 0,
+      totalB: 0,
+      totalDiff: 0,
+      totalGrowth: "0",
+      parentsA: 0,
+      parentsB: 0,
+      studentsA: 0,
+      studentsB: 0,
     };
-  }, [surveysA, surveysB]);
+  }, [analyticsData]);
 
-  // Max value for Y-axis scale across both Period A & Period B
+  // Aggregate Comparison Data per Location/Category for Dual Bars
+  const comparisonData = useMemo(() => {
+    if (analyticsData?.breakdownA || analyticsData?.breakdownB) {
+      const mapA = {};
+      const mapB = {};
+      (analyticsData.breakdownA || []).forEach((item) => {
+        mapA[item._id || "Other / अन्य"] = item.count;
+      });
+      (analyticsData.breakdownB || []).forEach((item) => {
+        mapB[item._id || "Other / अन्य"] = item.count;
+      });
+      const allKeys = Array.from(new Set([...Object.keys(mapA), ...Object.keys(mapB)]));
+      return allKeys
+        .map((name) => {
+          const countA = mapA[name] || 0;
+          const countB = mapB[name] || 0;
+          const diff = countA - countB;
+          const growthPct =
+            countB > 0 ? ((diff / countB) * 100).toFixed(1) : countA > 0 ? "+100" : "0";
+          return { name, countA, countB, diff, growthPct };
+        })
+        .sort((a, b) => b.countA - a.countA);
+    }
+    return [];
+  }, [analyticsData]);
+
+  // Max value for Y-axis scale
   const maxCount = useMemo(() => {
     if (!comparisonData.length) return 5;
-    const maxVal = Math.max(
-      ...comparisonData.map((d) => Math.max(d.countA, d.countB)),
-      1
-    );
+    const maxVal = Math.max(...comparisonData.map((d) => Math.max(d.countA, d.countB)), 1);
     if (maxVal <= 5) return 5;
     if (maxVal <= 10) return 10;
     if (maxVal <= 50) return 50;
@@ -344,7 +307,6 @@ export default function AnalyticsView({ liveSurveys = [], isLoading = false }) {
     return Math.ceil(maxVal / 5000) * 5000 || 25000;
   }, [comparisonData]);
 
-  // Handle Opening Custom Calendar Modal
   const openCustomCalendar = (targetPeriod) => {
     setActiveCustomPeriodTarget(targetPeriod);
     const targetRange = targetPeriod === "A" ? customRangeA : customRangeB;
@@ -353,7 +315,6 @@ export default function AnalyticsView({ liveSurveys = [], isLoading = false }) {
     setShowCustomDateModal(true);
   };
 
-  // Handle Day Click in Calendar Modal
   const handleCalendarDayClick = (dateObj) => {
     if (!tempStartDate || (tempStartDate && tempEndDate)) {
       setTempStartDate(dateObj);
@@ -368,7 +329,6 @@ export default function AnalyticsView({ liveSurveys = [], isLoading = false }) {
     }
   };
 
-  // Apply Custom Date Range
   const handleApplyCustomDateRange = () => {
     if (tempStartDate && tempEndDate) {
       if (activeCustomPeriodTarget === "A") {
@@ -639,7 +599,7 @@ export default function AnalyticsView({ liveSurveys = [], isLoading = false }) {
         </div>
       </div>
 
-      {/* Main Side-by-Side Comparison Grouped Bar Chart (Rectangular Columns - Screenshot 3 Match) */}
+      {/* Main Side-by-Side Comparison Grouped Bar Chart */}
       <div className="bg-white rounded-3xl p-4 sm:p-8 shadow-xs border border-gray-200/80 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -664,7 +624,11 @@ export default function AnalyticsView({ liveSurveys = [], isLoading = false }) {
           </div>
         </div>
 
-        {comparisonData.length === 0 ? (
+        {isAnalyticsLoading ? (
+          <div className="h-64 flex items-center justify-center bg-gray-50/50 rounded-2xl animate-pulse">
+            <span className="text-xs font-bold text-gray-400">Loading comparison analytics...</span>
+          </div>
+        ) : comparisonData.length === 0 ? (
           <div className="text-center py-16 bg-gray-50/60 rounded-3xl border border-dashed border-gray-200 my-4">
             <FaInbox className="text-4xl text-gray-300 mx-auto mb-3" />
             <h3 className="text-sm font-black text-gray-700">No Comparison Data</h3>
@@ -693,9 +657,7 @@ export default function AnalyticsView({ liveSurveys = [], isLoading = false }) {
                       className="absolute left-0 right-0 flex items-center text-[10px] font-bold text-gray-400 pointer-events-none"
                       style={{ top: `${topPct}%` }}
                     >
-                      <span className="w-8 text-right pr-2 shrink-0">
-                        {label}
-                      </span>
+                      <span className="w-8 text-right pr-2 shrink-0">{label}</span>
                       <div className="flex-1 border-b border-dashed border-gray-200/80" />
                     </div>
                   );
@@ -704,14 +666,8 @@ export default function AnalyticsView({ liveSurveys = [], isLoading = false }) {
                 {/* Side-by-Side Dual Bar Group Container */}
                 <div className="w-full h-full flex items-end justify-around gap-2 sm:gap-6 relative z-10">
                   {visibleBars.map((item, idx) => {
-                    const heightPctA = Math.max(
-                      (item.countA / maxCount) * 100,
-                      item.countA > 0 ? 6 : 0
-                    );
-                    const heightPctB = Math.max(
-                      (item.countB / maxCount) * 100,
-                      item.countB > 0 ? 6 : 0
-                    );
+                    const heightPctA = Math.max((item.countA / maxCount) * 100, item.countA > 0 ? 6 : 0);
+                    const heightPctB = Math.max((item.countB / maxCount) * 100, item.countB > 0 ? 6 : 0);
 
                     return (
                       <div
@@ -750,11 +706,7 @@ export default function AnalyticsView({ liveSurveys = [], isLoading = false }) {
               {/* X-Axis Labels Row */}
               <div className="pl-10 pr-2 flex items-start justify-around gap-2 sm:gap-6">
                 {visibleBars.map((item, idx) => (
-                  <div
-                    key={idx}
-                    className="flex-1 text-center py-1"
-                    title={item.name}
-                  >
+                  <div key={idx} className="flex-1 text-center py-1" title={item.name}>
                     <span className="text-[10px] sm:text-[11px] font-extrabold text-slate-700 block truncate max-w-[65px] sm:max-w-[90px] mx-auto">
                       {item.name}
                     </span>
@@ -781,7 +733,6 @@ export default function AnalyticsView({ liveSurveys = [], isLoading = false }) {
               SELECT DATE RANGE FOR PERIOD {activeCustomPeriodTarget}
             </h3>
 
-            {/* Calendar Side-by-Side View */}
             {(() => {
               const month1 = calendarBaseDate;
               const month2 = new Date(calendarBaseDate.getFullYear(), calendarBaseDate.getMonth() + 1, 1);
@@ -789,8 +740,18 @@ export default function AnalyticsView({ liveSurveys = [], isLoading = false }) {
               const daysMonth2 = getCalendarDays(month2.getFullYear(), month2.getMonth());
 
               const monthNames = [
-                "January", "February", "March", "April", "May", "June",
-                "July", "August", "September", "October", "November", "December"
+                "January",
+                "February",
+                "March",
+                "April",
+                "May",
+                "June",
+                "July",
+                "August",
+                "September",
+                "October",
+                "November",
+                "December",
               ];
 
               return (
@@ -801,7 +762,11 @@ export default function AnalyticsView({ liveSurveys = [], isLoading = false }) {
                       <div className="flex items-center justify-between mb-4 px-1">
                         <button
                           type="button"
-                          onClick={() => setCalendarBaseDate(new Date(month1.getFullYear(), month1.getMonth() - 1, 1))}
+                          onClick={() =>
+                            setCalendarBaseDate(
+                              new Date(month1.getFullYear(), month1.getMonth() - 1, 1)
+                            )
+                          }
                           className="w-8 h-8 rounded-full flex items-center justify-center border border-gray-200 text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
                         >
                           <FaChevronLeft className="text-xs" />
@@ -813,7 +778,13 @@ export default function AnalyticsView({ liveSurveys = [], isLoading = false }) {
                       </div>
 
                       <div className="grid grid-cols-7 text-center text-xs font-bold text-slate-400 mb-2">
-                        <div>Su</div><div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div>
+                        <div>Su</div>
+                        <div>Mo</div>
+                        <div>Tu</div>
+                        <div>We</div>
+                        <div>Th</div>
+                        <div>Fr</div>
+                        <div>Sa</div>
                       </div>
 
                       <div className="grid grid-cols-7 gap-1 text-xs">
@@ -857,7 +828,11 @@ export default function AnalyticsView({ liveSurveys = [], isLoading = false }) {
                         </span>
                         <button
                           type="button"
-                          onClick={() => setCalendarBaseDate(new Date(month1.getFullYear(), month1.getMonth() + 1, 1))}
+                          onClick={() =>
+                            setCalendarBaseDate(
+                              new Date(month1.getFullYear(), month1.getMonth() + 1, 1)
+                            )
+                          }
                           className="w-8 h-8 rounded-full flex items-center justify-center border border-gray-200 text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
                         >
                           <FaChevronRight className="text-xs" />
@@ -865,7 +840,13 @@ export default function AnalyticsView({ liveSurveys = [], isLoading = false }) {
                       </div>
 
                       <div className="grid grid-cols-7 text-center text-xs font-bold text-slate-400 mb-2">
-                        <div>Su</div><div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div>
+                        <div>Su</div>
+                        <div>Mo</div>
+                        <div>Tu</div>
+                        <div>We</div>
+                        <div>Th</div>
+                        <div>Fr</div>
+                        <div>Sa</div>
                       </div>
 
                       <div className="grid grid-cols-7 gap-1 text-xs">

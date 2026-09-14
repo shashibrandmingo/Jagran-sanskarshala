@@ -30,22 +30,53 @@ export default function StoryDetailPage() {
   const { isHindi } = useLanguage();
   const [currentStory, setCurrentStory] = useState(null);
   const [allStories, setAllStories] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    getStoryById(storyId).then((story) => {
-      setCurrentStory(story);
-    });
-    getStories().then((list) => {
-      setAllStories(list || []);
-    });
+    setIsLoading(true);
+    Promise.all([
+      getStoryById(storyId),
+      getStories(),
+    ])
+      .then(([story, list]) => {
+        setCurrentStory(story);
+        setAllStories(list || []);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   }, [storyId]);
 
-  if (!currentStory) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
         <div className="text-center py-20">
           <div className="w-10 h-10 border-4 border-[var(--primary)] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="paragraph">Loading story...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentStory) {
+    return (
+      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
+        <div className="text-center py-20 max-w-md mx-auto px-4">
+          <h2 className="text-xl font-black text-gray-900 mb-2">
+            {isHindi ? "कहानी नहीं मिली" : "Story Not Found"}
+          </h2>
+          <p className="text-sm text-gray-500 mb-6 font-medium">
+            {isHindi
+              ? "यह कहानी अभी उपलब्ध नहीं है या हटा दी गई है।"
+              : "This story is not available or has been removed."}
+          </p>
+          <Link
+            href="/#till-now"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[var(--primary)] text-white font-bold text-xs shadow-md hover:bg-red-700 transition-colors"
+          >
+            <FaArrowLeft className="text-xs" />
+            <span>{isHindi ? "सभी कहानियां देखें" : "View All Stories"}</span>
+          </Link>
         </div>
       </div>
     );

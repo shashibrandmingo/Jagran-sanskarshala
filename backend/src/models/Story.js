@@ -83,4 +83,8 @@ const storySchema = new mongoose.Schema(
   }
 );
 
+// Performance Indexes
+storySchema.index({ isPublished: 1, createdAt: -1 });
+storySchema.index({ scheduledDate: 1, scheduledTime: 1 });
+
 export const Story = mongoose.model("Story", storySchema);

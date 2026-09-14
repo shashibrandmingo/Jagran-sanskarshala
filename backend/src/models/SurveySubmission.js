@@ -75,9 +75,13 @@ const surveySubmissionSchema = new mongoose.Schema(
 surveySubmissionSchema.index({ createdAt: -1 });
 surveySubmissionSchema.index({ type: 1, createdAt: -1 });
 surveySubmissionSchema.index({ state: 1, city: 1, school: 1, createdAt: -1 });
+surveySubmissionSchema.index({ state: 1, createdAt: -1 });
 surveySubmissionSchema.index({ mobile: 1, type: 1 });
+surveySubmissionSchema.index({ email: 1 });
+surveySubmissionSchema.index({ grade: 1, createdAt: -1 });
 
 const SurveySubmission = mongoose.model("SurveySubmission", surveySubmissionSchema);
 
 export default SurveySubmission;
+
 

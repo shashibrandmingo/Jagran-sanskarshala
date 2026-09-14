@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import {
   FaGraduationCap,
   FaAward,
-  FaCrown,
-  FaStar,
   FaEye,
   FaFileExport,
   FaMagnifyingGlass,
@@ -13,75 +12,83 @@ import {
   FaChevronLeft,
   FaChevronRight,
   FaChevronDown,
-  FaChevronUp,
   FaUserGroup,
   FaTableCells,
   FaXmark,
-  FaFilter,
   FaRotateLeft,
-  FaListCheck,
   FaCalendarDays,
-  FaCheckDouble,
+  FaArrowsRotate,
 } from "react-icons/fa6";
 import * as XLSX from "xlsx";
 import schoolsData from "@/data/schoolsData.json";
-import { QUESTIONS, calculateGrade } from "@/services/surveyQuestions";
-
-const getItemGrade = (item) => {
-  if (item.grade && ["A++", "A+", "A"].includes(item.grade)) {
-    return item.grade;
-  }
-  if (item.answers && typeof item.answers === "object" && Object.keys(item.answers).length > 0) {
-    return calculateGrade(item.answers);
-  }
-  return "A";
-};
-
-// Helper for date comparison & formatting
-const isSameDay = (d1, d2) => {
-  if (!d1 || !d2) return false;
-  return (
-    d1.getFullYear() === d2.getFullYear() &&
-    d1.getMonth() === d2.getMonth() &&
-    d1.getDate() === d2.getDate()
-  );
-};
+import { QUESTIONS } from "@/services/surveyQuestions";
 
 const datePresets = [
+  { id: "all", label: "All Time (सभी)" },
   { id: "today", label: "Today" },
   { id: "yesterday", label: "Yesterday" },
   { id: "7days", label: "Last 7 days" },
   { id: "30days", label: "Last 30 days" },
   { id: "thisMonth", label: "This Month" },
   { id: "lastMonth", label: "Last Month" },
-  { id: "all", label: "All Time" },
 ];
 
-export default function SurveyGradesView({ liveSurveys = [], isLoading = false }) {
-  // Tab Filter: 'all' | 'parent' | 'student'
+export default function SurveyGradesView() {
+  const router = useRouter();
+
+  // Primary Tab Filter: 'all' | 'parent' | 'student'
   const [tabFilter, setTabFilter] = useState("all");
 
   // Secondary Filters
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [gradeFilter, setGradeFilter] = useState("all"); // 'all' | 'A++' | 'A+' | 'A'
   const [stateFilter, setStateFilter] = useState("all");
   const [cityFilter, setCityFilter] = useState("all");
   const [schoolFilter, setSchoolFilter] = useState("all");
-  const [datePreset, setDatePreset] = useState("30days");
-  const [dateRangeLabel, setDateRangeLabel] = useState("Last 30 days");
+  const [datePreset, setDatePreset] = useState("all");
+  const [dateRangeLabel, setDateRangeLabel] = useState("All Time (सभी)");
 
-  // Dropdown Open State: 'none' | 'date' | 'state' | 'city' | 'school' | 'grade' | 'entries'
+  // Dropdown Open State: 'none' | 'date' | 'state' | 'city' | 'school' | 'grade'
   const [openDropdown, setOpenDropdown] = useState("none");
 
-  // Selected Checkboxes & Detail Modal State
+  // Selection & Detail Modal State
   const [selectedRows, setSelectedRows] = useState([]);
   const [selectedSubmission, setSelectedSubmission] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
 
-  // Pagination State (Show 10, 25, 50, 100 entries)
+  // Pagination State
   const [itemsPerPage, setItemsPerPage] = useState(25);
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
 
-  // Close dropdowns on click outside
+  // Data & Loading States
+  const [surveys, setSurveys] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isStatsLoading, setIsStatsLoading] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
+
+  // Stats Breakdown Counters
+  const [stats, setStats] = useState({
+    total: 0,
+    studentCount: 0,
+    parentCount: 0,
+    todayCount: 0,
+    gradeA2: 0,
+    gradeA1: 0,
+    gradeA0: 0,
+  });
+
+  // Debounce search input by 300ms
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (!e.target.closest(".custom-dropdown-container")) {
@@ -92,56 +99,170 @@ export default function SurveyGradesView({ liveSurveys = [], isLoading = false }
     return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
-  // Reset pagination to Page 1 when filters change
+  // Reset to page 1 whenever filters change
   useEffect(() => {
     setCurrentPage(1);
+  }, [debouncedSearch, tabFilter, gradeFilter, stateFilter, cityFilter, schoolFilter, datePreset, itemsPerPage]);
+
+  // Fetch Live Stats from Backend
+  const fetchStats = useCallback(async () => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("adminToken") : null;
+    if (!token) return;
+
+    try {
+      setIsStatsLoading(true);
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+      const res = await fetch(`${backendUrl}/api/v1/survey/stats`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.status === 401) {
+        localStorage.removeItem("adminToken");
+        router.push("/admin-login");
+        return;
+      }
+
+      const data = await res.json();
+      if (res.ok && data.stats) {
+        setStats({
+          total: data.stats.total || 0,
+          studentCount: data.stats.studentCount || 0,
+          parentCount: data.stats.parentCount || 0,
+          todayCount: data.stats.todayCount || 0,
+          gradeA2: data.stats.gradeA2 || 0,
+          gradeA1: data.stats.gradeA1 || 0,
+          gradeA0: data.stats.gradeA0 || 0,
+        });
+      }
+    } catch (err) {
+      console.error("Failed to load survey stats:", err);
+    } finally {
+      setIsStatsLoading(false);
+    }
+  }, [router]);
+
+  // Helper to compute date parameters
+  const getDateRangeParams = useCallback(() => {
+    if (datePreset === "all") return {};
+
+    const now = new Date();
+    let start = null;
+    let end = null;
+
+    if (datePreset === "today") {
+      start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+      end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+    } else if (datePreset === "yesterday") {
+      start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 0, 0, 0);
+      end = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 23, 59, 59, 999);
+    } else if (datePreset === "7days") {
+      start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7, 0, 0, 0);
+      end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+    } else if (datePreset === "30days") {
+      start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30, 0, 0, 0);
+      end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+    } else if (datePreset === "thisMonth") {
+      start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
+      end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+    } else if (datePreset === "lastMonth") {
+      start = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0);
+      end = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+    }
+
+    return {
+      startDate: start ? start.toISOString() : undefined,
+      endDate: end ? end.toISOString() : undefined,
+    };
+  }, [datePreset]);
+
+  // Fetch Paginated Surveys from Backend
+  const fetchSurveys = useCallback(async () => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("adminToken") : null;
+    if (!token) return;
+
+    try {
+      setIsLoading(true);
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+      const params = new URLSearchParams({
+        page: String(currentPage),
+        limit: String(itemsPerPage),
+      });
+
+      if (tabFilter !== "all") params.append("tab", tabFilter);
+      if (gradeFilter !== "all") params.append("grade", gradeFilter);
+      if (stateFilter !== "all") params.append("state", stateFilter);
+      if (cityFilter !== "all") params.append("city", cityFilter);
+      if (schoolFilter !== "all") params.append("school", schoolFilter);
+      if (debouncedSearch.trim() !== "") params.append("search", debouncedSearch.trim());
+
+      const dateParams = getDateRangeParams();
+      if (dateParams.startDate) params.append("startDate", dateParams.startDate);
+      if (dateParams.endDate) params.append("endDate", dateParams.endDate);
+
+      const res = await fetch(`${backendUrl}/api/v1/survey/all?${params.toString()}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.status === 401) {
+        localStorage.removeItem("adminToken");
+        router.push("/admin-login");
+        return;
+      }
+
+      const result = await res.json();
+      if (res.ok && result.success) {
+        setSurveys(result.data || []);
+        setTotalItems(result.total || 0);
+        setTotalPages(result.totalPages || 1);
+      } else {
+        setSurveys([]);
+        setTotalItems(0);
+        setTotalPages(1);
+      }
+    } catch (err) {
+      console.error("Failed to load surveys:", err);
+      setSurveys([]);
+    } finally {
+      setIsLoading(false);
+    }
   }, [
-    searchQuery,
+    currentPage,
+    itemsPerPage,
     tabFilter,
     gradeFilter,
     stateFilter,
     cityFilter,
     schoolFilter,
-    datePreset,
-    itemsPerPage,
+    debouncedSearch,
+    getDateRangeParams,
+    router,
   ]);
 
-  // Dynamic States
+  // Load initial data and stats
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
+
+  useEffect(() => {
+    fetchSurveys();
+  }, [fetchSurveys]);
+
+  // Location Dropdown Options
   const stateOptions = useMemo(() => {
     const knownStates = Object.keys(schoolsData || {}).sort();
-    const customStates = new Set();
-    liveSurveys.forEach((s) => {
-      if (s.state && !schoolsData[s.state] && s.state !== "Other") {
-        customStates.add(s.state);
-      }
-    });
-
     return [
       { value: "all", label: "All States" },
       ...knownStates.map((st) => ({ value: st, label: st })),
       { value: "Other", label: "Other / Custom" },
-      ...Array.from(customStates)
-        .sort()
-        .map((st) => ({ value: st, label: st })),
     ];
-  }, [liveSurveys]);
+  }, []);
 
-  // Dynamic Cities
   const cityOptions = useMemo(() => {
     if (!stateFilter || stateFilter === "all") {
       return [{ value: "all", label: "Select State First" }];
     }
     if (stateFilter === "Other") {
-      const customCities = new Set();
-      liveSurveys.forEach((s) => {
-        if (s.city) customCities.add(s.city);
-      });
-      return [
-        { value: "all", label: "All Cities" },
-        ...Array.from(customCities)
-          .sort()
-          .map((c) => ({ value: c, label: c })),
-      ];
+      return [{ value: "all", label: "All Cities" }];
     }
     const stateObj = schoolsData[stateFilter];
     const cities = stateObj ? Object.keys(stateObj).sort() : [];
@@ -149,9 +270,8 @@ export default function SurveyGradesView({ liveSurveys = [], isLoading = false }
       { value: "all", label: "All Cities" },
       ...cities.map((c) => ({ value: c, label: c })),
     ];
-  }, [stateFilter, liveSurveys]);
+  }, [stateFilter]);
 
-  // Dynamic Schools
   const schoolOptions = useMemo(() => {
     if (!stateFilter || stateFilter === "all") {
       return [{ value: "all", label: "Select State & City First" }];
@@ -160,227 +280,157 @@ export default function SurveyGradesView({ liveSurveys = [], isLoading = false }
       return [{ value: "all", label: "Select City First" }];
     }
     if (stateFilter === "Other" || cityFilter === "Other") {
-      const customSchools = new Set();
-      liveSurveys.forEach((s) => {
-        if (s.school) customSchools.add(s.school);
-      });
-      return [
-        { value: "all", label: "All Schools" },
-        ...Array.from(customSchools)
-          .sort()
-          .map((sch) => ({ value: sch, label: sch })),
-      ];
+      return [{ value: "all", label: "All Schools" }];
     }
     const schools = schoolsData[stateFilter]?.[cityFilter] || [];
     return [
       { value: "all", label: "All Schools" },
       ...schools.map((sch) => ({ value: sch, label: sch })),
     ];
-  }, [stateFilter, cityFilter, liveSurveys]);
+  }, [stateFilter, cityFilter]);
 
-  // Filtered Dataset
-  const filteredData = useMemo(() => {
-    return liveSurveys.filter((item) => {
-      if (!item) return false;
+  // Handle single submission details loading
+  const handleViewDetail = async (item) => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("adminToken") : null;
+    if (!token) return;
 
-      // Tab Filter: Parent / Student / All
-      const itemType = String(item.type || "").toLowerCase();
-      if (tabFilter === "parent" && itemType !== "parent") return false;
-      if (tabFilter === "student" && itemType !== "student") return false;
+    setSelectedSubmission(item);
+    setDetailLoading(true);
 
-      // Grade Filter
-      if (gradeFilter !== "all") {
-        const itemGrade = getItemGrade(item);
-        if (itemGrade !== gradeFilter) return false;
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+      const res = await fetch(`${backendUrl}/api/v1/survey/detail/${item._id || item.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (res.ok && data.data) {
+        setSelectedSubmission(data.data);
       }
+    } catch (err) {
+      console.error("Error loading detail:", err);
+    } finally {
+      setDetailLoading(false);
+    }
+  };
 
-      // Search Query
-      if (searchQuery.trim() !== "") {
-        const q = searchQuery.trim().toLowerCase();
-        const itemGrade = getItemGrade(item);
-        const fieldsToSearch = [
-          item.id,
-          item._id,
-          item.firstName,
-          item.lastName,
-          `${item.firstName || ""} ${item.lastName || ""}`,
-          item.email,
-          item.mobile,
-          itemGrade,
-          item.type,
-          item.school,
-          item.city,
-          item.state,
-          item.submittedOn,
-        ];
-        const matches = fieldsToSearch.some(
-          (val) => val && String(val).toLowerCase().includes(q)
-        );
-        if (!matches) return false;
-      }
-
-      // Location Filters
-      if (stateFilter !== "all" && item.state !== stateFilter) return false;
-      if (cityFilter !== "all" && item.city !== cityFilter) return false;
-      if (schoolFilter !== "all" && item.school !== schoolFilter) return false;
-
-      // Date Range Filter
-      const rawDate = item.submittedOn || item.createdAt;
-      if (rawDate && datePreset !== "all") {
-        const dateStr =
-          typeof rawDate === "string" ? rawDate.replace(",", "") : rawDate;
-        const itemDate = new Date(dateStr);
-        if (!isNaN(itemDate.getTime())) {
-          const now = new Date();
-          if (datePreset === "today" && !isSameDay(itemDate, now)) return false;
-          if (datePreset === "yesterday") {
-            const yesterday = new Date();
-            yesterday.setDate(yesterday.getDate() - 1);
-            if (!isSameDay(itemDate, yesterday)) return false;
-          }
-          if (datePreset === "7days") {
-            const start = new Date();
-            start.setDate(start.getDate() - 7);
-            start.setHours(0, 0, 0, 0);
-            if (itemDate < start) return false;
-          }
-          if (datePreset === "30days") {
-            const start = new Date();
-            start.setDate(start.getDate() - 30);
-            start.setHours(0, 0, 0, 0);
-            if (itemDate < start) return false;
-          }
-        }
-      }
-
-      return true;
-    });
-  }, [
-    liveSurveys,
-    tabFilter,
-    gradeFilter,
-    searchQuery,
-    stateFilter,
-    cityFilter,
-    schoolFilter,
-    datePreset,
-  ]);
-
-  // Summary Counts
-  const gradeCounts = useMemo(() => {
-    let total = liveSurveys.length;
-    let countA2 = 0;
-    let countA1 = 0;
-    let countA0 = 0;
-
-    liveSurveys.forEach((item) => {
-      const g = getItemGrade(item);
-      if (g === "A++") countA2++;
-      else if (g === "A+") countA1++;
-      else countA0++;
-    });
-
-    return { total, countA2, countA1, countA0 };
-  }, [liveSurveys]);
-
-  // Pagination Calculations
-  const totalItems = filteredData.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
-  const validPage = Math.min(currentPage, totalPages);
-  const startIndex = totalItems === 0 ? 0 : (validPage - 1) * itemsPerPage;
-  const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
-  const paginatedData = filteredData.slice(startIndex, endIndex);
-
-  const startItemDisplay = totalItems === 0 ? 0 : startIndex + 1;
-  const endItemDisplay = endIndex;
-
-  const getRowId = (row) => row._id || row.id;
+  // Row selection helpers
+  const getRowId = (row) => String(row?._id || row?.id || "");
 
   const isAllSelected =
-    paginatedData.length > 0 &&
-    paginatedData.every((row) => selectedRows.includes(getRowId(row)));
+    surveys.length > 0 && surveys.every((row) => selectedRows.includes(getRowId(row)));
 
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      const pageIds = paginatedData.map((row) => getRowId(row));
+      const pageIds = surveys.map((row) => getRowId(row)).filter(Boolean);
       setSelectedRows((prev) => Array.from(new Set([...prev, ...pageIds])));
     } else {
-      const pageIds = new Set(paginatedData.map((row) => getRowId(row)));
+      const pageIds = new Set(surveys.map((row) => getRowId(row)));
       setSelectedRows((prev) => prev.filter((id) => !pageIds.has(id)));
     }
   };
 
   const handleToggleRow = (id) => {
+    const stringId = String(id);
     setSelectedRows((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+      prev.includes(stringId) ? prev.filter((item) => item !== stringId) : [...prev, stringId]
     );
   };
 
-  // Export to Excel
-  const handleExport = () => {
-    let dataToExport = [];
+  // High-Speed Streaming CSV / Excel Export
+  const handleExport = async () => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("adminToken") : null;
+    if (!token) return;
+
+    // If specific rows selected on current page, export selected items in Excel (.xlsx)
     if (selectedRows.length > 0) {
-      dataToExport = filteredData.filter((row) =>
-        selectedRows.includes(getRowId(row))
-      );
-    } else {
-      dataToExport = filteredData;
+      const selectedIdSet = new Set(selectedRows.map(String));
+      const selectedData = surveys.filter((row) => selectedIdSet.has(getRowId(row)));
+      if (selectedData.length > 0) {
+        const excelRows = selectedData.map((item, idx) => ({
+          "S.No": idx + 1,
+          "Survey ID": item.id || "-",
+          "Grade": item.grade || "A",
+          "Survey Type": item.type || "-",
+          "First Name": item.firstName || "-",
+          "Last Name": item.lastName || "-",
+          "Email Address": item.email || "-",
+          "Mobile Number": item.mobile || "-",
+          "Date of Birth": item.dob || "-",
+          "Gender": item.gender || "-",
+          "Occupation": item.occupation || "-",
+          "Class": item.studentClass || "-",
+          "State": item.state || "-",
+          "City": item.city || "-",
+          "School": item.school || "-",
+          "Submitted On": item.submittedOn || "-",
+        }));
+
+        const worksheet = XLSX.utils.json_to_sheet(excelRows);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Selected Grades");
+        XLSX.writeFile(
+          workbook,
+          `Jagran_Grades_Selected_${selectedRows.length}_${new Date().toISOString().slice(0, 10)}.xlsx`
+        );
+        return;
+      }
     }
 
-    if (dataToExport.length === 0) {
-      alert("No data available to export.");
-      return;
-    }
+    // Otherwise stream full filtered CSV from backend
+    try {
+      setIsExporting(true);
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+      const params = new URLSearchParams();
 
-    const excelRows = dataToExport.map((item, idx) => {
-      const row = {
-        "S.No": idx + 1,
-        "ID": item.id || "-",
-        "Grade": getItemGrade(item),
-        "Type": item.type || "-",
-        "First Name": item.firstName || "-",
-        "Last Name": item.lastName || "-",
-        "Email": item.email || "-",
-        "Mobile": item.mobile || "-",
-        "DOB": item.dob || "-",
-        "Gender": item.gender || "-",
-        "Occupation": item.occupation || "-",
-        "Class": item.studentClass || "-",
-        "State": item.state || "-",
-        "City": item.city || "-",
-        "School": item.school || "-",
-        "Submitted On": item.submittedOn || "-",
-      };
+      if (tabFilter !== "all") params.append("tab", tabFilter);
+      if (gradeFilter !== "all") params.append("grade", gradeFilter);
+      if (stateFilter !== "all") params.append("state", stateFilter);
+      if (cityFilter !== "all") params.append("city", cityFilter);
+      if (schoolFilter !== "all") params.append("school", schoolFilter);
+      if (debouncedSearch.trim() !== "") params.append("search", debouncedSearch.trim());
 
-      // Add all 15 Question Answers to Excel columns
-      QUESTIONS.forEach((q, qIdx) => {
-        const userAns = item.answers ? item.answers[q.id] : null;
-        row[`Q${qIdx + 1}: ${q.question}`] = Array.isArray(userAns)
-          ? userAns.join(", ")
-          : userAns || "-";
+      const dateParams = getDateRangeParams();
+      if (dateParams.startDate) params.append("startDate", dateParams.startDate);
+      if (dateParams.endDate) params.append("endDate", dateParams.endDate);
+
+      const res = await fetch(`${backendUrl}/api/v1/survey/export?${params.toString()}`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      return row;
-    });
+      if (!res.ok) throw new Error("Export failed");
 
-    const worksheet = XLSX.utils.json_to_sheet(excelRows);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Survey Responses & Grades");
-
-    const dateStr = new Date().toISOString().split("T")[0];
-    XLSX.writeFile(workbook, `Jagran_Sanskarshaala_Grades_Report_${dateStr}.xlsx`);
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Jagran_Sanskarshaala_Grades_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Export error:", err);
+      alert("Export failed. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const resetFilters = () => {
     setSearchQuery("");
+    setDebouncedSearch("");
     setGradeFilter("all");
     setStateFilter("all");
     setCityFilter("all");
     setSchoolFilter("all");
-    setDatePreset("30days");
-    setDateRangeLabel("Last 30 days");
+    setDatePreset("all");
+    setDateRangeLabel("All Time (सभी)");
     setOpenDropdown("none");
   };
+
+  // Pagination bounds
+  const startItemDisplay = totalItems === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
+  const endItemDisplay = Math.min(currentPage * itemsPerPage, totalItems);
 
   return (
     <>
@@ -389,12 +439,11 @@ export default function SurveyGradesView({ liveSurveys = [], isLoading = false }
         <div className="flex items-center gap-8 border-b border-gray-100 pb-4">
           <button
             onClick={() => setTabFilter("all")}
-            className={`text-xs sm:text-sm font-extrabold pb-2 relative transition-all cursor-pointer ${tabFilter === "all"
-                ? "text-[var(--primary)]"
-                : "text-gray-500 hover:text-gray-800"
-              }`}
+            className={`text-xs sm:text-sm font-extrabold pb-2 relative transition-all cursor-pointer ${
+              tabFilter === "all" ? "text-[var(--primary)]" : "text-gray-500 hover:text-gray-800"
+            }`}
           >
-            <span>All Data ({gradeCounts.total})</span>
+            <span>All Data ({stats.total.toLocaleString()})</span>
             {tabFilter === "all" && (
               <span className="absolute bottom-0 left-0 right-0 h-1 bg-[var(--primary)] rounded-full animate-fadeIn" />
             )}
@@ -402,12 +451,11 @@ export default function SurveyGradesView({ liveSurveys = [], isLoading = false }
 
           <button
             onClick={() => setTabFilter("parent")}
-            className={`text-xs sm:text-sm font-extrabold pb-2 relative transition-all cursor-pointer ${tabFilter === "parent"
-                ? "text-[var(--primary)]"
-                : "text-gray-500 hover:text-gray-800"
-              }`}
+            className={`text-xs sm:text-sm font-extrabold pb-2 relative transition-all cursor-pointer ${
+              tabFilter === "parent" ? "text-[var(--primary)]" : "text-gray-500 hover:text-gray-800"
+            }`}
           >
-            <span>Parent Data</span>
+            <span>Parent Data ({stats.parentCount.toLocaleString()})</span>
             {tabFilter === "parent" && (
               <span className="absolute bottom-0 left-0 right-0 h-1 bg-[var(--primary)] rounded-full animate-fadeIn" />
             )}
@@ -415,12 +463,11 @@ export default function SurveyGradesView({ liveSurveys = [], isLoading = false }
 
           <button
             onClick={() => setTabFilter("student")}
-            className={`text-xs sm:text-sm font-extrabold pb-2 relative transition-all cursor-pointer ${tabFilter === "student"
-                ? "text-[var(--primary)]"
-                : "text-gray-500 hover:text-gray-800"
-              }`}
+            className={`text-xs sm:text-sm font-extrabold pb-2 relative transition-all cursor-pointer ${
+              tabFilter === "student" ? "text-[var(--primary)]" : "text-gray-500 hover:text-gray-800"
+            }`}
           >
-            <span>Student Data</span>
+            <span>Student Data ({stats.studentCount.toLocaleString()})</span>
             {tabFilter === "student" && (
               <span className="absolute bottom-0 left-0 right-0 h-1 bg-[var(--primary)] rounded-full animate-fadeIn" />
             )}
@@ -429,9 +476,12 @@ export default function SurveyGradesView({ liveSurveys = [], isLoading = false }
 
         {/* 4 Summary Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-          {isLoading ? (
+          {isStatsLoading ? (
             [...Array(4)].map((_, i) => (
-              <div key={i} className="p-4 sm:p-5 rounded-2xl bg-[#fdf8f4] border border-[#f5e6d6] flex items-center gap-4 animate-pulse">
+              <div
+                key={i}
+                className="p-4 sm:p-5 rounded-2xl bg-[#fdf8f4] border border-[#f5e6d6] flex items-center gap-4 animate-pulse"
+              >
                 <div className="w-12 h-12 rounded-2xl bg-gray-200/90 shrink-0" />
                 <div className="space-y-2 flex-1">
                   <div className="h-3 bg-gray-200 rounded-md w-28" />
@@ -449,7 +499,7 @@ export default function SurveyGradesView({ liveSurveys = [], isLoading = false }
                 <div>
                   <p className="text-xs font-bold text-gray-500">Total Submissions</p>
                   <h3 className="text-2xl font-black text-gray-900 mt-0.5 tracking-tight">
-                    {gradeCounts.total.toLocaleString()}
+                    {stats.total.toLocaleString()}
                   </h3>
                 </div>
               </div>
@@ -462,7 +512,7 @@ export default function SurveyGradesView({ liveSurveys = [], isLoading = false }
                 <div>
                   <p className="text-xs font-bold text-emerald-800">Grade A++ (Top Conduct)</p>
                   <h3 className="text-2xl font-black text-gray-900 mt-0.5 tracking-tight">
-                    {gradeCounts.countA2.toLocaleString()}
+                    {stats.gradeA2.toLocaleString()}
                   </h3>
                 </div>
               </div>
@@ -475,7 +525,7 @@ export default function SurveyGradesView({ liveSurveys = [], isLoading = false }
                 <div>
                   <p className="text-xs font-bold text-blue-800">Grade A+ (High Conduct)</p>
                   <h3 className="text-2xl font-black text-gray-900 mt-0.5 tracking-tight">
-                    {gradeCounts.countA1.toLocaleString()}
+                    {stats.gradeA1.toLocaleString()}
                   </h3>
                 </div>
               </div>
@@ -488,7 +538,7 @@ export default function SurveyGradesView({ liveSurveys = [], isLoading = false }
                 <div>
                   <p className="text-xs font-bold text-amber-800">Grade A (Good Conduct)</p>
                   <h3 className="text-2xl font-black text-gray-900 mt-0.5 tracking-tight">
-                    {gradeCounts.countA0.toLocaleString()}
+                    {stats.gradeA0.toLocaleString()}
                   </h3>
                 </div>
               </div>
@@ -501,9 +551,7 @@ export default function SurveyGradesView({ liveSurveys = [], isLoading = false }
           {/* Date Filter Dropdown */}
           <div className="relative custom-dropdown-container">
             <button
-              onClick={() =>
-                setOpenDropdown(openDropdown === "date" ? "none" : "date")
-              }
+              onClick={() => setOpenDropdown(openDropdown === "date" ? "none" : "date")}
               className="px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-2xl text-xs font-bold text-gray-700 flex items-center gap-2 hover:bg-gray-100 transition-colors cursor-pointer"
             >
               <FaCalendarDays className="text-gray-400" />
@@ -521,10 +569,9 @@ export default function SurveyGradesView({ liveSurveys = [], isLoading = false }
                       setDateRangeLabel(p.label);
                       setOpenDropdown("none");
                     }}
-                    className={`w-full px-3.5 py-2 text-left text-xs font-semibold flex items-center justify-between hover:bg-red-50 hover:text-[var(--primary)] ${datePreset === p.id
-                        ? "text-[var(--primary)] font-bold bg-red-50/50"
-                        : "text-gray-700"
-                      }`}
+                    className={`w-full px-3.5 py-2 text-left text-xs font-semibold flex items-center justify-between hover:bg-red-50 hover:text-[var(--primary)] ${
+                      datePreset === p.id ? "text-[var(--primary)] font-bold bg-red-50/50" : "text-gray-700"
+                    }`}
                   >
                     <span>{p.label}</span>
                     {datePreset === p.id && <FaCheck className="text-xs" />}
@@ -537,15 +584,11 @@ export default function SurveyGradesView({ liveSurveys = [], isLoading = false }
           {/* Grade Filter Dropdown */}
           <div className="relative custom-dropdown-container">
             <button
-              onClick={() =>
-                setOpenDropdown(openDropdown === "grade" ? "none" : "grade")
-              }
+              onClick={() => setOpenDropdown(openDropdown === "grade" ? "none" : "grade")}
               className="px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-2xl text-xs font-bold text-gray-700 flex items-center gap-2 hover:bg-gray-100 transition-colors cursor-pointer"
             >
               <FaAward className="text-gray-400" />
-              <span>
-                {gradeFilter === "all" ? "All Grades" : `Grade ${gradeFilter}`}
-              </span>
+              <span>{gradeFilter === "all" ? "All Grades" : `Grade ${gradeFilter}`}</span>
               <FaChevronDown className="text-[10px] text-gray-400" />
             </button>
 
@@ -563,10 +606,9 @@ export default function SurveyGradesView({ liveSurveys = [], isLoading = false }
                       setGradeFilter(g.value);
                       setOpenDropdown("none");
                     }}
-                    className={`w-full px-3.5 py-2 text-left text-xs font-semibold flex items-center justify-between hover:bg-red-50 hover:text-[var(--primary)] ${gradeFilter === g.value
-                        ? "text-[var(--primary)] font-bold bg-red-50/50"
-                        : "text-gray-700"
-                      }`}
+                    className={`w-full px-3.5 py-2 text-left text-xs font-semibold flex items-center justify-between hover:bg-red-50 hover:text-[var(--primary)] ${
+                      gradeFilter === g.value ? "text-[var(--primary)] font-bold bg-red-50/50" : "text-gray-700"
+                    }`}
                   >
                     <span>{g.label}</span>
                     {gradeFilter === g.value && <FaCheck className="text-xs" />}
@@ -579,14 +621,10 @@ export default function SurveyGradesView({ liveSurveys = [], isLoading = false }
           {/* State Filter Dropdown */}
           <div className="relative custom-dropdown-container">
             <button
-              onClick={() =>
-                setOpenDropdown(openDropdown === "state" ? "none" : "state")
-              }
+              onClick={() => setOpenDropdown(openDropdown === "state" ? "none" : "state")}
               className="px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-2xl text-xs font-bold text-gray-700 flex items-center gap-2 hover:bg-gray-100 transition-colors cursor-pointer max-w-[160px] truncate"
             >
-              <span className="truncate">
-                {stateFilter === "all" ? "All States" : stateFilter}
-              </span>
+              <span className="truncate">{stateFilter === "all" ? "All States" : stateFilter}</span>
               <FaChevronDown className="text-[10px] text-gray-400 shrink-0" />
             </button>
 
@@ -601,15 +639,12 @@ export default function SurveyGradesView({ liveSurveys = [], isLoading = false }
                       setSchoolFilter("all");
                       setOpenDropdown("none");
                     }}
-                    className={`w-full px-3.5 py-2 text-left text-xs font-semibold flex items-center justify-between hover:bg-red-50 hover:text-[var(--primary)] ${stateFilter === st.value
-                        ? "text-[var(--primary)] font-bold bg-red-50/50"
-                        : "text-gray-700"
-                      }`}
+                    className={`w-full px-3.5 py-2 text-left text-xs font-semibold flex items-center justify-between hover:bg-red-50 hover:text-[var(--primary)] ${
+                      stateFilter === st.value ? "text-[var(--primary)] font-bold bg-red-50/50" : "text-gray-700"
+                    }`}
                   >
                     <span className="truncate">{st.label}</span>
-                    {stateFilter === st.value && (
-                      <FaCheck className="text-xs shrink-0" />
-                    )}
+                    {stateFilter === st.value && <FaCheck className="text-xs shrink-0" />}
                   </button>
                 ))}
               </div>
@@ -619,36 +654,34 @@ export default function SurveyGradesView({ liveSurveys = [], isLoading = false }
           {/* City Filter Dropdown */}
           <div className="relative custom-dropdown-container">
             <button
-              onClick={() =>
-                setOpenDropdown(openDropdown === "city" ? "none" : "city")
-              }
-              className="px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-2xl text-xs font-bold text-gray-700 flex items-center gap-2 hover:bg-gray-100 transition-colors cursor-pointer max-w-[160px] truncate"
+              onClick={() => setOpenDropdown(openDropdown === "city" ? "none" : "city")}
+              disabled={stateFilter === "all"}
+              className={`px-3.5 py-2.5 border rounded-2xl text-xs font-bold flex items-center gap-2 transition-colors max-w-[160px] truncate ${
+                stateFilter === "all"
+                  ? "bg-gray-100/60 text-gray-400 border-gray-200 cursor-not-allowed"
+                  : "bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100 cursor-pointer"
+              }`}
             >
-              <span className="truncate">
-                {cityFilter === "all" ? "Select City" : cityFilter}
-              </span>
+              <span className="truncate">{cityFilter === "all" ? "All Cities" : cityFilter}</span>
               <FaChevronDown className="text-[10px] text-gray-400 shrink-0" />
             </button>
 
             {openDropdown === "city" && (
               <div className="absolute top-full left-0 mt-1.5 w-52 max-h-56 overflow-y-auto bg-white rounded-2xl shadow-xl border border-gray-100 py-1.5 z-30 space-y-0.5 [scrollbar-width:thin]">
-                {cityOptions.map((c) => (
+                {cityOptions.map((ct) => (
                   <button
-                    key={c.value}
+                    key={ct.value}
                     onClick={() => {
-                      setCityFilter(c.value);
+                      setCityFilter(ct.value);
                       setSchoolFilter("all");
                       setOpenDropdown("none");
                     }}
-                    className={`w-full px-3.5 py-2 text-left text-xs font-semibold flex items-center justify-between hover:bg-red-50 hover:text-[var(--primary)] ${cityFilter === c.value
-                        ? "text-[var(--primary)] font-bold bg-red-50/50"
-                        : "text-gray-700"
-                      }`}
+                    className={`w-full px-3.5 py-2 text-left text-xs font-semibold flex items-center justify-between hover:bg-red-50 hover:text-[var(--primary)] ${
+                      cityFilter === ct.value ? "text-[var(--primary)] font-bold bg-red-50/50" : "text-gray-700"
+                    }`}
                   >
-                    <span className="truncate">{c.label}</span>
-                    {cityFilter === c.value && (
-                      <FaCheck className="text-xs shrink-0" />
-                    )}
+                    <span className="truncate">{ct.label}</span>
+                    {cityFilter === ct.value && <FaCheck className="text-xs shrink-0" />}
                   </button>
                 ))}
               </div>
@@ -658,19 +691,20 @@ export default function SurveyGradesView({ liveSurveys = [], isLoading = false }
           {/* School Filter Dropdown */}
           <div className="relative custom-dropdown-container">
             <button
-              onClick={() =>
-                setOpenDropdown(openDropdown === "school" ? "none" : "school")
-              }
-              className="px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-2xl text-xs font-bold text-gray-700 flex items-center gap-2 hover:bg-gray-100 transition-colors cursor-pointer max-w-[180px] truncate"
+              onClick={() => setOpenDropdown(openDropdown === "school" ? "none" : "school")}
+              disabled={cityFilter === "all"}
+              className={`px-3.5 py-2.5 border rounded-2xl text-xs font-bold flex items-center gap-2 transition-colors max-w-[180px] truncate ${
+                cityFilter === "all"
+                  ? "bg-gray-100/60 text-gray-400 border-gray-200 cursor-not-allowed"
+                  : "bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100 cursor-pointer"
+              }`}
             >
-              <span className="truncate">
-                {schoolFilter === "all" ? "Select School" : schoolFilter}
-              </span>
+              <span className="truncate">{schoolFilter === "all" ? "All Schools" : schoolFilter}</span>
               <FaChevronDown className="text-[10px] text-gray-400 shrink-0" />
             </button>
 
             {openDropdown === "school" && (
-              <div className="absolute top-full left-0 mt-1.5 w-64 max-h-56 overflow-y-auto bg-white rounded-2xl shadow-xl border border-gray-100 py-1.5 z-30 space-y-0.5 [scrollbar-width:thin]">
+              <div className="absolute top-full left-0 mt-1.5 w-72 max-h-56 overflow-y-auto bg-white rounded-2xl shadow-xl border border-gray-100 py-1.5 z-30 space-y-0.5 [scrollbar-width:thin]">
                 {schoolOptions.map((sch) => (
                   <button
                     key={sch.value}
@@ -678,177 +712,150 @@ export default function SurveyGradesView({ liveSurveys = [], isLoading = false }
                       setSchoolFilter(sch.value);
                       setOpenDropdown("none");
                     }}
-                    className={`w-full px-3.5 py-2 text-left text-xs font-semibold flex items-center justify-between hover:bg-red-50 hover:text-[var(--primary)] ${schoolFilter === sch.value
-                        ? "text-[var(--primary)] font-bold bg-red-50/50"
-                        : "text-gray-700"
-                      }`}
+                    className={`w-full px-3.5 py-2 text-left text-xs font-semibold flex items-center justify-between hover:bg-red-50 hover:text-[var(--primary)] ${
+                      schoolFilter === sch.value ? "text-[var(--primary)] font-bold bg-red-50/50" : "text-gray-700"
+                    }`}
                   >
                     <span className="truncate">{sch.label}</span>
-                    {schoolFilter === sch.value && (
-                      <FaCheck className="text-xs shrink-0" />
-                    )}
+                    {schoolFilter === sch.value && <FaCheck className="text-xs shrink-0" />}
                   </button>
                 ))}
               </div>
             )}
           </div>
 
-          {/* Reset Filters Button */}
-          <button
-            onClick={resetFilters}
-            className="px-3.5 py-2.5 rounded-2xl border border-gray-200 hover:bg-gray-100 text-gray-600 text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer ml-auto"
-          >
-            <FaRotateLeft className="text-xs" />
-            <span>Reset</span>
-          </button>
-        </div>
-
-        {/* Global Search Input & Show Entries Dropdown */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-1">
-          {/* Global Search Input */}
-          <div className="relative w-full sm:w-96">
+          {/* Search Box */}
+          <div className="relative flex-1 min-w-[200px]">
             <FaMagnifyingGlass className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs" />
             <input
               type="text"
+              placeholder="Search by name, mobile, email, city..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Global Search (ID, Name, Mobile, Email, Grade, School...)"
-              className="w-full pl-9 pr-4 py-2 bg-gray-50/80 border border-gray-200 rounded-2xl text-xs font-semibold text-gray-900 focus:outline-none focus:border-[var(--primary)] focus:bg-white transition-colors shadow-2xs"
+              className="w-full pl-9 pr-3.5 py-2 bg-gray-50 border border-gray-200 rounded-2xl text-xs font-bold text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[var(--primary)] focus:bg-white transition-all"
             />
           </div>
 
-          {/* Show Entries Dropdown (Matching Screenshot 2) */}
-          <div className="flex items-center gap-2 text-xs font-bold text-gray-600 self-end sm:self-auto">
-            <span>Show</span>
-            <div className="relative custom-dropdown-container">
-              <button
-                onClick={() =>
-                  setOpenDropdown(
-                    openDropdown === "entries" ? "none" : "entries"
-                  )
-                }
-                className="px-3 py-1 bg-white border border-red-500/80 rounded-full font-extrabold text-gray-900 flex items-center gap-1.5 shadow-xs hover:border-red-600 transition-colors cursor-pointer"
-              >
-                <span>{itemsPerPage}</span>
-                <FaChevronDown className="text-[10px] text-gray-500" />
-              </button>
+          {/* Reset Filters */}
+          {(searchQuery ||
+            gradeFilter !== "all" ||
+            stateFilter !== "all" ||
+            cityFilter !== "all" ||
+            schoolFilter !== "all" ||
+            datePreset !== "all") && (
+            <button
+              onClick={resetFilters}
+              className="px-3.5 py-2 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors"
+              title="Reset all filters"
+            >
+              <FaRotateLeft className="text-[10px]" />
+              <span>Reset</span>
+            </button>
+          )}
 
-              {openDropdown === "entries" && (
-                <div className="absolute top-full right-0 mt-1.5 w-24 bg-white rounded-2xl shadow-xl border border-gray-100 py-1.5 z-30 space-y-0.5">
-                  {[10, 25, 50, 100].map((num) => (
-                    <button
-                      key={num}
-                      onClick={() => {
-                        setItemsPerPage(num);
-                        setOpenDropdown("none");
-                      }}
-                      className={`w-full px-3 py-1.5 text-left text-xs font-bold flex items-center justify-between hover:bg-red-50 hover:text-[var(--primary)] ${itemsPerPage === num
-                          ? "text-[var(--primary)] font-extrabold bg-red-50/50"
-                          : "text-gray-700"
-                        }`}
-                    >
-                      <span>{num}</span>
-                      {itemsPerPage === num && (
-                        <FaCheck className="text-xs text-[var(--primary)]" />
-                      )}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-            <span>entries</span>
-          </div>
+          {/* Export Button */}
+          <button
+            onClick={handleExport}
+            disabled={isExporting}
+            className={`ml-auto px-4 py-2 rounded-2xl text-xs font-extrabold shadow-2xs transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 active:scale-95 ${
+              selectedRows.length > 0
+                ? "bg-[var(--primary)] text-white hover:bg-red-700 shadow-md shadow-red-500/20"
+                : "bg-white border border-gray-200 hover:border-gray-300 text-gray-700 hover:bg-gray-50"
+            }`}
+            title={
+              selectedRows.length > 0
+                ? `Export ${selectedRows.length} selected entries as Excel Sheet (.xlsx)`
+                : "Export all filtered data as CSV"
+            }
+          >
+            <FaFileExport className={selectedRows.length > 0 ? "text-white text-sm" : "text-[var(--primary)] text-sm"} />
+            <span>
+              {isExporting
+                ? "Exporting..."
+                : selectedRows.length > 0
+                ? `Export Selected (${selectedRows.length})`
+                : "Export CSV"}
+            </span>
+          </button>
         </div>
 
         {/* Data Table */}
-        <div className="overflow-x-auto rounded-2xl border border-gray-200/80 shadow-2xs [scrollbar-width:thin]">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="bg-gray-50/90 text-gray-700 font-extrabold uppercase border-b border-gray-200/80 tracking-wider">
+        <div className="overflow-x-auto rounded-2xl border border-gray-100 min-h-[300px]">
+          <table className="w-full text-left text-xs text-gray-600">
+            <thead className="bg-[#faf4ed] text-gray-700 font-black uppercase text-[11px] tracking-wider border-b border-[#f5e6d6]">
+              <tr>
                 <th className="py-3.5 px-4 w-10 text-center">
                   <input
                     type="checkbox"
                     checked={isAllSelected}
                     onChange={handleSelectAll}
-                    className="rounded border-gray-300 text-[var(--primary)] focus:ring-[var(--primary)] cursor-pointer"
+                    className="w-4 h-4 rounded-md text-[var(--primary)] accent-[var(--primary)] cursor-pointer"
                   />
                 </th>
-                <th className="py-3.5 px-4 font-extrabold whitespace-nowrap">ID / ID</th>
-                <th className="py-3.5 px-4 font-extrabold whitespace-nowrap">GRADE / ग्रेड</th>
-                <th className="py-3.5 px-4 font-extrabold whitespace-nowrap">FIRST NAME / नाम</th>
-                <th className="py-3.5 px-4 font-extrabold whitespace-nowrap">LAST NAME / उपनाम</th>
-                <th className="py-3.5 px-4 font-extrabold whitespace-nowrap">EMAIL / ईमेल</th>
-                <th className="py-3.5 px-4 font-extrabold whitespace-nowrap">MOBILE / मोबाइल</th>
-                <th className="py-3.5 px-4 font-extrabold whitespace-nowrap">TYPE / प्रकार</th>
-                <th className="py-3.5 px-4 font-extrabold whitespace-nowrap">SCHOOL / CLASS</th>
-                <th className="py-3.5 px-4 font-extrabold whitespace-nowrap">CITY / STATE</th>
-                <th className="py-3.5 px-4 font-extrabold whitespace-nowrap">SUBMITTED / तारीख</th>
-                <th className="py-3.5 px-4 font-extrabold text-center whitespace-nowrap">ACTION</th>
+                <th className="py-3.5 px-4">S.No</th>
+                <th className="py-3.5 px-4">Grade</th>
+                <th className="py-3.5 px-4">First Name</th>
+                <th className="py-3.5 px-4">Last Name</th>
+                <th className="py-3.5 px-4">Email Address</th>
+                <th className="py-3.5 px-4">Mobile</th>
+                <th className="py-3.5 px-4">Type</th>
+                <th className="py-3.5 px-4">School / Class</th>
+                <th className="py-3.5 px-4">Location</th>
+                <th className="py-3.5 px-4">Date</th>
+                <th className="py-3.5 px-4 text-center">Action</th>
               </tr>
             </thead>
 
-            <tbody className="divide-y divide-gray-100 font-semibold text-gray-800">
+            <tbody className="divide-y divide-gray-100 font-medium">
               {isLoading ? (
                 [...Array(6)].map((_, i) => (
-                  <tr key={i} className="animate-pulse border-b border-gray-100">
-                    <td className="py-3.5 px-4 text-center"><div className="w-4 h-4 bg-gray-200 rounded mx-auto" /></td>
-                    <td className="py-3.5 px-4"><div className="h-3.5 bg-gray-200 rounded w-16" /></td>
-                    <td className="py-3.5 px-4"><div className="h-3.5 bg-gray-300 rounded w-24" /></td>
-                    <td className="py-3.5 px-4"><div className="h-3.5 bg-gray-200 rounded w-20" /></td>
-                    <td className="py-3.5 px-4"><div className="h-3.5 bg-gray-200 rounded w-32" /></td>
-                    <td className="py-3.5 px-4"><div className="h-3.5 bg-gray-200 rounded w-20" /></td>
-                    <td className="py-3.5 px-4"><div className="h-3.5 bg-gray-200 rounded w-16" /></td>
-                    <td className="py-3.5 px-4 text-center"><div className="h-6 bg-gray-200 rounded-full w-14 mx-auto" /></td>
-                    <td className="py-3.5 px-4"><div className="h-3.5 bg-gray-200 rounded w-24" /></td>
-                    <td className="py-3.5 px-4"><div className="h-3.5 bg-gray-200 rounded w-24" /></td>
-                    <td className="py-3.5 px-4"><div className="h-3.5 bg-gray-200 rounded w-24" /></td>
-                    <td className="py-3.5 px-4 text-center"><div className="w-6 h-6 bg-gray-200 rounded-md mx-auto" /></td>
+                  <tr key={i} className="animate-pulse">
+                    <td colSpan="12" className="py-4 px-4">
+                      <div className="h-4 bg-gray-200/80 rounded-md w-full" />
+                    </td>
                   </tr>
                 ))
-              ) : paginatedData.length === 0 ? (
+              ) : surveys.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan={12}
-                    className="p-8 text-center text-gray-400 font-bold"
-                  >
-                    No survey grade submissions found.
+                  <td colSpan="12" className="py-12 text-center text-gray-400 font-bold">
+                    No survey grade records found matching the applied filters.
                   </td>
                 </tr>
               ) : (
-                paginatedData.map((row) => {
-                  const rowId = getRowId(row);
-                  const isChecked = selectedRows.includes(rowId);
-                  const rowGrade = getItemGrade(row);
+                surveys.map((row, idx) => {
+                  const isSelected = selectedRows.includes(getRowId(row));
+                  const rowGrade = row.grade || "A";
 
                   return (
                     <tr
-                      key={rowId}
-                      className={`hover:bg-red-50/20 transition-colors ${isChecked ? "bg-red-50/30" : ""
-                        }`}
+                      key={getRowId(row)}
+                      className={`hover:bg-red-50/30 transition-colors ${
+                        isSelected ? "bg-red-50/50" : ""
+                      }`}
                     >
                       <td className="py-3.5 px-4 text-center">
                         <input
                           type="checkbox"
-                          checked={isChecked}
-                          onChange={() => handleToggleRow(rowId)}
-                          className="rounded border-gray-300 text-[var(--primary)] focus:ring-[var(--primary)] cursor-pointer"
+                          checked={isSelected}
+                          onChange={() => handleToggleRow(getRowId(row))}
+                          className="w-4 h-4 rounded-md text-[var(--primary)] accent-[var(--primary)] cursor-pointer"
                         />
                       </td>
 
-                      {/* ID */}
-                      <td className="py-3.5 px-4 font-mono text-gray-500 font-bold whitespace-nowrap">
-                        {row.id || String(row._id).substring(18, 24)}
+                      <td className="py-3.5 px-4 font-bold text-gray-400">
+                        {startItemDisplay + idx}
                       </td>
 
-                      {/* Grade Badge */}
+                      {/* Grade Pill */}
                       <td className="py-3.5 px-4 whitespace-nowrap">
                         <span
-                          className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded-full font-black text-xs text-white shadow-2xs ${rowGrade === "A++"
+                          className={`inline-flex items-center justify-center px-2.5 py-1 rounded-xl text-xs font-black text-white shadow-xs ${
+                            rowGrade === "A++"
                               ? "bg-gradient-to-r from-emerald-500 to-green-600 shadow-emerald-500/20"
                               : rowGrade === "A+"
-                                ? "bg-gradient-to-r from-blue-600 to-indigo-600 shadow-blue-500/20"
-                                : "bg-gradient-to-r from-amber-500 to-orange-600 shadow-amber-500/20"
-                            }`}
+                              ? "bg-gradient-to-r from-blue-500 to-indigo-600 shadow-blue-500/20"
+                              : "bg-gradient-to-r from-amber-500 to-orange-600 shadow-amber-500/20"
+                          }`}
                         >
                           {rowGrade}
                         </span>
@@ -867,10 +874,11 @@ export default function SurveyGradesView({ liveSurveys = [], isLoading = false }
                       {/* Type Badge */}
                       <td className="py-3.5 px-4 whitespace-nowrap">
                         <span
-                          className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${row.type === "Student"
+                          className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                            row.type === "Student"
                               ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                               : "bg-orange-50 text-orange-700 border border-orange-200"
-                            }`}
+                          }`}
                         >
                           {row.type}
                         </span>
@@ -894,7 +902,7 @@ export default function SurveyGradesView({ liveSurveys = [], isLoading = false }
                       {/* View Details Eye Action */}
                       <td className="py-3.5 px-4 text-center whitespace-nowrap">
                         <button
-                          onClick={() => setSelectedSubmission(row)}
+                          onClick={() => handleViewDetail(row)}
                           className="p-1.5 rounded-xl bg-gray-100 hover:bg-[var(--primary)] hover:text-white text-gray-600 transition-all cursor-pointer shadow-2xs active:scale-95"
                           title="View Full Questionnaire Responses"
                         >
@@ -909,51 +917,64 @@ export default function SurveyGradesView({ liveSurveys = [], isLoading = false }
           </table>
         </div>
 
-        {/* Footer Pagination (Matching Screenshot 3) */}
+        {/* Footer Pagination */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2 text-xs font-bold text-gray-500">
           <div>
-            Showing {startItemDisplay} to {endItemDisplay} of {totalItems} entries
+            Showing {startItemDisplay} to {endItemDisplay} of {totalItems.toLocaleString()} entries
           </div>
 
           <div className="flex items-center gap-1.5">
             {/* Prev Button */}
             <button
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={validPage === 1}
-              className={`w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center transition-colors cursor-pointer ${validPage === 1
+              disabled={currentPage === 1}
+              className={`w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center transition-colors cursor-pointer ${
+                currentPage === 1
                   ? "opacity-40 cursor-not-allowed bg-gray-50 text-gray-300"
                   : "hover:bg-gray-100 text-gray-700"
-                }`}
+              }`}
             >
               <FaChevronLeft className="text-xs" />
             </button>
 
-            {/* Page Numbers */}
-            {Array.from({ length: totalPages }).map((_, idx) => {
-              const pNum = idx + 1;
-              const isCurrent = pNum === validPage;
-              return (
-                <button
-                  key={pNum}
-                  onClick={() => setCurrentPage(pNum)}
-                  className={`w-8 h-8 rounded-full font-black text-xs transition-colors cursor-pointer flex items-center justify-center ${isCurrent
-                      ? "bg-[var(--primary)] text-white shadow-md shadow-red-500/20"
-                      : "hover:bg-gray-100 text-gray-700"
+            {/* Dynamic Page Buttons */}
+            {(() => {
+              const buttons = [];
+              const maxButtons = 5;
+              let start = Math.max(1, currentPage - 2);
+              let end = Math.min(totalPages, start + maxButtons - 1);
+
+              if (end - start + 1 < maxButtons) {
+                start = Math.max(1, end - maxButtons + 1);
+              }
+
+              for (let p = start; p <= end; p++) {
+                buttons.push(
+                  <button
+                    key={p}
+                    onClick={() => setCurrentPage(p)}
+                    className={`w-8 h-8 rounded-full font-black text-xs transition-colors cursor-pointer flex items-center justify-center ${
+                      p === currentPage
+                        ? "bg-[var(--primary)] text-white shadow-md shadow-red-500/20"
+                        : "hover:bg-gray-100 text-gray-700"
                     }`}
-                >
-                  {pNum}
-                </button>
-              );
-            })}
+                  >
+                    {p}
+                  </button>
+                );
+              }
+              return buttons;
+            })()}
 
             {/* Next Button */}
             <button
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={validPage === totalPages}
-              className={`w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center transition-colors cursor-pointer ${validPage === totalPages
+              disabled={currentPage === totalPages}
+              className={`w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center transition-colors cursor-pointer ${
+                currentPage === totalPages
                   ? "opacity-40 cursor-not-allowed bg-gray-50 text-gray-300"
                   : "hover:bg-gray-100 text-gray-700"
-                }`}
+              }`}
             >
               <FaChevronRight className="text-xs" />
             </button>
@@ -961,7 +982,7 @@ export default function SurveyGradesView({ liveSurveys = [], isLoading = false }
         </div>
       </div>
 
-      {/* DETAIL MODAL: View All 15 Question Responses */}
+      {/* DETAIL MODAL: View Full Questionnaire Responses */}
       {selectedSubmission && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
           <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl p-6 border border-gray-100 max-h-[90vh] flex flex-col overflow-hidden">
@@ -969,14 +990,15 @@ export default function SurveyGradesView({ liveSurveys = [], isLoading = false }
             <div className="flex items-center justify-between pb-4 border-b border-gray-100 shrink-0">
               <div className="flex items-center gap-3">
                 <div
-                  className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-md ${getItemGrade(selectedSubmission) === "A++"
+                  className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-md ${
+                    (selectedSubmission.grade || "A") === "A++"
                       ? "bg-gradient-to-br from-emerald-500 to-green-700 shadow-emerald-500/30"
-                      : getItemGrade(selectedSubmission) === "A+"
-                        ? "bg-gradient-to-br from-blue-600 to-indigo-700 shadow-blue-500/30"
-                        : "bg-gradient-to-br from-amber-500 to-red-600 shadow-amber-500/30"
-                    }`}
+                      : (selectedSubmission.grade || "A") === "A+"
+                      ? "bg-gradient-to-br from-blue-600 to-indigo-700 shadow-blue-500/30"
+                      : "bg-gradient-to-br from-amber-500 to-red-600 shadow-amber-500/30"
+                  }`}
                 >
-                  {getItemGrade(selectedSubmission)}
+                  {selectedSubmission.grade || "A"}
                 </div>
                 <div>
                   <h3 className="text-lg font-black text-gray-900">
@@ -1003,24 +1025,30 @@ export default function SurveyGradesView({ liveSurveys = [], isLoading = false }
                   <span className="text-gray-400">Email:</span> {selectedSubmission.email}
                 </div>
                 <div>
-                  <span className="text-gray-400">DOB / Gender:</span>{" "}
-                  {selectedSubmission.dob} ({selectedSubmission.gender})
+                  <span className="text-gray-400">DOB / Gender:</span> {selectedSubmission.dob} (
+                  {selectedSubmission.gender})
                 </div>
                 <div>
                   <span className="text-gray-400">Occupation / Class:</span>{" "}
                   {selectedSubmission.occupation} ({selectedSubmission.studentClass})
                 </div>
                 <div>
-                  <span className="text-gray-400">Location:</span>{" "}
-                  {selectedSubmission.city}, {selectedSubmission.state}
+                  <span className="text-gray-400">Location:</span> {selectedSubmission.city},{" "}
+                  {selectedSubmission.state}
                 </div>
                 <div className="col-span-2">
                   <span className="text-gray-400">School:</span> {selectedSubmission.school}
                 </div>
               </div>
 
-              <h4 className="text-xs font-black text-gray-900 uppercase tracking-wider pt-2 border-t border-gray-100">
-                Full 15 Questionnaire Responses
+              <h4 className="text-xs font-black text-gray-900 uppercase tracking-wider pt-2 border-t border-gray-100 flex items-center justify-between">
+                <span>Questionnaire Responses</span>
+                {detailLoading && (
+                  <span className="text-[11px] font-bold text-gray-400 flex items-center gap-1.5 normal-case">
+                    <FaArrowsRotate className="animate-spin text-xs text-[var(--primary)]" />
+                    Loading answers...
+                  </span>
+                )}
               </h4>
 
               <div className="space-y-3">
@@ -1030,7 +1058,7 @@ export default function SurveyGradesView({ liveSurveys = [], isLoading = false }
                     : null;
                   const ansDisplay = Array.isArray(userAns)
                     ? userAns.join(", ")
-                    : userAns || "Not Answered";
+                    : userAns || (detailLoading ? "Loading..." : "Not Answered");
 
                   return (
                     <div
